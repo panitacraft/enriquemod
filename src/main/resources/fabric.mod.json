@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "enriquecraft",
+  "version": "${version}",
+  "name": "Enriquecraft",
+  "description": "Personal Plugin for a Private Server",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/enriquecraft/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.panita.enriquecraft.client.EnriquecraftDataGenerator"
+    ],
+    "main": [
+      "com.panita.enriquecraft.Enriquecraft"
+    ]
+  },
+  "mixins": [
+    "enriquecraft.mixins.json",
+    {
+      "config": "enriquecraft.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
