@@ -8,21 +8,14 @@
   "contact": {},
   "license": "All-Rights-Reserved",
   "icon": "assets/enriquecraft/icon.png",
-  "environment": "client",
+  "environment": "server",
   "entrypoints": {
-    "fabric-datagen": [
-      "com.panita.enriquecraft.client.EnriquecraftDataGenerator"
-    ],
     "main": [
       "com.panita.enriquecraft.Enriquecraft"
     ]
   },
   "mixins": [
-    "enriquecraft.mixins.json",
-    {
-      "config": "enriquecraft.client.mixins.json",
-      "environment": "client"
-    }
+    "enriquecraft.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
