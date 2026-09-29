@@ -10,6 +10,9 @@ This file is the source of truth for how work is done in this project. Every con
 - **Language and toolchain:** Java 25, Gradle (via the wrapper), Fabric Loom, Fabric Loader, Fabric API. Exact versions live in `gradle.properties`.
 - **Base package:** `com.panita.enriquecraft`
 - **Mod id:** `enriquecraft`
+- **Approved external libraries** (bundled inside the mod jar, versions in `gradle.properties`):
+  - Placeholder API (`eu.pb4:placeholder-api`, LGPL-3.0): text tags and placeholders. Keep its license file intact when distributing.
+  - Fabric Permissions API (`me.lucko:fabric-permissions-api`): LuckPerms-compatible permission nodes.
 
 ## 2. Non-Negotiable Constraint: Server-Authoritative With an Optional Client Companion
 
@@ -125,12 +128,12 @@ Target package structure under `com.panita.enriquecraft`:
 | Package | Responsibility |
 |---|---|
 | (base package) | `Enriquecraft` entrypoint class. Only wires modules together; contains no feature logic. |
-| `command` | Server command definitions. Parse input and delegate to services. |
+| `command` | Command framework: `ModCommand`, `CommandMetadata`, `CommandTreeBuilder`, `CommandCatalog`, `CommandModule`, `CommandRegistrar`. Concrete commands live in `command.builtin`. |
 | `event` | Event listeners. Subscribe to Fabric events and delegate to services. |
 | `feature` | Feature modules. Each feature is self-contained and exposes a small interface. |
 | `service` | Business logic shared across features. |
 | `config` | Configuration model, loading, and saving. |
-| `message` | Player-facing text (Spanish) and its delivery: chat, titles, action bar. Presentation only. |
+| `message` | `Messenger` (the only way to show text to players), `Message`, `MessageFormatter`, `Messages` (all Spanish text), and `message.channel` (title and boss bar delivery). Presentation only. |
 | `network` | Shared protocol: payload types, codecs, protocol version, and server-side capability detection. No client classes. |
 | `util` | Small stateless helpers. Add only when reuse is proven. |
 | `mixin` | Mixin classes (server-safe only). Thin, delegating. |
@@ -142,6 +145,17 @@ Rules:
 - The entrypoints register commands and listeners through dedicated registrar classes, not inline.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
 - Do not create the client entrypoint or the client mixin config until the first client enhancement needs them.
+
+### Commands
+- A command is a class implementing `ModCommand`. It declares its name, aliases, Spanish description, and fallback `PermissionLevel` in `CommandMetadata`, adds arguments and executors in `configure`, and nests other `ModCommand`s through `subcommands()`.
+- To add a command, create its class in `command.builtin` and register it with one line in `CommandModule`. Do not register commands anywhere else and do not write Brigadier permission, alias, or nesting code by hand.
+- Permission nodes are derived from the command path (`enriquecraft.command.<path>`); never declare them by hand.
+- Executors read input and delegate. Logic that is more than a getter belongs in a service.
+
+### Messaging
+- All text shown to players goes through `Messenger` with a `Message`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
+- Templates live in `Messages`, grouped by feature. Use text tags (`<bold>`), server placeholders (`%player:name%`), and `{name}` arguments. Pass dynamic values with `Message.with(...)`, never by string concatenation, so their content is not parsed as tags.
+- Use `MessageLevel` (`info`, `success`, `warning`, `error`) for color and icon, and `prefixed()` when the mod prefix is wanted.
 
 ## 7. Working Process
 
