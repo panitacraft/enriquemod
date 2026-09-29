@@ -22,11 +22,13 @@ loom {
 }
 
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    // Fabric Permissions API
+    mavenCentral()
+    // Placeholder API
+    maven {
+        name = 'Nucleoid'
+        url = 'https://maven.nucleoid.xyz'
+    }
 }
 
 dependencies {
@@ -35,6 +37,10 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Bundled inside the mod jar so servers do not need to install them separately.
+    include(implementation("eu.pb4:placeholder-api:${project.placeholder_api_version}"))
+    include(implementation("me.lucko:fabric-permissions-api:${project.permissions_api_version}"))
 }
 
 processResources {
