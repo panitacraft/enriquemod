@@ -71,8 +71,7 @@ public final class Messages {
     }
 
     public static final class Broadcast {
-        public static final String DESCRIPTION = "Envía un anuncio a todos los jugadores";
-        public static final String FORMAT = "<bold>Anuncio</bold> <gray>»</gray> {message}";
+        public static final String DESCRIPTION = "Envía un mensaje a todos los jugadores, con o sin prefijo";
 
         private Broadcast() {
         }

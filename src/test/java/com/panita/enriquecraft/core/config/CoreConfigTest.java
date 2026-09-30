@@ -31,7 +31,6 @@ class CoreConfigTest {
         CoreConfig config = manager.bind("core", CoreConfig.class);
 
         assertEquals(Messages.Prefix.DEFAULT, config.prefix.get());
-        assertEquals(Messages.Broadcast.FORMAT, config.broadcastFormat.get());
         assertTrue(manager.reload().isClean(), "the file written from the defaults must load without issues");
     }
 
@@ -49,25 +48,11 @@ class CoreConfigTest {
     }
 
     @Test
-    void broadcastFormatWithoutThePlaceholderIsRejected() throws IOException {
-        writeConfig("{ \"core\": { \"broadcast\": { \"format\": \"no placeholder here\" } } }");
-        ConfigManager manager = new ConfigManager(directory);
-        CoreConfig config = manager.bind("core", CoreConfig.class);
-
-        ConfigReport report = manager.reload();
-
-        assertEquals(Messages.Broadcast.FORMAT, config.broadcastFormat.get());
-        assertEquals(List.of(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, "core.broadcast.format", "must contain {message}")),
-                report.issues());
-    }
-
-    @Test
-    void customValuesAreUsed() throws IOException {
-        writeConfig("{ \"core\": { \"messages\": { \"prefix\": \"<red>[Mine]</red>\" }, \"broadcast\": { \"format\": \"[!] {message}\" } } }");
+    void customPrefixIsUsed() throws IOException {
+        writeConfig("{ \"core\": { \"messages\": { \"prefix\": \"<red>[Mine]</red>\" } } }");
 
         CoreConfig config = new ConfigManager(directory).bind("core", CoreConfig.class);
 
         assertEquals("<red>[Mine]</red>", config.prefix.get());
-        assertEquals("[!] {message}", config.broadcastFormat.get());
     }
 }
