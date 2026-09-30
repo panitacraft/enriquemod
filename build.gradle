@@ -41,6 +41,15 @@ dependencies {
     // Bundled inside the mod jar so servers do not need to install them separately.
     include(implementation("eu.pb4:placeholder-api:${project.placeholder_api_version}"))
     include(implementation("me.lucko:fabric-permissions-api:${project.permissions_api_version}"))
+
+    // Unit tests only; nothing here is shipped in the mod jar.
+    testImplementation platform("org.junit:junit-bom:${project.junit_version}")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
 }
 
 processResources {
