@@ -6,6 +6,7 @@ import com.panita.enriquecraft.core.framework.command.CommandTreeBuilder;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.framework.config.ModConfig;
+import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
 import com.panita.enriquecraft.core.framework.scan.ClassScanner;
@@ -33,6 +34,7 @@ public final class ModuleManager {
         this.scanner = new ClassScanner(modId);
         services.register(CommandCatalog.class, catalog);
         services.register(ConfigManager.class, configManager);
+        services.register(WorldData.class, new WorldData());
         new CommandRegistry(catalog, new CommandTreeBuilder()).register();
     }
 
