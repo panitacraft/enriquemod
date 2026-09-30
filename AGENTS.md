@@ -154,7 +154,7 @@ Rules:
 
 ### Messaging
 - All text shown to players goes through `Messenger` with a `Message`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
-- Templates live in `Messages`, grouped by feature. Use text tags (`<bold>`), server placeholders (`%player:name%`), and `{name}` arguments. Pass dynamic values with `Message.with(...)`, never by string concatenation, so their content is not parsed as tags.
+- Templates live in `Messages`, grouped by feature. Use text tags (`<bold>`), server placeholders (`%player:name%`), and `{name}` arguments. Pass dynamic values with `Message.with(...)`, never by string concatenation, so their content is not parsed as tags. Use `Message.withMarkup(...)` only for input from someone trusted to format text (for example an administrator); it parses text tags and legacy `&` color codes.
 - Use `MessageLevel` (`info`, `success`, `warning`, `error`) for color and icon, and `prefixed()` when the mod prefix is wanted.
 
 ## 7. Working Process
