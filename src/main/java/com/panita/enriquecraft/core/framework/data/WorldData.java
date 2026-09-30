@@ -1,8 +1,8 @@
 package com.panita.enriquecraft.core.framework.data;
 
-import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
+import net.minecraft.nbt.Tag;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,16 +18,16 @@ import java.util.List;
  */
 public final class WorldData {
 
-    private final List<JsonStore<?>> registered = new ArrayList<>();
+    private final List<SnbtStore<?>> registered = new ArrayList<>();
     private Path directory;
-    private DynamicOps<JsonElement> ops;
+    private DynamicOps<Tag> ops;
 
     /**
      * Registers a store that lives as long as the mod. It is loaded now if a world is running,
      * and on every later world start.
      */
-    public <T> JsonStore<T> register(String relativePath, Codec<T> codec, T emptyValue) {
-        JsonStore<T> store = new JsonStore<>(relativePath, codec, emptyValue);
+    public <T> SnbtStore<T> register(String relativePath, Codec<T> codec, T emptyValue) {
+        SnbtStore<T> store = new SnbtStore<>(relativePath, codec, emptyValue);
         registered.add(store);
         if (directory != null) {
             store.load(directory, ops);
@@ -41,11 +41,11 @@ public final class WorldData {
      *
      * @throws IllegalStateException if no world is running
      */
-    public <T> JsonStore<T> open(String relativePath, Codec<T> codec, T emptyValue) {
+    public <T> SnbtStore<T> open(String relativePath, Codec<T> codec, T emptyValue) {
         if (directory == null) {
             throw new IllegalStateException("No world is running, so " + relativePath + " cannot be opened");
         }
-        JsonStore<T> store = new JsonStore<>(relativePath, codec, emptyValue);
+        SnbtStore<T> store = new SnbtStore<>(relativePath, codec, emptyValue);
         store.load(directory, ops);
         return store;
     }
@@ -54,9 +54,9 @@ public final class WorldData {
      * Called when a world starts.
      *
      * @param directory the folder for the mod's data in that world
-     * @param ops       how to turn data into JSON, with that world's registries
+     * @param ops       how to turn data into NBT, with that world's registries
      */
-    public void attach(Path directory, DynamicOps<JsonElement> ops) {
+    public void attach(Path directory, DynamicOps<Tag> ops) {
         this.directory = directory;
         this.ops = ops;
         registered.forEach(store -> store.load(directory, ops));

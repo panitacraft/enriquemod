@@ -1,6 +1,6 @@
 package com.panita.enriquecraft.staff.service;
 
-import com.panita.enriquecraft.core.framework.data.JsonStore;
+import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import net.minecraft.server.level.ServerLevel;
@@ -25,10 +25,10 @@ public final class CoordinateService {
 
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_-]{1,32}");
 
-    private final JsonStore<List<SavedCoordinate>> store;
+    private final SnbtStore<List<SavedCoordinate>> store;
 
     public CoordinateService(WorldData worldData) {
-        this.store = worldData.register("coordinates.json", SavedCoordinate.CODEC.listOf(), List.of());
+        this.store = worldData.register("coordinates.snbt", SavedCoordinate.CODEC.listOf(), List.of());
     }
 
     /** Whether a name can be used: 1 to 32 letters, digits, underscores or dashes. */

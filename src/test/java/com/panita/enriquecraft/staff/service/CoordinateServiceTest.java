@@ -1,6 +1,6 @@
 package com.panita.enriquecraft.staff.service;
 
-import com.mojang.serialization.JsonOps;
+import net.minecraft.nbt.NbtOps;
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
@@ -31,7 +31,7 @@ class CoordinateServiceTest {
     void createService() {
         MinecraftTestSupport.bootstrap();
         worldData = new WorldData();
-        worldData.attach(directory, JsonOps.INSTANCE);
+        worldData.attach(directory, NbtOps.INSTANCE);
         service = new CoordinateService(worldData);
     }
 
@@ -97,7 +97,7 @@ class CoordinateServiceTest {
 
         WorldData restarted = new WorldData();
         CoordinateService reloaded = new CoordinateService(restarted);
-        restarted.attach(directory, JsonOps.INSTANCE);
+        restarted.attach(directory, NbtOps.INSTANCE);
 
         assertEquals(List.of(saved), reloaded.all());
     }

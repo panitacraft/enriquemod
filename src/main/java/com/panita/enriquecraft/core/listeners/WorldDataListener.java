@@ -1,9 +1,9 @@
 package com.panita.enriquecraft.core.listeners;
 
-import com.mojang.serialization.JsonOps;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -29,6 +29,6 @@ public final class WorldDataListener implements ModListener {
 
     private void attach(MinecraftServer server) {
         worldData.attach(server.getWorldPath(LevelResource.ROOT).resolve(DIRECTORY),
-                RegistryOps.create(JsonOps.INSTANCE, server.registryAccess()));
+                RegistryOps.create(NbtOps.INSTANCE, server.registryAccess()));
     }
 }

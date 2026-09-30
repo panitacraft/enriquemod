@@ -1,6 +1,6 @@
 package com.panita.enriquecraft.staff.gui;
 
-import com.mojang.serialization.JsonOps;
+import net.minecraft.nbt.NbtOps;
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.gui.MenuFactory;
@@ -37,7 +37,7 @@ class CoordinatesMenuTest {
     void createMenu() {
         MenuFactory factory = MinecraftTestSupport.menuFactory(directory.resolve("config"));
         WorldData worldData = new WorldData();
-        worldData.attach(directory.resolve("world"), JsonOps.INSTANCE);
+        worldData.attach(directory.resolve("world"), NbtOps.INSTANCE);
         service = new CoordinateService(worldData);
         CoordinateView view = new CoordinateView(MinecraftTestSupport.messenger(directory.resolve("config")), service);
         menu = new CoordinatesMenu(factory, service, view);
