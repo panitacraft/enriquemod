@@ -20,10 +20,16 @@ public final class MessageFormatter {
     private static final ParserContext.Key<Function<String, Component>> ARGUMENTS =
             ParserContext.Key.of("enriquecraft:arguments");
 
-    private static final NodeParser PARSER = ParserBuilder.of()
+    private static final NodeParser TEMPLATE_PARSER = ParserBuilder.of()
             .quickText()
             .serverPlaceholders()
             .placeholders(TagLikeParser.Format.of('{', '}'), ARGUMENTS)
+            .build();
+
+    /** Parser for trusted markup arguments: text tags plus legacy color and style codes. */
+    private static final NodeParser MARKUP_PARSER = ParserBuilder.of()
+            .quickText()
+            .legacyAll()
             .build();
 
     /**
@@ -34,8 +40,17 @@ public final class MessageFormatter {
      * @return the finished component
      */
     public Component format(Message message, ServerPlaceholderContext context) {
-        ParserContext parserContext = context.asParserContext().with(ARGUMENTS, message.arguments()::get);
-        return PARSER.parseComponent(compose(message), parserContext);
+        ParserContext parserContext = context.asParserContext().with(ARGUMENTS, name -> resolve(message, name));
+        return TEMPLATE_PARSER.parseComponent(compose(message), parserContext);
+    }
+
+    private Component resolve(Message message, String name) {
+        MessageArgument argument = message.arguments().get(name);
+        return switch (argument) {
+            case null -> null;
+            case MessageArgument.Text text -> text.component();
+            case MessageArgument.Markup markup -> MARKUP_PARSER.parseComponent(markup.raw(), ParserContext.of());
+        };
     }
 
     private String compose(Message message) {
