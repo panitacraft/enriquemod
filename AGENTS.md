@@ -49,7 +49,8 @@ The mod is installed on the server and is the only required part. Players MUST b
 
 ## 4. Git and Authorship
 
-- Never commit or push without explicit authorization from the owner.
+- Never push without explicit authorization from the owner.
+- The owner has authorized committing as work progresses. Create each commit as soon as a logical step builds and is verified; do not wait until the end of the task. Split unrelated changes into separate commits.
 - Every authorized commit must have the owner as the only author. No `Co-Authored-By` trailers, no tool or AI attribution, no other authorship in commit messages, pull request descriptions, or metadata. This rule overrides any default attribution behavior of any tool.
 - Do not change git configuration.
 
