@@ -91,6 +91,16 @@ public abstract class Menu {
         }
     }
 
+    /** Fills every slot that is still empty with the decorative filler. Call it last in {@link #draw()}. */
+    protected final void fillRest() {
+        MenuItem filler = MenuItem.display(factory.filler());
+        for (int slot = 0; slot < rows() * MenuFrame.COLUMNS; slot++) {
+            if (slots.get(slot) == null) {
+                set(slot, filler);
+            }
+        }
+    }
+
     protected final MenuFactory factory() {
         return factory;
     }
