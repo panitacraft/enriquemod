@@ -66,7 +66,7 @@ Every commit MUST follow [Conventional Commits](https://gist.github.com/qoomon/5
 ```
 
 - `<area>`: always present, never omitted. The primary area the commit is about. Use one of:
-  - a top-level package from the architecture table: `command`, `event`, `feature`, `service`, `config`, `message`, `network`, `util`, `mixin`, `client`
+  - a module id (`core` today, and every future module), or `framework` for the shared infrastructure under `core.framework`, or `client` for the client companion
   - `docs` for documentation
   - `repo` for anything not scoped to a single area (root tooling, Gradle wrapper, CI, repository configuration)
 
@@ -84,18 +84,18 @@ Every commit MUST follow [Conventional Commits](https://gist.github.com/qoomon/5
   - `chore`: everything else (initial commit, `.gitignore` tweaks, etc.)
 - Exception: when the area and the type are both `docs`, write a single `docs` instead of repeating it: `docs: add project guidelines`, not `docs, docs: add project guidelines`.
 - `<description>`: imperative, present tense ("add", not "added" or "adds"), lowercase first letter, no trailing period.
-- Breaking changes: put `!` right before the colon (`config, feat!: rename the settings file`) and explain the break in a `BREAKING CHANGE:` footer if the description alone is not clear.
+- Breaking changes: put `!` right before the colon (`core, feat!: rename the settings file`) and explain the break in a `BREAKING CHANGE:` footer if the description alone is not clear.
 - Body (optional): the motivation for the change, in imperative present tense.
 - Footer (optional, mandatory for breaking changes): issue references (`Closes #123`) and/or a `BREAKING CHANGE:` explanation.
 
 Examples:
 
-- `command, feat: add command to toggle the spawn protection notice`
-- `event, fix: prevent crash when the world is null on disconnect`
+- `core, feat: add command to toggle the spawn protection notice`
+- `core, fix: prevent crash when the world is null on disconnect`
 - `repo, build: bump Gradle wrapper to 9.7.1`
 - `repo, chore: add gradle output folders to .gitignore`
 - `docs: document the config file format`
-- `config, feat!: rename the settings file`
+- `core, feat!: rename the settings file`
 
   `BREAKING CHANGE: the old settings file is no longer read; users must recreate their settings.`
 
@@ -123,36 +123,69 @@ Examples:
 
 ## 6. Architecture
 
-Follow the standard Fabric layout, with each concern in its own package. Commands, listeners, features, and configuration are never mixed in one class.
+The mod is split into modules. A module is a self-contained feature set in its own package under `com.panita.enriquecraft`. `core` is the first module and also hosts the framework that every module uses.
 
-Target package structure under `com.panita.enriquecraft`:
+```
+com.panita.enriquecraft
+├─ Enriquecraft.java        entrypoint: registers modules, one line each
+└─ core/                    the core module
+   ├─ CoreModule.java       implements EnriquecraftModule; registers the core services
+   ├─ framework/            infrastructure shared by all modules
+   │  ├─ module/            EnriquecraftModule, ModuleManager
+   │  ├─ command/           ModCommand, CommandSpec, CommandCatalog, CommandTreeBuilder, CommandRegistry, ...
+   │  ├─ listener/          ModListener
+   │  ├─ inject/            ServiceRegistry (constructor injection)
+   │  └─ scan/              ClassScanner
+   ├─ message/              Messenger, Message, Messages (all Spanish text), HelpView, channels
+   ├─ service/              business logic (HelpService, ServerInfoService, ...)
+   ├─ commands/             auto-discovered commands (see below)
+   └─ listeners/            auto-discovered listeners
+```
 
-| Package | Responsibility |
+Every module follows the same layout:
+
+| Package inside a module | Responsibility |
 |---|---|
-| (base package) | `Enriquecraft` entrypoint class. Only wires modules together; contains no feature logic. |
-| `command` | Command framework: `ModCommand`, `CommandMetadata`, `CommandTreeBuilder`, `CommandCatalog`, `CommandModule`, `CommandRegistrar`. Concrete commands live in `command.builtin`. |
-| `event` | Event listeners. Subscribe to Fabric events and delegate to services. |
-| `feature` | Feature modules. Each feature is self-contained and exposes a small interface. |
-| `service` | Business logic shared across features. |
+| `<Name>Module` | Implements `EnriquecraftModule`. Creates and registers the module's services. |
+| `commands` | Commands, discovered automatically. |
+| `listeners` | Event listeners, discovered automatically. |
+| `service` | Business logic shared across the module's features. |
+| `feature` | Self-contained features that expose a small interface. |
 | `config` | Configuration model, loading, and saving. |
-| `message` | `Messenger` (the only way to show text to players), `Message`, `MessageFormatter`, `Messages` (all Spanish text), and `message.channel` (title and boss bar delivery). Presentation only. |
-| `network` | Shared protocol: payload types, codecs, protocol version, and server-side capability detection. No client classes. |
-| `util` | Small stateless helpers. Add only when reuse is proven. |
+| `message` | Player-facing text (Spanish) and its delivery. Presentation only. |
+| `network` | Shared protocol: payload types, codecs, protocol version, server-side capability detection. No client classes. |
 | `mixin` | Mixin classes (server-safe only). Thin, delegating. |
-| `client` | Client companion, in `src/client` only. Contains its own entrypoint (`EnriquecraftClient`), client payload handlers, rendering, HUD, screens, and client mixins (`client.mixin`). Enhancements only. |
+
+The client companion lives in `src/client`, in the package `com.panita.enriquecraft.client`, with its own entrypoint (`EnriquecraftClient`), payload handlers, rendering, HUD, screens, and client mixins (`client.mixin`). It only adds enhancements.
 
 Rules:
-- The build uses split source sets. `src/main` holds server code and the shared `network` protocol. `src/client` holds the `client` package and client resources.
-- `src/main` never depends on `src/client`. `src/client` may depend on `src/main`.
-- The entrypoints register commands and listeners through dedicated registrar classes, not inline.
+- The build uses split source sets. `src/main` holds server code and the shared protocol. `src/client` holds the client companion and client resources.
+- `src/main` never depends on `src/client`. `src/client` may depend on `src/main`. The scanner never scans client packages.
+- The entrypoint only registers modules. Commands and listeners are never registered by hand.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
 - Do not create the client entrypoint or the client mixin config until the first client enhancement needs them.
+- Fabric events cannot be unregistered, so modules cannot be enabled or disabled while the server runs.
+
+### Modules
+- To add a module, create its package and a `<Name>Module` class implementing `EnriquecraftModule`, then add one line in `Enriquecraft.onInitialize`. Modules load in registration order, and later modules can use the services of earlier ones.
 
 ### Commands
-- A command is a class implementing `ModCommand`. It declares its name, aliases, Spanish description, and fallback `PermissionLevel` in `CommandMetadata`, adds arguments and executors in `configure`, and nests other `ModCommand`s through `subcommands()`.
-- To add a command, create its class in `command.builtin` and register it with one line in `CommandModule`. Do not register commands anywhere else and do not write Brigadier permission, alias, or nesting code by hand.
-- Permission nodes are derived from the command path (`enriquecraft.command.<path>`); never declare them by hand.
+- A command is a class in `<module>.commands` that implements `ModCommand` and is annotated with `@CommandSpec(name, description, parent, aliases, access)`. It adds arguments and executors in `configure`. Nothing else is needed: no list, no registration call.
+- `description` is Spanish and must reference a constant in `Messages`. `access` is the vanilla `PermissionLevel` used when no permission manager decides. Permission nodes are derived from the command path (`enriquecraft.command.<path>`); never declare them by hand.
+- Naming and layout:
+  - A standalone command is named `<Name>Command` and sits directly in `<module>.commands`.
+  - A command with subcommands gets its own folder, `<module>.commands.<name>/`, holding the parent `<Name>Command` and its children `<Name>Subcommand`.
+  - A subcommand points to its parent with `parent = <Name>Command.class`. A subcommand that has children of its own gets a nested folder inside its parent's folder.
+- Do not write Brigadier permission, alias, or nesting code by hand; `CommandTreeBuilder` does it.
 - Executors read input and delegate. Logic that is more than a getter belongs in a service.
+
+### Listeners
+- A listener is a class in `<module>.listeners` that implements `ModListener` and subscribes to events in `register()`. It is discovered and built automatically.
+
+### Dependency injection
+- Commands and listeners declare exactly one public constructor. Each parameter is resolved by its exact type from the `ServiceRegistry`.
+- A module registers its services in `registerServices`. Services are created explicitly there, in one place. There is no static access to services.
+- A missing service, a missing `@CommandSpec`, an unregistered parent, a parent cycle, or a duplicate literal stops startup with a message that names the class.
 
 ### Messaging
 - All text shown to players goes through `Messenger` with a `Message`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
