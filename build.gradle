@@ -50,6 +50,9 @@ dependencies {
 
 tasks.named("test") {
     useJUnitPlatform()
+    // Minecraft's logging writes a logs folder into the working directory; keep it out of the repository.
+    workingDir = file("build/test-run")
+    doFirst { workingDir.mkdirs() }
 }
 
 processResources {
