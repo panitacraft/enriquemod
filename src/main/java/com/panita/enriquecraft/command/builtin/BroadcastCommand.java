@@ -40,7 +40,7 @@ public final class BroadcastCommand implements ModCommand {
     private int execute(CommandContext<CommandSourceStack> context) {
         String text = StringArgumentType.getString(context, MESSAGE_ARGUMENT);
         messenger.broadcast(context.getSource().getServer(),
-                Message.plain(Messages.Broadcast.FORMAT).prefixed().with("message", text));
+                Message.plain(Messages.Broadcast.FORMAT).prefixed().withMarkup("message", text));
         return Command.SINGLE_SUCCESS;
     }
 }
