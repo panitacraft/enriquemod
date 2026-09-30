@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.staff.message;
 
+import com.panita.enriquecraft.core.item.ItemGiving;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.message.Timestamps;
@@ -7,7 +8,6 @@ import com.panita.enriquecraft.staff.data.SavedItem;
 import com.panita.enriquecraft.staff.service.CustomItemService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Prediction;
 
 /**
  * Tells staff what happened when they use saved custom items, whether from a command or a menu.
@@ -58,7 +58,7 @@ public final class CustomItemView {
 
     /** Gives the staff member an exact copy; whatever does not fit in the inventory drops at their feet. */
     public void give(ServerPlayer player, SavedItem item) {
-        player.getInventory().placeItemBackInInventory(item.stack().copy(), Prediction.SERVER_ONLY);
+        ItemGiving.give(player, item.stack());
         messenger.send(player, Message.success(StaffMessages.Items.GIVEN).prefixed().with("name", item.name()));
     }
 }
