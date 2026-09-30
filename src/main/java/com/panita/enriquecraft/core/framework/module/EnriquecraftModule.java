@@ -11,9 +11,10 @@ public interface EnriquecraftModule {
 
     /**
      * Creates the module's services and makes them available to its commands and listeners, and to
-     * modules registered after it.
+     * modules registered after it. Modules without services of their own need not override this.
      */
-    void registerServices(ServiceRegistry services);
+    default void registerServices(ServiceRegistry services) {
+    }
 
     /** The package that holds the module's classes; by default, the package of the module class. */
     default String basePackage() {
