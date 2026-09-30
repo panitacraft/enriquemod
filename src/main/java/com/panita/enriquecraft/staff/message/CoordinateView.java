@@ -5,6 +5,7 @@ import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.staff.data.Dimensions;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import com.panita.enriquecraft.staff.service.CoordinateService;
+import com.panita.enriquecraft.staff.service.Teleporter;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -54,7 +55,7 @@ public final class CoordinateView {
 
     /** Moves the player to the coordinate and tells them the outcome. */
     public void teleport(ServerPlayer player, SavedCoordinate coordinate) {
-        if (service.teleport(player, coordinate) == CoordinateService.TeleportResult.TELEPORTED) {
+        if (service.teleport(player, coordinate) == Teleporter.Result.TELEPORTED) {
             messenger.send(player, Message.success(StaffMessages.Coordinates.TELEPORTED).prefixed()
                     .with("name", coordinate.name()));
         } else {

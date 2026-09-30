@@ -3,15 +3,12 @@ package com.panita.enriquecraft.staff.service;
 import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Relative;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -20,8 +17,6 @@ import java.util.regex.Pattern;
 public final class CoordinateService {
 
     public enum AddResult { ADDED, INVALID_NAME, DUPLICATE }
-
-    public enum TeleportResult { TELEPORTED, DIMENSION_UNAVAILABLE }
 
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_-]{1,32}");
 
@@ -76,13 +71,8 @@ public final class CoordinateService {
         return true;
     }
 
-    public TeleportResult teleport(ServerPlayer player, SavedCoordinate coordinate) {
-        ServerLevel level = player.level().getServer().getLevel(coordinate.dimension());
-        if (level == null) {
-            return TeleportResult.DIMENSION_UNAVAILABLE;
-        }
-        player.teleportTo(level, coordinate.x(), coordinate.y(), coordinate.z(), Set.<Relative>of(),
-                coordinate.yaw(), coordinate.pitch(), true);
-        return TeleportResult.TELEPORTED;
+    public Teleporter.Result teleport(ServerPlayer player, SavedCoordinate coordinate) {
+        return Teleporter.teleport(player, coordinate.dimension(), coordinate.x(), coordinate.y(), coordinate.z(),
+                coordinate.yaw(), coordinate.pitch());
     }
 }
