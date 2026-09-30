@@ -12,23 +12,20 @@ import java.util.function.Function;
 
 /**
  * Turns a {@link Message} into a vanilla {@link Component}: applies the prefix and level styling,
- * then resolves text tags, server placeholders and named arguments.
+ * then resolves text tags, legacy color codes, named arguments and, when a context is given,
+ * server placeholders.
  */
 public final class MessageFormatter {
 
     private static final ParserContext.Key<Function<String, Component>> ARGUMENTS =
             ParserContext.Key.of("enriquecraft:arguments");
 
-    private static final NodeParser TEMPLATE_PARSER = ParserBuilder.of()
-            .quickText()
-            .serverPlaceholders()
-            .placeholders(TagLikeParser.Format.of('{', '}'), ARGUMENTS)
-            .build();
+    private static final TagLikeParser.Format ARGUMENT_FORMAT = TagLikeParser.Format.of('{', '}');
 
-    /** Parser for trusted markup arguments: text tags plus legacy color and style codes. */
-    private static final NodeParser MARKUP_PARSER = ParserBuilder.of()
+    private static final NodeParser TEXT_PARSER = ParserBuilder.of()
             .quickText()
             .legacyAll()
+            .placeholders(ARGUMENT_FORMAT, ARGUMENTS)
             .build();
 
     private final CoreConfig config;
@@ -38,28 +35,39 @@ public final class MessageFormatter {
     }
 
     /**
-     * Formats a message for a specific viewer.
-     *
-     * @param message the message to format
-     * @param context the placeholder context (player, command source or server)
-     * @return the finished component
+     * Formats a message without resolving server placeholders.
      */
-    public Component format(Message message, ServerPlaceholderContext context) {
-        ParserContext parserContext = context.asParserContext().with(ARGUMENTS, name -> resolve(message, name));
-        return TEMPLATE_PARSER.parseComponent(compose(message), parserContext);
+    public Component format(Message message) {
+        return TEXT_PARSER.parseComponent(compose(message), withArguments(ParserContext.of(), message));
     }
 
-    private Component resolve(Message message, String name) {
-        MessageArgument argument = message.arguments().get(name);
-        return switch (argument) {
-            case null -> null;
-            case MessageArgument.Text text -> text.component();
-            case MessageArgument.Markup markup -> MARKUP_PARSER.parseComponent(markup.raw(), ParserContext.of());
-        };
+    /**
+     * Formats a message and resolves server placeholders, such as {@code %player:name%}, for the
+     * given context.
+     */
+    public Component format(Message message, ServerPlaceholderContext context) {
+        return PlaceholderParser.INSTANCE.parseComponent(compose(message), withArguments(context.asParserContext(), message));
+    }
+
+    private static ParserContext withArguments(ParserContext base, Message message) {
+        return base.with(ARGUMENTS, name -> message.arguments().get(name));
     }
 
     private String compose(Message message) {
         String body = message.level().decorate(message.template());
         return message.hasPrefix() ? config.prefix.get() + " " + body : body;
+    }
+
+    /**
+     * Built on first use: Placeholder API registers its placeholders when this parser is created,
+     * which needs a running Fabric Loader. Formatting without placeholders never pays for it.
+     */
+    private static final class PlaceholderParser {
+        private static final NodeParser INSTANCE = ParserBuilder.of()
+                .quickText()
+                .legacyAll()
+                .serverPlaceholders()
+                .placeholders(ARGUMENT_FORMAT, ARGUMENTS)
+                .build();
     }
 }

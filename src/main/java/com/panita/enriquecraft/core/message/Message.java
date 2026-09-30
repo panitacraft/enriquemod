@@ -8,17 +8,18 @@ import java.util.Map;
 /**
  * Immutable description of a player-facing message: a template, its level, and its named arguments.
  * <p>
- * Templates use text tags (for example {@code <bold>}), server placeholders (for example
- * {@code %player:name%}) and named arguments written as {@code {name}}. Arguments added with
- * {@code with} are inserted as finished components, so their content is never parsed as tags.
- * Use {@link #withMarkup(String, String)} for trusted input that may contain formatting.
+ * Templates use text tags (for example {@code <bold>}), legacy color codes (for example
+ * {@code &c}), server placeholders (for example {@code %player:name%}, only where the Messenger
+ * method resolves them) and named arguments written as {@code {name}}. Arguments are inserted as
+ * finished components, so their content is never parsed: pass untrusted text through
+ * {@code with}, never by building the template with string concatenation.
  *
  * @param template  the raw template
  * @param level     the visual category of the message
  * @param hasPrefix whether the mod prefix is prepended
  * @param arguments values for the {@code {name}} arguments
  */
-public record Message(String template, MessageLevel level, boolean hasPrefix, Map<String, MessageArgument> arguments) {
+public record Message(String template, MessageLevel level, boolean hasPrefix, Map<String, Component> arguments) {
 
     public Message {
         arguments = Map.copyOf(arguments);
@@ -53,7 +54,9 @@ public record Message(String template, MessageLevel level, boolean hasPrefix, Ma
     }
 
     public Message with(String name, Component value) {
-        return withArgument(name, new MessageArgument.Text(value));
+        Map<String, Component> updated = new HashMap<>(arguments);
+        updated.put(name, value);
+        return new Message(template, level, hasPrefix, updated);
     }
 
     public Message with(String name, String value) {
@@ -62,18 +65,5 @@ public record Message(String template, MessageLevel level, boolean hasPrefix, Ma
 
     public Message with(String name, int value) {
         return with(name, String.valueOf(value));
-    }
-
-    /**
-     * Adds an argument whose text is parsed for text tags and legacy color codes.
-     */
-    public Message withMarkup(String name, String raw) {
-        return withArgument(name, new MessageArgument.Markup(raw));
-    }
-
-    private Message withArgument(String name, MessageArgument argument) {
-        Map<String, MessageArgument> updated = new HashMap<>(arguments);
-        updated.put(name, argument);
-        return new Message(template, level, hasPrefix, updated);
     }
 }

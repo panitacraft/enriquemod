@@ -4,10 +4,8 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
-import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
 import com.panita.enriquecraft.core.message.Messenger;
 import net.minecraft.commands.CommandSourceStack;
@@ -23,11 +21,9 @@ public final class BroadcastCommand implements ModCommand {
     private static final String MESSAGE_ARGUMENT = "message";
 
     private final Messenger messenger;
-    private final CoreConfig config;
 
-    public BroadcastCommand(Messenger messenger, CoreConfig config) {
+    public BroadcastCommand(Messenger messenger) {
         this.messenger = messenger;
-        this.config = config;
     }
 
     @Override
@@ -38,8 +34,7 @@ public final class BroadcastCommand implements ModCommand {
 
     private int execute(CommandContext<CommandSourceStack> context) {
         String text = StringArgumentType.getString(context, MESSAGE_ARGUMENT);
-        messenger.broadcast(context.getSource().getServer(),
-                Message.plain(config.broadcastFormat.get()).prefixed().withMarkup("message", text));
+        messenger.prefixedBroadcast(context.getSource().getServer(), text);
         return Command.SINGLE_SUCCESS;
     }
 }
