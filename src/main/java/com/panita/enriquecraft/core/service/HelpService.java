@@ -4,7 +4,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import com.panita.enriquecraft.core.framework.command.CommandCatalog;
 import com.panita.enriquecraft.core.framework.command.CommandEntry;
-import com.panita.enriquecraft.core.framework.command.ModCommand;
 import net.minecraft.commands.CommandSourceStack;
 
 import java.util.List;
@@ -31,17 +30,16 @@ public final class HelpService {
 
     /** Names of the top-level commands the sender may run. */
     public List<String> visibleNames(CommandSourceStack source) {
-        return catalog.commands().stream()
-                .filter(command -> findNode(source, List.of(command.metadata().name())) != null)
-                .map(command -> command.metadata().name())
+        return catalog.roots().stream()
+                .filter(entry -> findNode(source, entry.path()) != null)
+                .map(entry -> entry.spec().name())
                 .toList();
     }
 
     /** Finds a visible top-level command by its name or one of its aliases. */
     public Optional<CommandEntry> findTopLevel(CommandSourceStack source, String literal) {
-        return catalog.commands().stream()
-                .filter(command -> matches(command, literal))
-                .map(command -> new CommandEntry(List.of(command.metadata().name()), command))
+        return catalog.roots().stream()
+                .filter(entry -> entry.matches(literal))
                 .filter(entry -> findNode(source, entry.path()) != null)
                 .findFirst();
     }
@@ -51,18 +49,13 @@ public final class HelpService {
      * {@code enriquecraft help <command>}.
      */
     public List<String> usages(CommandSourceStack source, CommandEntry entry) {
-        CommandDispatcher<CommandSourceStack> dispatcher = dispatcher(source);
         CommandNode<CommandSourceStack> node = findNode(source, entry.path());
         if (node == null) {
             return List.of();
         }
-        return List.of(dispatcher.getAllUsage(node, source, true)).stream()
+        return List.of(dispatcher(source).getAllUsage(node, source, true)).stream()
                 .map(relative -> relative.isEmpty() ? entry.displayPath() : entry.displayPath() + " " + relative)
                 .toList();
-    }
-
-    private boolean matches(ModCommand command, String literal) {
-        return command.metadata().name().equals(literal) || command.metadata().aliases().contains(literal);
     }
 
     /** Returns the node at the path if the sender can use it and every parent above it, otherwise null. */

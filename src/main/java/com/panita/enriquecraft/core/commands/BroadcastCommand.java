@@ -4,7 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.panita.enriquecraft.core.framework.command.CommandMetadata;
+import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
@@ -16,6 +16,7 @@ import net.minecraft.server.permissions.PermissionLevel;
 /**
  * {@code /broadcast <message>}: sends a prefixed chat announcement to every player and the console.
  */
+@CommandSpec(name = "broadcast", description = Messages.Broadcast.DESCRIPTION, access = PermissionLevel.ADMINS)
 public final class BroadcastCommand implements ModCommand {
 
     private static final String MESSAGE_ARGUMENT = "message";
@@ -24,11 +25,6 @@ public final class BroadcastCommand implements ModCommand {
 
     public BroadcastCommand(Messenger messenger) {
         this.messenger = messenger;
-    }
-
-    @Override
-    public CommandMetadata metadata() {
-        return CommandMetadata.of("broadcast", Messages.Broadcast.DESCRIPTION, PermissionLevel.ADMINS);
     }
 
     @Override

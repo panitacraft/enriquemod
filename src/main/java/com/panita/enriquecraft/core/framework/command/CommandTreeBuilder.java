@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Turns {@link ModCommand}s into Brigadier nodes. This is the only class that contains Brigadier
+ * Turns {@link CommandEntry}s into Brigadier nodes. This is the only class that contains Brigadier
  * boilerplate: permission requirements, subcommand nesting and alias redirects.
  */
 public final class CommandTreeBuilder {
 
-    public void registerOn(CommandDispatcher<CommandSourceStack> dispatcher, ModCommand command) {
-        for (LiteralCommandNode<CommandSourceStack> node : build(command, List.of())) {
+    public void registerOn(CommandDispatcher<CommandSourceStack> dispatcher, CommandEntry entry) {
+        for (LiteralCommandNode<CommandSourceStack> node : build(entry)) {
             dispatcher.getRoot().addChild(node);
         }
     }
@@ -24,22 +24,19 @@ public final class CommandTreeBuilder {
     /**
      * Builds the node of a command followed by one redirecting node per alias.
      */
-    private List<LiteralCommandNode<CommandSourceStack>> build(ModCommand command, List<String> parentPath) {
-        CommandMetadata metadata = command.metadata();
-        List<String> path = new ArrayList<>(parentPath);
-        path.add(metadata.name());
-
-        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(metadata.name())
-                .requires(CommandPermissions.requirement(path, metadata.permission()));
-        command.configure(builder);
-        for (ModCommand subcommand : command.subcommands()) {
-            build(subcommand, path).forEach(builder::then);
+    private List<LiteralCommandNode<CommandSourceStack>> build(CommandEntry entry) {
+        CommandSpec spec = entry.spec();
+        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(spec.name())
+                .requires(CommandPermissions.requirement(entry.path(), spec.access()));
+        entry.command().configure(builder);
+        for (CommandEntry child : entry.children()) {
+            build(child).forEach(builder::then);
         }
         LiteralCommandNode<CommandSourceStack> node = builder.build();
 
         List<LiteralCommandNode<CommandSourceStack>> nodes = new ArrayList<>();
         nodes.add(node);
-        for (String alias : metadata.aliases()) {
+        for (String alias : spec.aliases()) {
             // A redirect copies the children but not the executor or the requirement of its target.
             nodes.add(Commands.literal(alias)
                     .requires(node.getRequirement())

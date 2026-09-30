@@ -3,29 +3,24 @@ package com.panita.enriquecraft.core.commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.panita.enriquecraft.core.framework.command.CommandMetadata;
+import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
 import com.panita.enriquecraft.core.message.Messenger;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.PermissionLevel;
 
 /**
  * {@code /ping}: shows the latency of the player who runs it.
  */
+@CommandSpec(name = "ping", description = Messages.Ping.DESCRIPTION)
 public final class PingCommand implements ModCommand {
 
     private final Messenger messenger;
 
     public PingCommand(Messenger messenger) {
         this.messenger = messenger;
-    }
-
-    @Override
-    public CommandMetadata metadata() {
-        return CommandMetadata.of("ping", Messages.Ping.DESCRIPTION, PermissionLevel.ALL);
     }
 
     @Override

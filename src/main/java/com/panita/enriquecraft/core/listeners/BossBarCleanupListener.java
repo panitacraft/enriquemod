@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core.listeners;
 
+import com.panita.enriquecraft.core.framework.listener.ModListener;
 import com.panita.enriquecraft.core.message.channel.BossBarChannel;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -7,7 +8,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 /**
  * Releases boss bars when their owner disconnects or the server stops.
  */
-public final class BossBarCleanupListener {
+public final class BossBarCleanupListener implements ModListener {
 
     private final BossBarChannel bossBars;
 
@@ -15,6 +16,7 @@ public final class BossBarCleanupListener {
         this.bossBars = bossBars;
     }
 
+    @Override
     public void register() {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> bossBars.removeAll(handler.getPlayer().getUUID()));
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> bossBars.clear());

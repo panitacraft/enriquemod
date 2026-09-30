@@ -1,13 +1,7 @@
 package com.panita.enriquecraft;
 
-import com.panita.enriquecraft.core.framework.command.CommandModule;
-import com.panita.enriquecraft.core.framework.command.CommandRegistrar;
-import com.panita.enriquecraft.core.framework.command.CommandTreeBuilder;
-import com.panita.enriquecraft.core.listeners.BossBarCleanupListener;
-import com.panita.enriquecraft.core.message.MessageFormatter;
-import com.panita.enriquecraft.core.message.Messenger;
-import com.panita.enriquecraft.core.message.channel.BossBarChannel;
-import com.panita.enriquecraft.core.message.channel.TitleChannel;
+import com.panita.enriquecraft.core.CoreModule;
+import com.panita.enriquecraft.core.framework.module.ModuleManager;
 import net.fabricmc.api.ModInitializer;
 
 public class Enriquecraft implements ModInitializer {
@@ -16,10 +10,7 @@ public class Enriquecraft implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        BossBarChannel bossBars = new BossBarChannel();
-        Messenger messenger = new Messenger(new MessageFormatter(), new TitleChannel(), bossBars);
-
-        new BossBarCleanupListener(bossBars).register();
-        new CommandRegistrar(CommandModule.create(messenger), new CommandTreeBuilder()).register();
+        ModuleManager modules = new ModuleManager(MOD_ID);
+        modules.register(new CoreModule());
     }
 }
