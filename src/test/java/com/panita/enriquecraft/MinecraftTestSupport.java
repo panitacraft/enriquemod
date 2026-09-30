@@ -1,5 +1,6 @@
 package com.panita.enriquecraft;
 
+import com.mojang.serialization.DynamicOps;
 import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.gui.MenuFactory;
@@ -12,6 +13,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentInitializers;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.Bootstrap;
 
 import java.nio.file.Path;
@@ -23,6 +27,7 @@ import java.nio.file.Path;
 public final class MinecraftTestSupport {
 
     private static boolean started;
+    private static HolderLookup.Provider registries;
 
     private MinecraftTestSupport() {
     }
@@ -32,11 +37,18 @@ public final class MinecraftTestSupport {
             SharedConstants.tryDetectVersion();
             Bootstrap.bootStrap();
             // Items only get their default components once server resources load; do the same here.
-            HolderLookup.Provider lookup = VanillaRegistries.createReloadableLookup(VanillaRegistries.createWorldLookup());
+            registries = VanillaRegistries.createWorldLookup();
+            HolderLookup.Provider lookup = VanillaRegistries.createReloadableLookup(registries);
             BuiltInRegistries.DATA_COMPONENT_INITIALIZERS.build(lookup)
                     .forEach(DataComponentInitializers.PendingComponents::apply);
             started = true;
         }
+    }
+
+    /** How data is turned into JSON on a real server: with the registries that items need. */
+    public static DynamicOps<Tag> ops() {
+        bootstrap();
+        return RegistryOps.create(NbtOps.INSTANCE, registries);
     }
 
     /** A message formatter backed by a default config stored in the given directory. */

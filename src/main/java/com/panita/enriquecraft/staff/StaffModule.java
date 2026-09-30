@@ -5,7 +5,9 @@ import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.staff.message.CoordinateView;
+import com.panita.enriquecraft.staff.message.CustomItemView;
 import com.panita.enriquecraft.staff.service.CoordinateService;
+import com.panita.enriquecraft.staff.service.CustomItemService;
 
 /**
  * Tools for the server staff: saved coordinates, saved custom items and death inventory
@@ -18,5 +20,9 @@ public final class StaffModule implements EnriquecraftModule {
         CoordinateService coordinates = new CoordinateService(services.get(WorldData.class));
         services.register(CoordinateService.class, coordinates);
         services.register(CoordinateView.class, new CoordinateView(services.get(Messenger.class), coordinates));
+
+        CustomItemService customItems = new CustomItemService(services.get(WorldData.class));
+        services.register(CustomItemService.class, customItems);
+        services.register(CustomItemView.class, new CustomItemView(services.get(Messenger.class)));
     }
 }

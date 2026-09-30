@@ -41,4 +41,34 @@ public final class StaffMessages {
         private Coordinates() {
         }
     }
+
+    public static final class Items {
+        public static final String DESCRIPTION = "Gestiona los objetos personalizados guardados; sin argumentos abre el menú";
+        public static final String SAVE_DESCRIPTION = "Guarda el objeto de tu mano como objeto personalizado";
+        public static final String REMOVE_DESCRIPTION = "Elimina un objeto personalizado guardado";
+        public static final String INFO_DESCRIPTION = "Muestra los datos de un objeto personalizado";
+
+        public static final String EMPTY_HAND = "Sostén en la mano el objeto que quieres guardar.";
+        public static final String SAVED = "Objeto <bold>{name}</bold> guardado ({item} x{count}).";
+        public static final String DUPLICATE = "Ya existe un objeto llamado <bold>{name}</bold>.";
+        public static final String INVALID_NAME = "El nombre debe tener de 1 a 32 caracteres: letras minúsculas, números y _.";
+        public static final String REMOVED = "Objeto <bold>{name}</bold> eliminado.";
+        public static final String NOT_FOUND = "No existe ningún objeto llamado <bold>{name}</bold>.";
+        public static final String GIVEN = "Has recibido <bold>{name}</bold>.";
+
+        public static final String INFO_HEADER = "<bold>{name}</bold>";
+        public static final String INFO_ID = "<gray>ID: <white>{id}";
+        public static final String INFO_ITEM = "<gray>Objeto: <white>{item} x{count}";
+        public static final String INFO_SAVED_BY = "<gray>Guardado por: <white>{player}";
+        public static final String INFO_DATE = "<gray>Fecha: <white>{date}";
+
+        public static final String MENU_TITLE = "Objetos personalizados";
+        public static final String ENTRY_ID = "<gray>ID: <white>{id}";
+        public static final String ENTRY_SAVED_BY = "<gray>Guardado por: <white>{player}";
+        public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
+        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para obtener una copia";
+
+        private Items() {
+        }
+    }
 }
