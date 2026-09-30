@@ -130,20 +130,30 @@ The mod is split into modules. A module is a self-contained feature set in its o
 ```
 com.panita.enriquecraft
 ├─ Enriquecraft.java        entrypoint: registers modules, one line each
-└─ core/                    the core module
-   ├─ CoreModule.java       implements EnriquecraftModule; registers the core services
-   ├─ framework/            infrastructure shared by all modules
-   │  ├─ module/            EnriquecraftModule, ModuleManager
-   │  ├─ command/           ModCommand, CommandSpec, CommandCatalog, CommandTreeBuilder, CommandRegistry, ...
-   │  ├─ config/            ConfigManager, ConfigValue, ConfigSectionBuilder, ModConfig, ...
-   │  ├─ listener/          ModListener
-   │  ├─ inject/            ServiceRegistry (constructor injection)
-   │  └─ scan/              ClassScanner
-   ├─ config/               CoreConfig (the core module's config section)
-   ├─ message/              Messenger, Message, Messages (all Spanish text), HelpView, channels
-   ├─ service/              business logic (HelpService, ServerInfoService, ...)
-   ├─ commands/             auto-discovered commands (see below)
-   └─ listeners/            auto-discovered listeners
+├─ core/                    the core module
+│  ├─ CoreModule.java       implements EnriquecraftModule; registers the core services
+│  ├─ framework/            infrastructure shared by all modules
+│  │  ├─ module/            EnriquecraftModule, ModuleManager
+│  │  ├─ command/           ModCommand, CommandSpec, CommandCatalog, CommandTreeBuilder, CommandRegistry, ...
+│  │  ├─ config/            ConfigManager, ConfigValue, ConfigSectionBuilder, ModConfig, ...
+│  │  ├─ data/              WorldData, SnbtStore, TimeCodecs (data files in the world folder)
+│  │  ├─ io/                AtomicFiles
+│  │  ├─ listener/          ModListener
+│  │  ├─ inject/            ServiceRegistry (constructor injection)
+│  │  └─ scan/              ClassScanner
+│  ├─ gui/                  Menu, PaginatedMenu, MenuFactory, ItemBuilder, ... (the menu toolkit)
+│  ├─ item/                 CustomItemTag, ItemGiving
+│  ├─ config/               CoreConfig (the core module's config section)
+│  ├─ message/              Messenger, Message, Messages (core's Spanish text), HelpView, PlayerOnly, channels
+│  ├─ service/              business logic (HelpService, ServerInfoService, ...)
+│  ├─ commands/             auto-discovered commands (see below)
+│  └─ listeners/            auto-discovered listeners
+└─ staff/                   the staff module: /staff coords, /staff item, /staff invrestore
+   ├─ StaffModule.java
+   ├─ config/ commands/ listeners/ service/
+   ├─ data/                 records with their codecs (SavedCoordinate, SavedItem, DeathRecord)
+   ├─ gui/                  the module's menus
+   └─ message/              StaffMessages (the module's Spanish text) and the views that report outcomes
 ```
 
 Every module follows the same layout:
@@ -156,7 +166,9 @@ Every module follows the same layout:
 | `service` | Business logic shared across the module's features. |
 | `feature` | Self-contained features that expose a small interface. |
 | `config` | The module's config class, discovered automatically (see Configuration). |
-| `message` | Player-facing text (Spanish) and its delivery. Presentation only. |
+| `data` | Records stored in the world folder, each with its `Codec`. |
+| `gui` | The module's menus. |
+| `message` | The module's player-facing text (`<Name>Messages`, Spanish) and the views that report outcomes. Presentation only. |
 | `network` | Shared protocol: payload types, codecs, protocol version, server-side capability detection. No client classes. |
 | `mixin` | Mixin classes (server-safe only). Thin, delegating. |
 
@@ -199,6 +211,23 @@ Rules:
 - Behavior the framework guarantees: a missing key is added to the file with its comment; a value that is missing, has the wrong type, or breaks its rule uses the default and is reported; keys nobody declares are kept and reported; a file that cannot be parsed is never overwritten (startup uses defaults, a reload keeps the previous values). Values the administrator wrote are kept as written, even when invalid.
 - `/enriquecraft reload` reloads the file. Text shown to players about config problems is Spanish and lists only paths; the detailed reasons are English and go to the console.
 
+### Data files
+- Game data (records, items, inventories) is stored as SNBT, never JSON, because JSON cannot tell an int from a byte or a long and would change the custom data of every item. The config file stays JSON5 since people edit it by hand.
+- Register a store with `WorldData.register(file, codec, empty)` when it lives as long as the mod, or open one with `WorldData.open(...)` for files not known up front (one per player). Files live in `<world>/enriquecraft/`, are written on every change, atomically, and are named `.snbt`.
+- Describe each record with a `Codec` in a `data` package. Write only what is present (for example the occupied slots), and use `TimeCodecs.INSTANT` for moments. A file that cannot be read is moved aside as `.broken` and never overwritten.
+- Items are stored with `ItemStack.CODEC`, which keeps every component exactly. Never store an item as text of your own making.
+- Never modify a stored stack: give out copies (`ItemGiving.give` copies, drops what does not fit, and never loses anything).
+- Custom items carry `custom_item = enriquecraft:<name>` in their custom data. Test for one with `CustomItemTag.is(stack, name)`; do not read the data by hand.
+
+### Menus
+- A screen is a `Menu` (or a `PaginatedMenu<T>` for lists) in `core.gui`, built with `MenuFactory`. Create a new menu object for every player and every opening; it holds the state of that viewing, such as the page. `draw()` describes the screen and is called again on `refresh()`, so read data in `draw`/`entries`, not in the constructor.
+- Menus are display only: `MenuScreen` never lets a click move, drag, swap, drop or clone an item, so never work around it and never put a real inventory behind a menu.
+- Buttons run only on ordinary clicks. Check `click.isLeft()` in the action, and require `click.isShift()` for anything destructive, such as deleting a record.
+- Show stored items through `factory.item(stack)`, which copies, so lore added for display never reaches the stored item.
+- Menus that use the whole screen finish with `fillRest()`; framed lists use `frame()`, which `PaginatedMenu` does itself.
+- Commands that need a player use `PlayerOnly.executes(...)`.
+- Each module keeps its Spanish texts in its own `<Name>Messages` class; text shared by every module lives in `core.message.Messages`.
+
 ### Messaging
 - All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
 - `Messenger` has two ways to send. A raw string (`send`, `prefixedSend`, `broadcast`, `prefixedBroadcast`, `sendActionBar`, `showTitle`, `showBossBar`, ...) is the quick way for plain text. A `Message` adds named arguments (`{name}`) and a level, and is used when a template has dynamic values. Every method that sends a prefixed message has a non-prefixed twin, and the `placeholder` variants resolve server placeholders (`%player:name%`) for a context player; the other variants do not resolve placeholders.
@@ -212,5 +241,6 @@ Rules:
 - Read the relevant existing code before changing it.
 - Verify changes by building: `./gradlew build`, which also runs the tests (and `./gradlew compileJava compileClientJava` for a quick check). Report failures honestly.
 - Logic that does not need the Minecraft runtime (for example the config framework and validators) must have unit tests in `src/test` using JUnit 5. A bug fix starts with a test that reproduces it when that is practical. Tests run from `build/test-run`.
+- Tests that need Minecraft items or components call `MinecraftTestSupport.bootstrap()`; menus are checked without a player through `MenuTesting`. Behavior that needs a real player (teleporting, giving items, death capture) is checked on a dev server with Fabric's `FakePlayer`; force-load the chunk first, because no entity exists in an inactive chunk.
 - Do not include unrelated refactors in a feature change. Keep changes scoped to the request.
 - If a request violates any rule in this file, ask the owner "are you sure?" and state which rule is affected before doing anything.
