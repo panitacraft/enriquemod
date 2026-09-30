@@ -11,6 +11,18 @@ public final class Messages {
     private Messages() {
     }
 
+    public static final class Gui {
+        public static final String PREVIOUS = "<green>◀ Página anterior";
+        public static final String NEXT = "<green>Página siguiente ▶";
+        public static final String CLOSE = "<red>Cerrar";
+        public static final String BACK = "<yellow>Volver";
+        public static final String PAGE_INDICATOR = "<gray>Página <white>{page}</white> de <white>{pages}</white>";
+        public static final String EMPTY = "<gray>No hay nada que mostrar";
+
+        private Gui() {
+        }
+    }
+
     public static final class Prefix {
         public static final String DEFAULT = "<color #F2B134>[Enriquecraft]</color>";
 
