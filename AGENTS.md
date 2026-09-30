@@ -13,6 +13,7 @@ This file is the source of truth for how work is done in this project. Every con
 - **Approved external libraries** (bundled inside the mod jar, versions in `gradle.properties`):
   - Placeholder API (`eu.pb4:placeholder-api`, LGPL-3.0): text tags and placeholders. Keep its license file intact when distributing.
   - Fabric Permissions API (`me.lucko:fabric-permissions-api`): LuckPerms-compatible permission nodes.
+- **Approved test library** (test scope only, never shipped): JUnit 5.
 
 ## 2. Non-Negotiable Constraint: Server-Authoritative With an Optional Client Companion
 
@@ -134,9 +135,11 @@ com.panita.enriquecraft
    ├─ framework/            infrastructure shared by all modules
    │  ├─ module/            EnriquecraftModule, ModuleManager
    │  ├─ command/           ModCommand, CommandSpec, CommandCatalog, CommandTreeBuilder, CommandRegistry, ...
+   │  ├─ config/            ConfigManager, ConfigValue, ConfigSectionBuilder, ModConfig, ...
    │  ├─ listener/          ModListener
    │  ├─ inject/            ServiceRegistry (constructor injection)
    │  └─ scan/              ClassScanner
+   ├─ config/               CoreConfig (the core module's config section)
    ├─ message/              Messenger, Message, Messages (all Spanish text), HelpView, channels
    ├─ service/              business logic (HelpService, ServerInfoService, ...)
    ├─ commands/             auto-discovered commands (see below)
@@ -152,7 +155,7 @@ Every module follows the same layout:
 | `listeners` | Event listeners, discovered automatically. |
 | `service` | Business logic shared across the module's features. |
 | `feature` | Self-contained features that expose a small interface. |
-| `config` | Configuration model, loading, and saving. |
+| `config` | The module's config class, discovered automatically (see Configuration). |
 | `message` | Player-facing text (Spanish) and its delivery. Presentation only. |
 | `network` | Shared protocol: payload types, codecs, protocol version, server-side capability detection. No client classes. |
 | `mixin` | Mixin classes (server-safe only). Thin, delegating. |
@@ -188,6 +191,14 @@ Rules:
 - A module registers its services in `registerServices`. Services are created explicitly there, in one place. There is no static access to services.
 - A missing service, a missing `@CommandSpec`, an unregistered parent, a parent cycle, or a duplicate literal stops startup with a message that names the class.
 
+### Configuration
+- There is one config file, `config/enriquecraft.json5`, with one top-level section per module. The section name is the last segment of the module's package name (`core`). Comments (`//`, `/* */`) are accepted when reading; trailing commas in objects are not.
+- A module declares its settings in one class in `<module>.config` that implements `ModConfig`, has one public constructor taking a `ConfigSectionBuilder`, and exposes its values as public final `ConfigValue` fields. A module has at most one config class; it is discovered, bound, and registered as a service automatically, so other classes receive it by constructor injection.
+- Declare each value once, with its default, a comment, and its rule: `bool`, `intRange(min, max)`, or `string` with a validator and a rule written as "must ...". Defaults of player-visible text come from `Messages`. Add a new value type to `ValueTypes` only when a setting needs it.
+- Read values with `config.value.get()` at the moment they are needed. Never cache them, never use string-path getters, and never repeat a default at a call site.
+- Behavior the framework guarantees: a missing key is added to the file with its comment; a value that is missing, has the wrong type, or breaks its rule uses the default and is reported; keys nobody declares are kept and reported; a file that cannot be parsed is never overwritten (startup uses defaults, a reload keeps the previous values). Values the administrator wrote are kept as written, even when invalid.
+- `/enriquecraft reload` reloads the file. Text shown to players about config problems is Spanish and lists only paths; the detailed reasons are English and go to the console.
+
 ### Messaging
 - All text shown to players goes through `Messenger` with a `Message`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
 - Templates live in `Messages`, grouped by feature. Use text tags (`<bold>`), server placeholders (`%player:name%`), and `{name}` arguments. Pass dynamic values with `Message.with(...)`, never by string concatenation, so their content is not parsed as tags. Use `Message.withMarkup(...)` only for input from someone trusted to format text (for example an administrator); it parses text tags and legacy `&` color codes.
@@ -197,6 +208,7 @@ Rules:
 
 - Maintain context of the whole project at all times: current state, recent changes, and goals. Every new implementation must integrate with what already exists.
 - Read the relevant existing code before changing it.
-- Verify changes by building: `./gradlew build` (and `./gradlew compileJava compileClientJava` for a quick check). Report failures honestly.
+- Verify changes by building: `./gradlew build`, which also runs the tests (and `./gradlew compileJava compileClientJava` for a quick check). Report failures honestly.
+- Logic that does not need the Minecraft runtime (for example the config framework and validators) must have unit tests in `src/test` using JUnit 5. A bug fix starts with a test that reproduces it when that is practical. Tests run from `build/test-run`.
 - Do not include unrelated refactors in a feature change. Keep changes scoped to the request.
 - If a request violates any rule in this file, ask the owner "are you sure?" and state which rule is affected before doing anything.
