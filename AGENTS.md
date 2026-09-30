@@ -82,6 +82,7 @@ Every commit MUST follow [Conventional Commits](https://gist.github.com/qoomon/5
   - `build`: build tooling, dependencies, project version
   - `ops`: CI/CD, release and deployment scripts
   - `chore`: everything else (initial commit, `.gitignore` tweaks, etc.)
+- Exception: when the area and the type are both `docs`, write a single `docs` instead of repeating it: `docs: add project guidelines`, not `docs, docs: add project guidelines`.
 - `<description>`: imperative, present tense ("add", not "added" or "adds"), lowercase first letter, no trailing period.
 - Breaking changes: put `!` right before the colon (`config, feat!: rename the settings file`) and explain the break in a `BREAKING CHANGE:` footer if the description alone is not clear.
 - Body (optional): the motivation for the change, in imperative present tense.
@@ -93,6 +94,7 @@ Examples:
 - `event, fix: prevent crash when the world is null on disconnect`
 - `repo, build: bump Gradle wrapper to 9.7.1`
 - `repo, chore: add gradle output folders to .gitignore`
+- `docs: document the config file format`
 - `config, feat!: rename the settings file`
 
   `BREAKING CHANGE: the old settings file is no longer read; users must recreate their settings.`
