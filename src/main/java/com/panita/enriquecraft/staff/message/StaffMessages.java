@@ -71,4 +71,49 @@ public final class StaffMessages {
         private Items() {
         }
     }
+
+    public static final class Deaths {
+        public static final String DESCRIPTION = "Abre los inventarios de muerte de un jugador para inspeccionarlos y recuperarlos";
+        public static final String SINGLE_PLAYER = "Indica un único jugador.";
+
+        public static final String LIST_TITLE = "Muertes de {player}";
+        public static final String ENTRY_NAME = "<red>Muerte del {date}";
+        public static final String ENTRY_CAUSE = "<gray>Causa: <white>{cause}";
+        public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
+        public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
+        public static final String ENTRY_ITEMS = "<gray>Objetos: <white>{count}";
+        public static final String ENTRY_XP = "<gray>Nivel de experiencia: <white>{level}";
+        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para inspeccionar";
+
+        public static final String INSPECT_TITLE = "Inventario de {player}";
+        public static final String ITEM_HINT = "<green>Clic izquierdo para obtener una copia";
+        public static final String BACK = "<yellow>Volver a la lista";
+        public static final String TELEPORT_NAME = "<aqua>Ir al lugar de la muerte";
+        public static final String TELEPORT_LORE = "<gray>Te teletransporta a las coordenadas exactas.";
+        public static final String CHESTS_NAME = "<gold>Obtener en cofres";
+        public static final String CHESTS_LORE = "<gray>Empaqueta todo el inventario en cofres y te los entrega.";
+        public static final String RESTORE_NAME = "<green>Devolver al jugador";
+        public static final String RESTORE_LORE = "<gray>Añade los objetos al inventario del jugador.";
+        public static final String RESTORE_WARNING = "<red>El jugador debe estar conectado.";
+        public static final String DELETE_NAME = "<dark_red>Eliminar registro";
+        public static final String DELETE_LORE = "<gray>Borra este inventario de muerte para siempre.";
+        public static final String DELETE_WARNING = "<red>Mayús + clic izquierdo para confirmar.";
+        public static final String INFO_NAME = "<white>Datos de la muerte";
+
+        public static final String CHEST_NAME = "<gold>Inventario de {player}";
+        public static final String CHEST_NAME_PART = "<gold>Inventario de {player} ({number}/{total})";
+
+        public static final String TELEPORTED = "Te has teletransportado al lugar de la muerte de <bold>{player}</bold>.";
+        public static final String DIMENSION_UNAVAILABLE = "La dimensión {dimension} no está disponible.";
+        public static final String ITEM_GIVEN = "Has recibido una copia de {item}.";
+        public static final String CHESTS_GIVEN = "Has recibido <bold>{count}</bold> cofre(s) con el inventario de <bold>{player}</bold>.";
+        public static final String RESTORED = "Se devolvieron <bold>{count}</bold> objeto(s) a <bold>{player}</bold>.";
+        public static final String RESTORED_TO_PLAYER = "Un miembro del equipo te ha devuelto tus objetos perdidos.";
+        public static final String TARGET_OFFLINE = "<bold>{player}</bold> debe estar conectado para recibir sus objetos.";
+        public static final String DELETED = "Registro de muerte eliminado.";
+        public static final String DELETE_HINT = "Para eliminar este registro, mantén Mayús y haz clic izquierdo.";
+
+        private Deaths() {
+        }
+    }
 }

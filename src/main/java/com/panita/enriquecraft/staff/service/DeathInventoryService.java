@@ -2,10 +2,12 @@ package com.panita.enriquecraft.staff.service;
 
 import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
+import com.panita.enriquecraft.core.item.ItemGiving;
 import com.panita.enriquecraft.staff.config.StaffConfig;
 import com.panita.enriquecraft.staff.data.DeathRecord;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.item.ItemStack;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -65,6 +67,41 @@ public final class DeathInventoryService {
         }
         store.set(List.copyOf(updated));
         return true;
+    }
+
+    /**
+     * Gives a staff member the whole inventory packed into chests.
+     *
+     * @return how many chests they received
+     */
+    public int giveChests(ServerPlayer staff, DeathRecord record, DeathChests.Namer namer) {
+        List<ItemStack> chests = DeathChests.pack(record.nonEmptyItems(), namer);
+        chests.forEach(chest -> ItemGiving.give(staff, chest));
+        return chests.size();
+    }
+
+    /**
+     * Gives a player back the items of a death inventory. Each stack returns to the slot it came
+     * from (armor is worn again) when that slot is free, which is the case after a respawn; a stack
+     * whose slot is taken is given like a picked-up item instead, so nothing is lost or overwritten.
+     *
+     * @return how many stacks were given
+     */
+    public int restore(ServerPlayer target, DeathRecord record) {
+        int given = 0;
+        for (int slot = 0; slot < record.items().size(); slot++) {
+            ItemStack stack = record.items().get(slot);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            if (target.getInventory().getItem(slot).isEmpty()) {
+                target.getInventory().setItem(slot, stack.copy());
+            } else {
+                ItemGiving.give(target, stack);
+            }
+            given++;
+        }
+        return given;
     }
 
     /** Keeps the first {@code max} of a newest-first list. */

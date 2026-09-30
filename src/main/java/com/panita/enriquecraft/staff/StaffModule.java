@@ -7,6 +7,7 @@ import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.staff.config.StaffConfig;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import com.panita.enriquecraft.staff.message.CustomItemView;
+import com.panita.enriquecraft.staff.message.DeathInventoryView;
 import com.panita.enriquecraft.staff.service.CoordinateService;
 import com.panita.enriquecraft.staff.service.CustomItemService;
 import com.panita.enriquecraft.staff.service.DeathInventoryService;
@@ -29,5 +30,6 @@ public final class StaffModule implements EnriquecraftModule {
 
         services.register(DeathInventoryService.class,
                 new DeathInventoryService(services.get(WorldData.class), services.get(StaffConfig.class)));
+        services.register(DeathInventoryView.class, new DeathInventoryView(services.get(Messenger.class)));
     }
 }
