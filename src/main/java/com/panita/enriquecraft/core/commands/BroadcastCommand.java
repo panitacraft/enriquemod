@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.message.Message;
@@ -22,9 +23,11 @@ public final class BroadcastCommand implements ModCommand {
     private static final String MESSAGE_ARGUMENT = "message";
 
     private final Messenger messenger;
+    private final CoreConfig config;
 
-    public BroadcastCommand(Messenger messenger) {
+    public BroadcastCommand(Messenger messenger, CoreConfig config) {
         this.messenger = messenger;
+        this.config = config;
     }
 
     @Override
@@ -36,7 +39,7 @@ public final class BroadcastCommand implements ModCommand {
     private int execute(CommandContext<CommandSourceStack> context) {
         String text = StringArgumentType.getString(context, MESSAGE_ARGUMENT);
         messenger.broadcast(context.getSource().getServer(),
-                Message.plain(Messages.Broadcast.FORMAT).prefixed().withMarkup("message", text));
+                Message.plain(config.broadcastFormat.get()).prefixed().withMarkup("message", text));
         return Command.SINGLE_SUCCESS;
     }
 }

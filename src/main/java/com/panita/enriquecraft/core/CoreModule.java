@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core;
 
+import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.command.CommandCatalog;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -19,7 +20,7 @@ public final class CoreModule implements EnriquecraftModule {
     @Override
     public void registerServices(ServiceRegistry services) {
         BossBarChannel bossBars = new BossBarChannel();
-        Messenger messenger = new Messenger(new MessageFormatter(), new TitleChannel(), bossBars);
+        Messenger messenger = new Messenger(new MessageFormatter(services.get(CoreConfig.class)), new TitleChannel(), bossBars);
         HelpService helpService = new HelpService(services.get(CommandCatalog.class));
 
         services.register(BossBarChannel.class, bossBars);

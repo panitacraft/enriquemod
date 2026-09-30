@@ -11,6 +11,13 @@ public final class Messages {
     private Messages() {
     }
 
+    public static final class Prefix {
+        public static final String DEFAULT = "<color #F2B134>[Enriquecraft]</color>";
+
+        private Prefix() {
+        }
+    }
+
     public static final class Enriquecraft {
         public static final String DESCRIPTION = "Comandos generales de Enriquecraft";
 

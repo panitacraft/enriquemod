@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core.message;
 
+import com.panita.enriquecraft.core.config.CoreConfig;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.ServerPlaceholderContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
@@ -15,8 +16,6 @@ import java.util.function.Function;
  */
 public final class MessageFormatter {
 
-    private static final String PREFIX = "<color #F2B134>[Enriquecraft]</color> ";
-
     private static final ParserContext.Key<Function<String, Component>> ARGUMENTS =
             ParserContext.Key.of("enriquecraft:arguments");
 
@@ -31,6 +30,12 @@ public final class MessageFormatter {
             .quickText()
             .legacyAll()
             .build();
+
+    private final CoreConfig config;
+
+    public MessageFormatter(CoreConfig config) {
+        this.config = config;
+    }
 
     /**
      * Formats a message for a specific viewer.
@@ -55,6 +60,6 @@ public final class MessageFormatter {
 
     private String compose(Message message) {
         String body = message.level().decorate(message.template());
-        return message.hasPrefix() ? PREFIX + body : body;
+        return message.hasPrefix() ? config.prefix.get() + " " + body : body;
     }
 }
