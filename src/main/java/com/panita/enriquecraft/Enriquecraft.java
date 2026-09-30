@@ -1,13 +1,13 @@
 package com.panita.enriquecraft;
 
-import com.panita.enriquecraft.command.CommandModule;
-import com.panita.enriquecraft.command.CommandRegistrar;
-import com.panita.enriquecraft.command.CommandTreeBuilder;
-import com.panita.enriquecraft.event.BossBarCleanupListener;
-import com.panita.enriquecraft.message.MessageFormatter;
-import com.panita.enriquecraft.message.Messenger;
-import com.panita.enriquecraft.message.channel.BossBarChannel;
-import com.panita.enriquecraft.message.channel.TitleChannel;
+import com.panita.enriquecraft.core.framework.command.CommandModule;
+import com.panita.enriquecraft.core.framework.command.CommandRegistrar;
+import com.panita.enriquecraft.core.framework.command.CommandTreeBuilder;
+import com.panita.enriquecraft.core.listeners.BossBarCleanupListener;
+import com.panita.enriquecraft.core.message.MessageFormatter;
+import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.core.message.channel.BossBarChannel;
+import com.panita.enriquecraft.core.message.channel.TitleChannel;
 import net.fabricmc.api.ModInitializer;
 
 public class Enriquecraft implements ModInitializer {
