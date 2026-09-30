@@ -11,6 +11,13 @@ public final class Messages {
     private Messages() {
     }
 
+    public static final class Command {
+        public static final String PLAYERS_ONLY = "Este comando solo puede usarlo un jugador.";
+
+        private Command() {
+        }
+    }
+
     public static final class Gui {
         public static final String PREVIOUS = "<green>◀ Página anterior";
         public static final String NEXT = "<green>Página siguiente ▶";
@@ -76,7 +83,6 @@ public final class Messages {
     public static final class Ping {
         public static final String DESCRIPTION = "Muestra tu latencia con el servidor";
         public static final String RESULT = "Tu latencia es de <bold>{ping} ms</bold>.";
-        public static final String PLAYERS_ONLY = "Este comando solo puede usarlo un jugador.";
 
         private Ping() {
         }

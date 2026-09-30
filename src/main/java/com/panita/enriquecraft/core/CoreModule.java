@@ -9,6 +9,7 @@ import com.panita.enriquecraft.core.message.ConfigReportView;
 import com.panita.enriquecraft.core.message.HelpView;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.core.message.PlayerOnly;
 import com.panita.enriquecraft.core.message.channel.BossBarChannel;
 import com.panita.enriquecraft.core.message.channel.TitleChannel;
 import com.panita.enriquecraft.core.service.HelpService;
@@ -32,6 +33,7 @@ public final class CoreModule implements EnriquecraftModule {
         services.register(HelpView.class, new HelpView(messenger, helpService));
         services.register(ConfigReportView.class, new ConfigReportView(messenger));
         services.register(MenuFactory.class, new MenuFactory(formatter));
+        services.register(PlayerOnly.class, new PlayerOnly(messenger));
         services.register(ServerInfoService.class, new ServerInfoService());
     }
 }
