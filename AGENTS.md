@@ -13,7 +13,7 @@ This file is the source of truth for how work is done in this project. Every con
 - **Approved external libraries** (bundled inside the mod jar, versions in `gradle.properties`):
   - Placeholder API (`eu.pb4:placeholder-api`, LGPL-3.0): text tags and placeholders. Keep its license file intact when distributing.
   - Fabric Permissions API (`me.lucko:fabric-permissions-api`): LuckPerms-compatible permission nodes.
-- **Approved test library** (test scope only, never shipped): JUnit 5.
+- **Approved test libraries** (test scope only, never shipped): JUnit 5, and `fabric-loader-junit` (starts a minimal Fabric Loader inside tests, which Placeholder API needs to parse text).
 
 ## 2. Non-Negotiable Constraint: Server-Authoritative With an Optional Client Companion
 
@@ -110,7 +110,7 @@ Examples:
 
 ### Code quality
 - Strict typing. Avoid raw types, unchecked casts, and unnecessary `Object` usage. Use `final`, records, enums, sealed types, and `Optional` where appropriate. Mark nullability clearly.
-- No dead code: no unused classes, methods, imports, parameters, commented-out code, or empty placeholder files.
+- No dead code: no unused classes, methods, imports, parameters, commented-out code, or empty placeholder files. The only exception is the public method set of `Messenger`, which mirrors the owner's Tezzlar III Messenger; methods there that nothing calls yet are intentional.
 - DRY. Extract shared behavior instead of duplicating it. Do not over-abstract for a single use.
 - Comments explain why, not what. Keep them short and in English.
 
@@ -200,9 +200,11 @@ Rules:
 - `/enriquecraft reload` reloads the file. Text shown to players about config problems is Spanish and lists only paths; the detailed reasons are English and go to the console.
 
 ### Messaging
-- All text shown to players goes through `Messenger` with a `Message`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
-- Templates live in `Messages`, grouped by feature. Use text tags (`<bold>`), server placeholders (`%player:name%`), and `{name}` arguments. Pass dynamic values with `Message.with(...)`, never by string concatenation, so their content is not parsed as tags. Use `Message.withMarkup(...)` only for input from someone trusted to format text (for example an administrator); it parses text tags and legacy `&` color codes.
-- Use `MessageLevel` (`info`, `success`, `warning`, `error`) for color and icon, and `prefixed()` when the mod prefix is wanted.
+- All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
+- `Messenger` has two ways to send. A raw string (`send`, `prefixedSend`, `broadcast`, `prefixedBroadcast`, `sendActionBar`, `showTitle`, `showBossBar`, ...) is the quick way for plain text. A `Message` adds named arguments (`{name}`) and a level, and is used when a template has dynamic values. Every method that sends a prefixed message has a non-prefixed twin, and the `placeholder` variants resolve server placeholders (`%player:name%`) for a context player; the other variants do not resolve placeholders.
+- Raw strings and templates accept text tags (`<bold>`) and legacy color codes (`&c`). Templates live in `Messages`, grouped by feature. Pass dynamic values with `Message.with(...)`, never by string concatenation: arguments are inserted as finished components, so their content is never parsed. Only administrator-written text may be sent as a raw string (as `/broadcast` does).
+- Use `MessageLevel` (`info`, `success`, `warning`, `error`) for color and icon, and `prefixed()` when the mod prefix is wanted. The prefix comes from the config (`messages.prefix`).
+- `/broadcast <prefixed|raw> <message>` sends the text as written, with or without the prefix. Commands never add their own labels or layouts to it.
 
 ## 7. Working Process
 
