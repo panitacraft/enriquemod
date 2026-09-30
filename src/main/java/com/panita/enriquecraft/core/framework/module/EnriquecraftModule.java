@@ -4,8 +4,8 @@ import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 
 /**
  * A self-contained feature set of the mod, living in its own package. Commands in its
- * {@code commands} subpackage and listeners in its {@code listeners} subpackage are discovered
- * automatically.
+ * {@code commands} subpackage, listeners in its {@code listeners} subpackage and its config class in
+ * its {@code config} subpackage are discovered automatically.
  */
 public interface EnriquecraftModule {
 
@@ -26,5 +26,15 @@ public interface EnriquecraftModule {
 
     default String listenerPackage() {
         return basePackage() + ".listeners";
+    }
+
+    default String configPackage() {
+        return basePackage() + ".config";
+    }
+
+    /** The top-level key of this module in the config file; by default, the last segment of the package name. */
+    default String configSection() {
+        String basePackage = basePackage();
+        return basePackage.substring(basePackage.lastIndexOf('.') + 1);
     }
 }
