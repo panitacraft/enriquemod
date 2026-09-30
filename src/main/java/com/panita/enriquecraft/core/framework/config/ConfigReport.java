@@ -14,4 +14,9 @@ public record ConfigReport(List<ConfigIssue> issues) {
     public boolean isClean() {
         return issues.isEmpty();
     }
+
+    /** Whether the file could not be read, so none of its values were applied. */
+    public boolean hasSyntaxError() {
+        return issues.stream().anyMatch(issue -> issue.kind() == ConfigIssue.Kind.SYNTAX_ERROR);
+    }
 }

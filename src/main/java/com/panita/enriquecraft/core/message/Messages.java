@@ -49,6 +49,18 @@ public final class Messages {
         }
     }
 
+    public static final class Reload {
+        public static final String DESCRIPTION = "Recarga la configuración del mod";
+        public static final String SUCCESS = "Configuración recargada.";
+        public static final String WITH_ISSUES = "Configuración recargada con <bold>{count}</bold> aviso(s). Revisa la consola para ver el detalle.";
+        public static final String INVALID_VALUE = "<gray>-</gray> <yellow>{path}</yellow>: valor no válido, se usa el valor por defecto.";
+        public static final String UNKNOWN_KEY = "<gray>-</gray> <yellow>{path}</yellow>: clave desconocida, no tiene efecto.";
+        public static final String SYNTAX_ERROR = "El archivo de configuración tiene errores de sintaxis y no se pudo leer. Se mantienen los valores anteriores. Revisa la consola para ver el detalle.";
+
+        private Reload() {
+        }
+    }
+
     public static final class Ping {
         public static final String DESCRIPTION = "Muestra tu latencia con el servidor";
         public static final String RESULT = "Tu latencia es de <bold>{ping} ms</bold>.";

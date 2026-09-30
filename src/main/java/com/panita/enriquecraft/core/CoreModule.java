@@ -4,6 +4,7 @@ import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.command.CommandCatalog;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
+import com.panita.enriquecraft.core.message.ConfigReportView;
 import com.panita.enriquecraft.core.message.HelpView;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.message.Messenger;
@@ -27,6 +28,7 @@ public final class CoreModule implements EnriquecraftModule {
         services.register(Messenger.class, messenger);
         services.register(HelpService.class, helpService);
         services.register(HelpView.class, new HelpView(messenger, helpService));
+        services.register(ConfigReportView.class, new ConfigReportView(messenger));
         services.register(ServerInfoService.class, new ServerInfoService());
     }
 }

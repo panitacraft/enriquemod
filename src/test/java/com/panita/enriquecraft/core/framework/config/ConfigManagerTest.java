@@ -280,6 +280,7 @@ class ConfigManagerTest {
         ConfigReport report = manager.reload();
 
         assertTrue(report.isClean());
+        assertFalse(report.hasSyntaxError());
         assertEquals("Changed", config.prefix.get());
         assertEquals(40, config.limit.get());
         assertFalse(config.enabled.get());
@@ -318,6 +319,7 @@ class ConfigManagerTest {
 
         assertEquals(1, report.issues().size());
         assertEquals(ConfigIssue.Kind.SYNTAX_ERROR, report.issues().get(0).kind());
+        assertTrue(report.hasSyntaxError());
         assertEquals("Changed", config.prefix.get());
         assertEquals(40, config.limit.get());
         assertEquals(broken, read());
