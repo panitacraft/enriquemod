@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.panita.enriquecraft.core.framework.io.AtomicFiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,10 +12,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -201,16 +200,8 @@ public final class ConfigManager {
         if (!fileReadable) {
             return;
         }
-        String text = renderer.render(sections, root);
-        Path temporary = file.resolveSibling(FILE_NAME + ".tmp");
         try {
-            Files.createDirectories(file.getParent());
-            Files.writeString(temporary, text, StandardCharsets.UTF_8);
-            try {
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
-            }
+            AtomicFiles.write(file, renderer.render(sections, root));
         } catch (IOException e) {
             LOGGER.error("Could not write {}: {}", file, e.getMessage());
         }
