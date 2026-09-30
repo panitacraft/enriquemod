@@ -4,6 +4,9 @@ import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.MessageFormatter;
+import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.core.message.channel.BossBarChannel;
+import com.panita.enriquecraft.core.message.channel.TitleChannel;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentInitializers;
@@ -36,10 +39,18 @@ public final class MinecraftTestSupport {
         }
     }
 
-    /** A menu factory backed by a default config stored in the given directory. */
-    public static MenuFactory menuFactory(Path configDirectory) {
+    /** A message formatter backed by a default config stored in the given directory. */
+    public static MessageFormatter formatter(Path configDirectory) {
         bootstrap();
         CoreConfig config = new ConfigManager(configDirectory).bind("core", CoreConfig.class);
-        return new MenuFactory(new MessageFormatter(config));
+        return new MessageFormatter(config);
+    }
+
+    public static MenuFactory menuFactory(Path configDirectory) {
+        return new MenuFactory(formatter(configDirectory));
+    }
+
+    public static Messenger messenger(Path configDirectory) {
+        return new Messenger(formatter(configDirectory), new TitleChannel(), new BossBarChannel());
     }
 }
