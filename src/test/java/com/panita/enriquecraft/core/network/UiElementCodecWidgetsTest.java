@@ -91,4 +91,9 @@ final class UiElementCodecWidgetsTest {
         assertThrows(IllegalArgumentException.class, () -> new UiElement.Dropdown(0, Component.empty(),
                 Collections.nCopies(UiElement.Dropdown.MAX_OPTIONS + 1, Component.empty()), 0));
     }
+
+    @Test
+    void aDividerSurvivesARoundTrip() {
+        assertInstanceOf(UiElement.Divider.class, roundTrip(new UiElement.Divider()));
+    }
 }

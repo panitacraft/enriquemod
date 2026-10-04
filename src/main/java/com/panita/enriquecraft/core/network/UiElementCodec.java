@@ -33,6 +33,7 @@ public final class UiElementCodec {
     private static final byte DETAIL = 8;
     private static final byte SCROLL = 9;
     private static final byte DROPDOWN = 10;
+    private static final byte DIVIDER = 11;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -116,6 +117,7 @@ public final class UiElementCodec {
                 TOOLTIP.encode(buffer, dropdown.options());
                 buffer.writeVarInt(dropdown.selected());
             }
+            case UiElement.Divider ignored -> buffer.writeByte(DIVIDER);
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
     }
@@ -158,6 +160,7 @@ public final class UiElementCodec {
                     TOOLTIP.decode(buffer));
             case SCROLL -> readScroll(buffer, depth);
             case DROPDOWN -> readDropdown(buffer);
+            case DIVIDER -> new UiElement.Divider();
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
         };

@@ -92,6 +92,7 @@ final class UiLayouts {
             case UiElement.Detail detail -> detail(detail);
             case UiElement.TextInput input -> new UiInputWidget(font, input, actions);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
+            case UiElement.Divider ignored -> new UiDividerWidget();
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
                 case FOOTER -> button.icon().isEmpty() || button.role() == ButtonRole.CONFIRM
@@ -144,7 +145,19 @@ final class UiLayouts {
 
     private LinearLayout column(List<UiElement> children) {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
-        children.forEach(child -> column.addChild(build(child, Place.COLUMN), settings -> settings.alignHorizontallyCenter()));
+        List<UiDividerWidget> dividers = new ArrayList<>();
+        for (UiElement child : children) {
+            LayoutElement built = build(child, Place.COLUMN);
+            if (built instanceof UiDividerWidget divider) {
+                dividers.add(divider);
+            }
+            column.addChild(built, settings -> settings.alignHorizontallyCenter());
+        }
+        // A divider spans the column, so it is as wide as the widest thing beside it.
+        column.arrangeElements();
+        int width = column.getWidth();
+        dividers.forEach(divider -> divider.setWidth(width));
+        column.arrangeElements();
         return column;
     }
 

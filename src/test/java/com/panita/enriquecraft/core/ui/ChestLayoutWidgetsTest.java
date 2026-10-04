@@ -166,4 +166,14 @@ class ChestLayoutWidgetsTest {
 
         assertEquals(List.of("uno"), lore(plan.items().get(4).stack()));
     }
+
+    @Test
+    void aDividerTakesNoSlotInAChest() {
+        ChestLayout.Plan plan = plan(b -> new UiElement.Row(List.of(
+                new UiElement.Label(Component.literal("uno")), new UiElement.Divider(), new UiElement.Label(Component.literal("dos")))));
+
+        assertEquals(2, plan.items().size());
+        assertTrue(plan.items().containsKey(0));
+        assertTrue(plan.items().containsKey(2));
+    }
 }

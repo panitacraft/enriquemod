@@ -135,6 +135,7 @@ final class ChestLayout {
             case UiElement.Label label -> MenuItem.display(factory.item(Items.PAPER).name(label.text()).build());
             case UiElement.Spacer ignored -> null;
             case UiElement.Page ignored -> null;
+            case UiElement.Divider ignored -> null;
             case UiElement.Detail detail -> detail(detail);
             case UiElement.Dropdown dropdown -> MenuItem.button(stack(dropdown), click -> choose(dropdown, click));
             case UiElement.Scroll scroll -> throw containerInsideAnotherContainer();
