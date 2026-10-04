@@ -5,6 +5,7 @@ import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.message.Timestamps;
 import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.CopyTextTesting;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.staff.message.CustomItemView;
@@ -129,9 +130,8 @@ class CustomItemDetailMenuTest {
         assertTrue(detail.iconId() != UiElement.Detail.NOT_PRESSABLE);
         Component id = detail.lines().getFirst();
         assertEquals("ID: enriquecraft:espada", id.getString());
-        assertEquals(java.util.Optional.of("enriquecraft:espada"), id.visit((style, text) ->
-                style.getClickEvent() instanceof net.minecraft.network.chat.ClickEvent.CopyToClipboard copy
-                        ? java.util.Optional.of(copy.value()) : java.util.Optional.empty(), net.minecraft.network.chat.Style.EMPTY));
+        assertEquals(List.of("enriquecraft:espada -> enriquecraft:espada"), CopyTextTesting.clickable(id),
+                "only the id copies, not the label before it");
         assertEquals(ButtonRole.DANGER, assertInstanceOf(UiElement.Button.class, controls.children().get(4)).role());
     }
 

@@ -2,12 +2,16 @@ package com.panita.enriquecraft.staff.message;
 
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.core.ui.CopyText;
 import com.panita.enriquecraft.staff.data.Dimensions;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import com.panita.enriquecraft.staff.service.CoordinateService;
 import com.panita.enriquecraft.staff.service.Teleporter;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 import java.util.Locale;
 
@@ -32,6 +36,19 @@ public final class CoordinateView {
     /** The block a position is in, which is what staff read in menus; the exact position stays in the data. */
     public static int block(double value) {
         return (int) Math.floor(value);
+    }
+
+    /** The block position as staff read it, which a click copies as "x y z", ready to paste into a command. */
+    public static Component position(double x, double y, double z) {
+        int blockX = block(x);
+        int blockY = block(y);
+        int blockZ = block(z);
+        return CopyText.of(Component.literal(blockX + ", " + blockY + ", " + blockZ), blockX + " " + blockY + " " + blockZ);
+    }
+
+    /** The dimension in its color, which a click copies as its id. */
+    public static Component dimension(ResourceKey<Level> dimension) {
+        return CopyText.of(Dimensions.coloredName(dimension), dimension.identifier().toString());
     }
 
     public void saved(CommandSourceStack source, SavedCoordinate coordinate) {

@@ -10,10 +10,10 @@ import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.ConfirmMenu;
 import com.panita.enriquecraft.core.ui.CopyText;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
+import com.panita.enriquecraft.core.ui.Tints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiService;
-import com.panita.enriquecraft.staff.data.Dimensions;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import com.panita.enriquecraft.staff.message.StaffMessages;
@@ -96,9 +96,9 @@ public final class CoordinateDetailMenu extends UiMenu {
                     service.updateDisplayName(coordinate.name(), submit.text());
                     refresh();
                 });
-        UiElement teleport = builder.button(new ItemStack(Items.ENDER_PEARL),
+        UiElement teleport = builder.button(ButtonRole.NONE, new ItemStack(Items.ENDER_PEARL),
                 factory().text(StaffMessages.Coordinates.DETAIL_TELEPORT),
-                List.of(factory().text(StaffMessages.Coordinates.DETAIL_TELEPORT_LORE)), click -> {
+                List.of(factory().text(StaffMessages.Coordinates.DETAIL_TELEPORT_LORE)), Tints.PURPLE, click -> {
                     if (click.isLeft()) {
                         ui().close(click.player());
                         view.teleport(click.player(), coordinate);
@@ -132,17 +132,14 @@ public final class CoordinateDetailMenu extends UiMenu {
 
     private List<Component> lines(SavedCoordinate coordinate) {
         return List.of(
-                CopyText.of(factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_ID).with("id", coordinate.name())),
-                        coordinate.name()),
+                factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_ID).with("id", CopyText.of(coordinate.name()))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)
-                        .with("dimension", Dimensions.coloredName(coordinate.dimension()))),
+                        .with("dimension", CoordinateView.dimension(coordinate.dimension()))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_POSITION)
-                        .with("x", CoordinateView.block(coordinate.x()))
-                        .with("y", CoordinateView.block(coordinate.y()))
-                        .with("z", CoordinateView.block(coordinate.z()))),
+                        .with("position", CoordinateView.position(coordinate.x(), coordinate.y(), coordinate.z()))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_SAVED_BY)
-                        .with("player", PlayerHeads.inline(coordinate.savedBy(), Component.literal(coordinate.savedByName())))),
+                        .with("player", PlayerHeads.inline(coordinate.savedBy(), CopyText.of(coordinate.savedByName())))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DATE)
-                        .with("date", Timestamps.date(coordinate.savedAt()))));
+                        .with("date", CopyText.of(Timestamps.date(coordinate.savedAt())))));
     }
 }

@@ -46,7 +46,7 @@ class ItemMetadataTest {
 
     @Test
     void aStackShowsItsCountAgainstTheMaximum() {
-        assertTrue(lines(new ItemStack(Items.APPLE, 5)).contains("Cantidad: 5 / 64"));
+        assertTrue(lines(new ItemStack(Items.APPLE, 5)).stream().anyMatch(line -> line.endsWith("Cantidad: 5 / 64")));
     }
 
     @Test
@@ -54,7 +54,47 @@ class ItemMetadataTest {
         ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
         sword.setDamageValue(100);
 
-        assertTrue(lines(sword).contains("Durabilidad: " + (sword.getMaxDamage() - 100) + " / " + sword.getMaxDamage()));
+        String expected = "Durabilidad: " + (sword.getMaxDamage() - 100) + " / " + sword.getMaxDamage();
+        assertTrue(lines(sword).stream().anyMatch(line -> line.endsWith(expected)));
+    }
+
+    /** The texture of the picture a line starts with, or an empty string when it starts with text. */
+    private String iconOf(ItemStack stack, String text) {
+        Component line = ItemMetadata.lines(stack, factory).stream()
+                .filter(candidate -> candidate.getString().contains(text)).findFirst().orElseThrow();
+        // A line with a picture is an empty root holding the picture first, then the text.
+        Component first = line.getSiblings().isEmpty() ? line : line.getSiblings().getFirst();
+        if (first.getContents() instanceof net.minecraft.network.chat.contents.ObjectContents objects
+                && objects.contents() instanceof net.minecraft.network.chat.contents.objects.AtlasSprite sprite) {
+            return sprite.sprite().getPath();
+        }
+        return "";
+    }
+
+    @Test
+    void countStartsWithABundle() {
+        assertEquals("item/bundle", iconOf(new ItemStack(Items.APPLE, 2), "Cantidad"));
+    }
+
+    @Test
+    void durabilityStartsWithADiamondPickaxe() {
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        sword.setDamageValue(10);
+
+        assertEquals("item/diamond_pickaxe", iconOf(sword, "Durabilidad"));
+    }
+
+    @Test
+    void attributesStartWithAnEnchantedGoldenApple() {
+        assertEquals("item/enchanted_golden_apple", iconOf(new ItemStack(Items.DIAMOND_SWORD), "Atributos"));
+    }
+
+    @Test
+    void aLineWithoutAKindStartsWithText() {
+        ItemStack stick = new ItemStack(Items.STICK);
+        stick.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+
+        assertEquals("", iconOf(stick, "Otros datos"));
     }
 
     @Test

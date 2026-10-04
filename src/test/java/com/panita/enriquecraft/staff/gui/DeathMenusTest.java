@@ -4,6 +4,8 @@ import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.CopyTextTesting;
+import com.panita.enriquecraft.core.ui.Tints;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.core.message.Timestamps;
@@ -261,6 +263,26 @@ class DeathMenusTest {
         UiElement.Row actions = assertInstanceOf(UiElement.Row.class, root.children().get(3));
         assertEquals(false, actions.children().stream().anyMatch(child ->
                 child instanceof UiElement.Button button && button.icon().is(Items.PAPER)), "the data is on the screen already");
+    }
+
+    @Test
+    void theDeathsDimensionAndPositionCopyWhenClicked() {
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record(0, fullSample()), null, at(Duration.ofHours(1)));
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        List<Component> lines = assertInstanceOf(UiElement.Detail.class, root.children().get(0)).lines();
+
+        assertEquals(List.of("Nether -> minecraft:the_nether"), CopyTextTesting.clickable(lines.get(2)));
+        assertEquals(List.of("10, 64, -21 -> 10 64 -21"), CopyTextTesting.clickable(lines.get(3)));
+    }
+
+    @Test
+    void goingThereIsPurpleAndStoringInChestsIsBrown() {
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record(0, fullSample()), null, at(Duration.ofHours(1)));
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        UiElement.Row actions = assertInstanceOf(UiElement.Row.class, root.children().get(3));
+
+        assertEquals(Tints.PURPLE, assertInstanceOf(UiElement.Button.class, actions.children().get(1)).tint());
+        assertEquals(Tints.BROWN, assertInstanceOf(UiElement.Button.class, actions.children().get(3)).tint());
     }
 
     @Test

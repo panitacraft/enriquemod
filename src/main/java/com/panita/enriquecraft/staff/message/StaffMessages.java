@@ -44,7 +44,7 @@ public final class StaffMessages {
         public static final String ENTRY_NAME = "<gold>→ {name}";
         public static final String ENTRY_ID = "<gray>ID: <white>{id}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
-        public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
+        public static final String ENTRY_POSITION = "<gray>Posición: <white>{position}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardada por: <white>{player}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
 
@@ -142,7 +142,7 @@ public final class StaffMessages {
         public static final String ENTRY_NAME = "<red>☠ Muerte del {date}";
         public static final String ENTRY_CAUSE = "<gray>Causa: <white>{cause}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
-        public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
+        public static final String ENTRY_POSITION = "<gray>Posición: <white>{position}";
         public static final String ENTRY_ITEMS = "<gray>Objetos: <white>{count}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
         public static final String ENTRY_XP = "<gray>Nivel de experiencia: <white>{level}";

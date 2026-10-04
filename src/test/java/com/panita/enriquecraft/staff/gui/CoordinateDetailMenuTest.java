@@ -5,6 +5,8 @@ import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.message.Timestamps;
 import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.CopyTextTesting;
+import com.panita.enriquecraft.core.ui.Tints;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
@@ -171,6 +173,30 @@ class CoordinateDetailMenuTest {
         for (int slot : List.of(0, 3, 5, 8, 9, 12, 14, 17, 19, 20, 23, 26)) {
             assertEquals(filler, stack(menu, slot).getItem(), "slot " + slot);
         }
+    }
+
+    @Test
+    void everyFieldOfTheCoordinateCopiesItsValueWhenClicked() {
+        save("base", Items.DIAMOND);
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(detail("base")));
+        List<Component> lines = assertInstanceOf(UiElement.Detail.class, root.children().getFirst()).lines();
+
+        assertEquals(List.of("base -> base"), CopyTextTesting.clickable(lines.get(0)));
+        assertEquals(List.of("Nether -> minecraft:the_nether"), CopyTextTesting.clickable(lines.get(1)));
+        assertEquals(List.of("10, 64, -21 -> 10 64 -21"), CopyTextTesting.clickable(lines.get(2)),
+                "the position copies the way a command wants it");
+        assertEquals(List.of("<red>Ana -> <red>Ana"), CopyTextTesting.clickable(lines.get(3)),
+                "the head beside the name is not part of what copies");
+        assertEquals(List.of(Timestamps.date(WHEN) + " -> " + Timestamps.date(WHEN)), CopyTextTesting.clickable(lines.get(4)));
+    }
+
+    @Test
+    void goingThereIsPurpleLikeEveryTeleport() {
+        save("base", Items.DIAMOND);
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(detail("base")));
+        UiElement.Row controls = assertInstanceOf(UiElement.Row.class, root.children().getLast());
+
+        assertEquals(Tints.PURPLE, assertInstanceOf(UiElement.Button.class, controls.children().get(3)).tint());
     }
 
     @Test

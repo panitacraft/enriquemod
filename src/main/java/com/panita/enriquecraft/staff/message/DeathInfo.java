@@ -4,7 +4,6 @@ import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Timestamps;
 import com.panita.enriquecraft.staff.data.DeathRecord;
-import com.panita.enriquecraft.staff.data.Dimensions;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -25,11 +24,9 @@ public final class DeathInfo {
         List<Component> lines = new ArrayList<>();
         lines.add(factory.text(Message.plain(StaffMessages.Deaths.ENTRY_CAUSE).with("cause", record.cause())));
         lines.add(factory.text(Message.plain(StaffMessages.Deaths.ENTRY_DIMENSION)
-                .with("dimension", Dimensions.coloredName(record.dimension()))));
+                .with("dimension", CoordinateView.dimension(record.dimension()))));
         lines.add(factory.text(Message.plain(StaffMessages.Deaths.ENTRY_POSITION)
-                .with("x", CoordinateView.block(record.x()))
-                .with("y", CoordinateView.block(record.y()))
-                .with("z", CoordinateView.block(record.z()))));
+                .with("position", CoordinateView.position(record.x(), record.y(), record.z()))));
         restored(record, factory).ifPresent(lines::add);
         return lines;
     }

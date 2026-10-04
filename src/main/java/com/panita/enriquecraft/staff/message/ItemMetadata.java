@@ -2,6 +2,7 @@ package com.panita.enriquecraft.staff.message;
 
 import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.Message;
+import com.panita.enriquecraft.core.ui.ItemIcons;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -10,7 +11,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
@@ -58,10 +61,10 @@ public final class ItemMetadata {
 
     private void describe(ItemStack stack) {
         if (stack.getCount() > 1 || stack.getMaxStackSize() > 1) {
-            value(StaffMessages.Items.META_COUNT, stack.getCount() + " / " + stack.getMaxStackSize());
+            value(Items.BUNDLE, StaffMessages.Items.META_COUNT, stack.getCount() + " / " + stack.getMaxStackSize());
         }
         if (stack.getMaxDamage() > 0) {
-            value(StaffMessages.Items.META_DURABILITY, (stack.getMaxDamage() - stack.getDamageValue()) + " / " + stack.getMaxDamage());
+            value(Items.DIAMOND_PICKAXE, StaffMessages.Items.META_DURABILITY, (stack.getMaxDamage() - stack.getDamageValue()) + " / " + stack.getMaxDamage());
         }
         enchantments(StaffMessages.Items.META_ENCHANTMENTS, stack.get(DataComponents.ENCHANTMENTS));
         enchantments(StaffMessages.Items.META_STORED_ENCHANTMENTS, stack.get(DataComponents.STORED_ENCHANTMENTS));
@@ -99,7 +102,7 @@ public final class ItemMetadata {
         if (enchantments == null || enchantments.isEmpty()) {
             return;
         }
-        section(label);
+        section(Items.ENCHANTED_BOOK, label);
         enchantments.entrySet().forEach(entry -> {
             Holder<Enchantment> enchantment = entry.getKey();
             // Plain text: the game's own enchantment name carries a color of its own that would hide ours.
@@ -111,7 +114,7 @@ public final class ItemMetadata {
         if (modifiers == null || modifiers.modifiers().isEmpty()) {
             return;
         }
-        section(StaffMessages.Items.META_ATTRIBUTES);
+        section(Items.ENCHANTED_GOLDEN_APPLE, StaffMessages.Items.META_ATTRIBUTES);
         for (ItemAttributeModifiers.Entry entry : modifiers.modifiers()) {
             AttributeModifier modifier = entry.modifier();
             line(StaffMessages.Items.META_ATTRIBUTE, attributeName(entry.attribute()) + " " + amount(modifier) + " ("
@@ -182,16 +185,21 @@ public final class ItemMetadata {
         return key == null ? "?" : key.toString();
     }
 
-    private void value(String label, String value) {
-        lines.add(factory.text(Message.plain(StaffMessages.Items.META_LINE).with("label", label).with("value", value)));
+    /** A plain fact, led by the picture of an item that stands for it. */
+    private void value(Item icon, String label, String value) {
+        lines.add(withIcon(icon, factory.text(Message.plain(StaffMessages.Items.META_LINE).with("label", label).with("value", value))));
     }
 
     private void detail(String label, String value) {
         lines.add(factory.text(Message.plain(StaffMessages.Items.META_LINE_DETAIL).with("label", label).with("value", value)));
     }
 
-    private void section(String label) {
-        lines.add(factory.text(Message.plain(StaffMessages.Items.META_SECTION).with("label", label)));
+    private void section(Item icon, String label) {
+        lines.add(withIcon(icon, factory.text(Message.plain(StaffMessages.Items.META_SECTION).with("label", label))));
+    }
+
+    private static Component withIcon(Item icon, Component line) {
+        return Component.empty().append(ItemIcons.of(icon)).append(line);
     }
 
     /** A child of a section, in the color the template gives its kind. */

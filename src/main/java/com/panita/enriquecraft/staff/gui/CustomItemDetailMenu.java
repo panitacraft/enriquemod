@@ -147,8 +147,7 @@ public final class CustomItemDetailMenu extends UiMenu {
     /** What the mod itself knows: the id, who saved the item and when. */
     private List<Component> ownLines(SavedItem item) {
         return List.of(
-                CopyText.of(factory().text(Message.plain(StaffMessages.Items.ENTRY_ID).with("id", "enriquecraft:" + item.name())),
-                        "enriquecraft:" + item.name()),
+                factory().text(Message.plain(StaffMessages.Items.ENTRY_ID).with("id", CopyText.of("enriquecraft:" + item.name()))),
                 factory().text(Message.plain(StaffMessages.Items.ENTRY_SAVED_BY)
                         .with("player", PlayerHeads.inline(item.savedBy(), Component.literal(item.savedByName())))),
                 factory().text(Message.plain(StaffMessages.Items.ENTRY_DATE)

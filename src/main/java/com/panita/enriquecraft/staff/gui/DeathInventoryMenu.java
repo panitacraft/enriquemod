@@ -8,6 +8,7 @@ import com.panita.enriquecraft.core.ui.ChestStyle;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.ConfirmMenu;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
+import com.panita.enriquecraft.core.ui.Tints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiClick;
 import com.panita.enriquecraft.core.ui.UiMenu;
@@ -129,17 +130,17 @@ public final class DeathInventoryMenu extends UiMenu {
         UiElement.Spacer none = new UiElement.Spacer();
         UiElement back = builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(StaffMessages.Deaths.BACK),
                 List.of(), click -> previous().open(click.player()));
-        UiElement teleport = action(builder, ButtonRole.NONE, Items.ENDER_PEARL, StaffMessages.Deaths.TELEPORT_NAME,
+        UiElement teleport = action(builder, ButtonRole.NONE, Tints.PURPLE, Items.ENDER_PEARL, StaffMessages.Deaths.TELEPORT_NAME,
                 StaffMessages.Deaths.TELEPORT_LORE, List.of(), click -> {
                     ui().close(click.player());
                     view.teleport(click.player(), record);
                 });
-        UiElement chests = action(builder, ButtonRole.NONE, Items.CHEST, StaffMessages.Deaths.CHESTS_NAME, StaffMessages.Deaths.CHESTS_LORE,
+        UiElement chests = action(builder, ButtonRole.NONE, Tints.BROWN, Items.CHEST, StaffMessages.Deaths.CHESTS_NAME, StaffMessages.Deaths.CHESTS_LORE,
                 List.of(), click -> view.chestsGiven(click.player(), record,
                         service.giveChests(click.player(), record, this::chestName)));
-        UiElement restore = action(builder, ButtonRole.SUCCESS, Items.EMERALD_BLOCK, StaffMessages.Deaths.RESTORE_NAME,
+        UiElement restore = action(builder, ButtonRole.SUCCESS, UiElement.Button.NO_TINT, Items.EMERALD_BLOCK, StaffMessages.Deaths.RESTORE_NAME,
                 StaffMessages.Deaths.RESTORE_LORE, restoreWarnings(), click -> restore(click.player()));
-        UiElement delete = action(builder, ButtonRole.DANGER, Items.LAVA_BUCKET, StaffMessages.Deaths.DELETE_NAME,
+        UiElement delete = action(builder, ButtonRole.DANGER, UiElement.Button.NO_TINT, Items.LAVA_BUCKET, StaffMessages.Deaths.DELETE_NAME,
                 StaffMessages.Deaths.DELETE_LORE, List.of(), click -> confirmDelete().open(click.player()));
         List<UiElement> row = new ArrayList<>(List.of(back, teleport, none, chests));
         row.add(withInfo ? info(builder) : none);
@@ -161,11 +162,11 @@ public final class DeathInventoryMenu extends UiMenu {
     }
 
     /** A button that runs on a plain left click. */
-    private UiElement action(UiBuilder builder, ButtonRole role, Item icon, String name, String lore, List<String> warnings,
+    private UiElement action(UiBuilder builder, ButtonRole role, int tint, Item icon, String name, String lore, List<String> warnings,
                              Consumer<UiClick> onClick) {
         List<Component> tooltip = new ArrayList<>(List.of(factory().text(lore)));
         warnings.forEach(warning -> tooltip.add(factory().text(warning)));
-        return builder.button(role, new ItemStack(icon), factory().text(name), tooltip, click -> {
+        return builder.button(role, new ItemStack(icon), factory().text(name), tooltip, tint, click -> {
             if (click.isLeft()) {
                 onClick.accept(click);
             }
