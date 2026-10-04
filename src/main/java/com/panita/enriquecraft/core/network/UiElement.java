@@ -88,6 +88,16 @@ public sealed interface UiElement {
         }
     }
 
+    /**
+     * One thing shown in full: its item, its name and some lines about it. The client companion draws the
+     * item large with the text under it; a chest shows the item with the name and the lines as its tooltip.
+     */
+    record Detail(ItemStack icon, Component title, List<Component> lines) implements UiElement {
+        public Detail {
+            lines = List.copyOf(lines);
+        }
+    }
+
     /** An empty cell that keeps its neighbours in place. */
     record Spacer() implements UiElement {
     }

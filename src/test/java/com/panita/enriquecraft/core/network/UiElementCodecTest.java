@@ -204,4 +204,18 @@ final class UiElementCodecTest {
 
         assertThrows(DecoderException.class, () -> decode(buffer));
     }
+
+    @Test
+    void aDetailSurvivesARoundTrip() {
+        UiElement detail = new UiElement.Detail(new ItemStack(Items.DIAMOND), Component.literal("Base"),
+                List.of(Component.literal("uno"), Component.literal("dos")));
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(buffer, detail);
+
+        UiElement.Detail decoded = assertInstanceOf(UiElement.Detail.class, decode(buffer));
+        assertEquals(Items.DIAMOND, decoded.icon().getItem());
+        assertEquals("Base", decoded.title().getString());
+        assertEquals(List.of("uno", "dos"), decoded.lines().stream().map(Component::getString).toList());
+    }
 }

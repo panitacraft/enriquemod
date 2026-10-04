@@ -98,6 +98,6 @@ public final class UiService {
         }
         UiLayout layout = menu.layout(0);
         int session = sessions.begin(player.getUUID(), menu, layout);
-        ServerPlayNetworking.send(player, new OpenUiS2C(session, menu.title(), layout.root()));
+        ServerPlayNetworking.send(player, new OpenUiS2C(session, menu.title(), menu.icon(), layout.root()));
     }
 }

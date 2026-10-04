@@ -5,6 +5,7 @@ import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * A screen shown to one player, described once and shown the best way their client allows: as the
@@ -35,6 +36,11 @@ public abstract class UiMenu {
 
     /** The screen as it is right now. */
     protected abstract UiElement describe(UiBuilder builder);
+
+    /** An item shown beside the title by the client companion; none by default. A chest has no place for it. */
+    protected ItemStack icon() {
+        return ItemStack.EMPTY;
+    }
 
     /** How a chest decorates the screen; see {@link ChestLayout}. */
     protected ChestStyle chestStyle() {

@@ -249,4 +249,26 @@ class ChestLayoutTest {
 
         assertNull(UiTesting.itemAt(menu, 0));
     }
+
+    @Test
+    void aDetailIsShownAsItsItemWithTheTextAsTooltip() {
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Detail(new ItemStack(Items.DIAMOND),
+                Component.literal("Base"), List.of(Component.literal("uno"), Component.literal("dos"))));
+
+        UiTesting.drawAsChest(menu);
+
+        ItemStack shown = UiTesting.itemAt(menu, 4).stack();
+        assertEquals(Items.DIAMOND, shown.getItem());
+        assertEquals("Base", shown.get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals(List.of("uno", "dos"), shown.get(DataComponents.LORE).lines().stream().map(Component::getString).toList());
+    }
+
+    @Test
+    void aDetailWithoutAnIconIsShownAsPaper() {
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Detail(ItemStack.EMPTY, Component.literal("x"), List.of()));
+
+        UiTesting.drawAsChest(menu);
+
+        assertEquals(Items.PAPER, UiTesting.itemAt(menu, 4).stack().getItem());
+    }
 }

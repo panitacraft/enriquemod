@@ -28,10 +28,11 @@ final class UiPayloadsTest {
         UiElement tree = new UiElement.Row(List.of(
                 new UiElement.Button(5, ButtonRole.NONE, new ItemStack(Items.COMPASS), Component.literal("Base"), List.of())));
 
-        OpenUiS2C decoded = roundTrip(OpenUiS2C.STREAM_CODEC, new OpenUiS2C(12, Component.literal("Título"), tree));
+        OpenUiS2C decoded = roundTrip(OpenUiS2C.STREAM_CODEC, new OpenUiS2C(12, Component.literal("Título"), new ItemStack(Items.COMPASS), tree));
 
         assertEquals(12, decoded.sessionId());
         assertEquals("Título", decoded.title().getString());
+        assertEquals(Items.COMPASS, decoded.icon().getItem());
         UiElement.Row row = assertInstanceOf(UiElement.Row.class, decoded.root());
         assertEquals(5, assertInstanceOf(UiElement.Button.class, row.children().getFirst()).id());
     }
