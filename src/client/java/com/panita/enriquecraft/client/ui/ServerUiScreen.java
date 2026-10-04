@@ -3,6 +3,7 @@ package com.panita.enriquecraft.client.ui;
 import com.panita.enriquecraft.core.network.UiClickC2S;
 import com.panita.enriquecraft.core.network.UiClosedC2S;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.network.UiSelectC2S;
 import com.panita.enriquecraft.core.network.UiSubmitC2S;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -11,6 +12,8 @@ import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -37,6 +40,8 @@ final class ServerUiScreen extends Screen implements UiActions {
     private final int sessionId;
     private final ItemStack icon;
     private UiElement root;
+    private ScreenParts parts = ScreenParts.split(new UiElement.Spacer());
+    private List<UiDropdownWidget> dropdowns = List.of();
     private LinearLayout content;
     private FrameLayout header;
     private FrameLayout footer;
@@ -60,7 +65,7 @@ final class ServerUiScreen extends Screen implements UiActions {
 
     @Override
     protected void init() {
-        ScreenParts parts = ScreenParts.split(root);
+        parts = ScreenParts.split(root);
         UiLayouts layouts = new UiLayouts(font, this);
 
         LinearLayout headerStart = LinearLayout.horizontal().spacing(8);
@@ -73,13 +78,13 @@ final class ServerUiScreen extends Screen implements UiActions {
         }
         headerStart.addChild(new UiTitleWidget(font, title, TITLE_SCALE), settings -> settings.alignVerticallyMiddle());
         headerStart.arrangeElements();
-        UiButtonWidget close = UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> onClose());
+        UiButtonWidget close = UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
 
         LayoutElement body = layouts.build(parts.body());
         arrange(body);
 
-        LinearLayout footerStart = layouts.row(List.<UiElement>copyOf(parts.inputs()));
-        LinearLayout footerMiddle = layouts.row(parts.actions());
+        LinearLayout footerStart = layouts.row(parts.fields());
+        LinearLayout footerMiddle = layouts.footerActions(parts.actions());
         LinearLayout footerEnd = pager(parts);
         arrange(footerStart);
         arrange(footerMiddle);
@@ -110,6 +115,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         content.arrangeElements();
         FrameLayout.centerInRectangle(content, 0, 0, width, height);
         content.visitWidgets(this::addRenderableWidget);
+        dropdowns = layouts.dropdowns();
     }
 
     /** The page buttons with the page indicator between them; empty when the screen is not a list. */
@@ -146,6 +152,47 @@ final class ServerUiScreen extends Screen implements UiActions {
     }
 
     @Override
+    public void select(int elementId, int option) {
+        ClientPlayNetworking.send(new UiSelectC2S(sessionId, elementId, option));
+    }
+
+    /** Closes the whole screen, whatever it was opened from. */
+    private void closeAll() {
+        super.onClose();
+    }
+
+    /** Escape goes back to the screen this one was opened from, and closes only when there is none. */
+    @Override
+    public void onClose() {
+        if (parts.back() != null) {
+            press(parts.back().id(), 0, false);
+        } else {
+            closeAll();
+        }
+    }
+
+    /** An open list takes its clicks before anything under it. */
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        for (UiDropdownWidget dropdown : dropdowns) {
+            if (dropdown.clickList(event)) {
+                return true;
+            }
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    /** Escape closes an open list before it does anything else. */
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape() && dropdowns.stream().anyMatch(UiDropdownWidget::isOpen)) {
+            dropdowns.forEach(UiDropdownWidget::close);
+            return true;
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         int left = content.getX() - PADDING;
         int top = content.getY() - PADDING;
@@ -161,6 +208,7 @@ final class ServerUiScreen extends Screen implements UiActions {
             graphics.fill(left + 1, footerDividerY, left + panelWidth - 1, footerDividerY + 1, UiTheme.DIVIDER);
         }
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        dropdowns.forEach(dropdown -> dropdown.extractList(graphics, mouseX, mouseY));
     }
 
     /** The world keeps running behind a server screen, as it does behind a chest. */

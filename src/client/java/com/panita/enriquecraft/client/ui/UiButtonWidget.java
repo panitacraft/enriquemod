@@ -21,23 +21,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A button of a server-described screen, drawn flat in the screen's theme. It comes in three looks:
- * a cell shows only its item, with the name and details in the tooltip, so many fit in a grid; an
- * action shows its item and label; a glyph is a single character, used for navigation. Left and
- * right clicks are both reported, since the server decides what each of them does.
+ * A button of a server-described screen, drawn flat in the screen's theme. It comes in four looks:
+ * a cell shows only its item, with the name and details in the tooltip, so many fit in a grid or a
+ * row of actions; an action shows its item and label; a glyph is a single character, used for
+ * navigation; a big one shows one item large, such as the icon of a detail view. Left and right clicks
+ * are both reported, since the server decides what each of them does.
  */
 final class UiButtonWidget extends AbstractButton {
 
     static final int CELL_SIZE = 22;
     static final int ACTION_HEIGHT = 20;
     static final int GLYPH_SIZE = 18;
+    static final int BIG_ICON = 48;
 
+    private static final int BIG_SIZE = BIG_ICON + 8;
     private static final int ICON_SIZE = 16;
     private static final int PADDING = 5;
     private static final int MIN_ACTION_WIDTH = 40;
+    private static final int BADGE_COLOR = 0xFF7FE3A0;
 
     private enum Look {
-        CELL, ACTION, GLYPH
+        CELL, ACTION, GLYPH, BIG
     }
 
     /** What happens when the button is pressed. */
@@ -50,24 +54,26 @@ final class UiButtonWidget extends AbstractButton {
     private final Look look;
     private final ItemStack icon;
     private final String glyph;
+    private final String badge;
     private final boolean danger;
     private final Press press;
 
     private UiButtonWidget(Font font, Look look, int width, int height, Component message, ItemStack icon, String glyph,
-                           boolean danger, Press press) {
+                           String badge, boolean danger, Press press) {
         super(0, 0, width, height, message);
         this.font = font;
         this.look = look;
         this.icon = icon;
         this.glyph = glyph;
+        this.badge = badge;
         this.danger = danger;
         this.press = press;
     }
 
-    /** A button of a grid: only its item, with everything else in the tooltip. */
+    /** A button that is only its item, with everything else in the tooltip. */
     static UiButtonWidget cell(Font font, UiElement.Button button, UiActions actions) {
         UiButtonWidget widget = new UiButtonWidget(font, Look.CELL, CELL_SIZE, CELL_SIZE, shownLabel(button), button.icon(),
-                null, false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
+                null, button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.describe(button, true);
         return widget;
     }
@@ -77,8 +83,8 @@ final class UiButtonWidget extends AbstractButton {
         Component label = shownLabel(button);
         int iconSpace = button.icon().isEmpty() ? 0 : ICON_SIZE + PADDING;
         int width = Math.max(MIN_ACTION_WIDTH, PADDING + iconSpace + font.width(label) + PADDING);
-        UiButtonWidget widget = new UiButtonWidget(font, Look.ACTION, width, ACTION_HEIGHT, label, button.icon(), null, false,
-                (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        UiButtonWidget widget = new UiButtonWidget(font, Look.ACTION, width, ACTION_HEIGHT, label, button.icon(), null,
+                button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.describe(button, false);
         return widget;
     }
@@ -92,10 +98,20 @@ final class UiButtonWidget extends AbstractButton {
      */
     static UiButtonWidget glyph(Font font, String glyph, Component hint, boolean danger, boolean enabled, Press press) {
         UiButtonWidget widget = new UiButtonWidget(font, Look.GLYPH, GLYPH_SIZE, GLYPH_SIZE,
-                hint == null ? Component.literal(glyph) : hint, ItemStack.EMPTY, glyph, danger, press);
+                hint == null ? Component.literal(glyph) : hint, ItemStack.EMPTY, glyph, "", danger, press);
         widget.active = enabled;
         if (hint != null && enabled) {
             widget.setTooltip(Tooltip.create(hint));
+        }
+        return widget;
+    }
+
+    /** One item drawn large that can be pressed, such as the icon of a detail view. */
+    static UiButtonWidget big(Font font, ItemStack icon, List<Component> tooltip, Press press) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.BIG, BIG_SIZE, BIG_SIZE, Component.empty(), icon, null, "",
+                false, press);
+        if (!tooltip.isEmpty()) {
+            widget.setTooltip(Tooltip.create(joined(tooltip)));
         }
         return widget;
     }
@@ -160,6 +176,7 @@ final class UiButtonWidget extends AbstractButton {
                 int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
                 graphics.item(icon, iconX, iconY);
                 graphics.itemDecorations(font, icon, iconX, iconY);
+                drawBadge(graphics, getX() + getWidth() - 1, getY() + getHeight() - 1);
             }
             case ACTION -> {
                 surface(graphics, hovered);
@@ -168,6 +185,7 @@ final class UiButtonWidget extends AbstractButton {
                     int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
                     graphics.item(icon, textX, iconY);
                     graphics.itemDecorations(font, icon, textX, iconY);
+                    drawBadge(graphics, textX + ICON_SIZE, getY() + (getHeight() + ICON_SIZE) / 2);
                     textX += ICON_SIZE + PADDING;
                 }
                 graphics.text(font, getMessage(), textX, getY() + (getHeight() - font.lineHeight) / 2, UiTheme.TEXT);
@@ -181,6 +199,21 @@ final class UiButtonWidget extends AbstractButton {
                 graphics.text(font, glyph, getX() + (getWidth() - font.width(glyph)) / 2,
                         getY() + (getHeight() - font.lineHeight) / 2 + 1, color);
             }
+            case BIG -> {
+                surface(graphics, hovered);
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(getX() + (getWidth() - BIG_ICON) / 2.0F, getY() + (getHeight() - BIG_ICON) / 2.0F);
+                graphics.pose().scale(BIG_ICON / (float) ICON_SIZE, BIG_ICON / (float) ICON_SIZE);
+                graphics.item(icon, 0, 0);
+                graphics.pose().popMatrix();
+            }
+        }
+    }
+
+    /** The mark of a button that has one, such as a check, in the lower right corner of its item. */
+    private void drawBadge(GuiGraphicsExtractor graphics, int right, int bottom) {
+        if (!badge.isEmpty()) {
+            graphics.text(font, badge, right - font.width(badge), bottom - font.lineHeight, BADGE_COLOR);
         }
     }
 

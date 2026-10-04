@@ -16,4 +16,10 @@ interface UiActions {
      * @param text      the value the player confirmed
      */
     void submit(int elementId, String text);
+
+    /**
+     * @param elementId the id the server gave the dropdown
+     * @param option    the position of the option the player chose
+     */
+    void select(int elementId, int option);
 }

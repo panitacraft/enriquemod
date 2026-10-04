@@ -16,11 +16,11 @@ import java.util.List;
  * @param page     where a list is, or null when the screen is not a list
  * @param previous the button that shows the previous page, or null when there is none
  * @param next     the button that shows the next page, or null when there is none
- * @param inputs   the text fields of the controls
+ * @param fields   the text fields and dropdowns of the controls
  * @param actions  the other buttons of the controls
  */
 record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, UiElement.Button previous,
-                   UiElement.Button next, List<UiElement.TextInput> inputs, List<UiElement> actions) {
+                   UiElement.Button next, List<UiElement> fields, List<UiElement> actions) {
 
     static ScreenParts split(UiElement root) {
         if (!(root instanceof UiElement.Column column) || column.children().size() < 2
@@ -35,7 +35,7 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, U
         UiElement.Page page = null;
         UiElement.Button previous = null;
         UiElement.Button next = null;
-        List<UiElement.TextInput> inputs = new ArrayList<>();
+        List<UiElement> fields = new ArrayList<>();
         List<UiElement> actions = new ArrayList<>();
         for (UiElement element : controls.children()) {
             switch (element) {
@@ -50,11 +50,12 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, U
                     }
                 }
                 case UiElement.Page indicator -> page = indicator;
-                case UiElement.TextInput input -> inputs.add(input);
+                case UiElement.TextInput input -> fields.add(input);
+                case UiElement.Dropdown dropdown -> fields.add(dropdown);
                 case UiElement.Spacer ignored -> { }
                 default -> actions.add(element);
             }
         }
-        return new ScreenParts(body, back, page, previous, next, inputs, actions);
+        return new ScreenParts(body, back, page, previous, next, fields, actions);
     }
 }
