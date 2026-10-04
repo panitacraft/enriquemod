@@ -31,7 +31,12 @@ public final class ItemBuilder {
     }
 
     public ItemBuilder name(Message message) {
-        stack.set(DataComponents.CUSTOM_NAME, factory.text(message));
+        return name(factory.text(message));
+    }
+
+    /** Uses a text that is already formatted, for example one that travels inside a screen description. */
+    public ItemBuilder name(Component name) {
+        stack.set(DataComponents.CUSTOM_NAME, name);
         return this;
     }
 
@@ -47,6 +52,12 @@ public final class ItemBuilder {
         for (Message message : messages) {
             addLore(factory.text(message));
         }
+        return this;
+    }
+
+    /** Adds lines that are already formatted, after any lore already present. */
+    public ItemBuilder loreLines(List<Component> lines) {
+        lines.forEach(this::addLore);
         return this;
     }
 

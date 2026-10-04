@@ -15,6 +15,7 @@ import com.panita.enriquecraft.core.message.channel.TitleChannel;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.service.HelpService;
 import com.panita.enriquecraft.core.service.ServerInfoService;
+import com.panita.enriquecraft.core.ui.UiService;
 
 /**
  * The core module: messaging, help, and the general commands every other module relies on.
@@ -33,7 +34,9 @@ public final class CoreModule implements EnriquecraftModule {
         services.register(HelpService.class, helpService);
         services.register(HelpView.class, new HelpView(messenger, helpService));
         services.register(ConfigReportView.class, new ConfigReportView(messenger));
-        services.register(MenuFactory.class, new MenuFactory(formatter));
+        MenuFactory menuFactory = new MenuFactory(formatter);
+        services.register(MenuFactory.class, menuFactory);
+        services.register(UiService.class, new UiService(menuFactory));
         services.register(PlayerOnly.class, new PlayerOnly(messenger));
         services.register(ServerInfoService.class, new ServerInfoService());
         services.register(ClientCapabilities.class, new ClientCapabilities());

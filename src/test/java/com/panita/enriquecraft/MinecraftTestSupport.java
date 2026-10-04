@@ -8,6 +8,7 @@ import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.message.channel.BossBarChannel;
 import com.panita.enriquecraft.core.message.channel.TitleChannel;
+import com.panita.enriquecraft.core.ui.UiService;
 import io.netty.buffer.Unpooled;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.HolderLookup;
@@ -63,6 +64,10 @@ public final class MinecraftTestSupport {
 
     public static MenuFactory menuFactory(Path configDirectory) {
         return new MenuFactory(formatter(configDirectory));
+    }
+
+    public static UiService uiService(Path configDirectory) {
+        return new UiService(menuFactory(configDirectory));
     }
 
     /** A buffer that can carry items and components, as the ones of a real connection can. */
