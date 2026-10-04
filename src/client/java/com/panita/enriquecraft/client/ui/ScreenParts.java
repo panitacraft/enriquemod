@@ -46,7 +46,7 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, U
                         case BACK -> back = button;
                         case PREVIOUS -> previous = button;
                         case NEXT -> next = button;
-                        case NONE -> actions.add(button);
+                        case NONE, CONFIRM -> actions.add(button);
                     }
                 }
                 case UiElement.Page indicator -> page = indicator;

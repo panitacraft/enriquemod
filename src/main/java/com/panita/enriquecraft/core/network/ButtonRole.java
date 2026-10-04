@@ -18,6 +18,9 @@ public enum ButtonRole {
     /** Shows the previous page of a list. */
     PREVIOUS,
 
+    /** Confirms what the screen asks about; the client companion shows it as a labeled button. */
+    CONFIRM,
+
     /** Shows the next page of a list. */
     NEXT
 }

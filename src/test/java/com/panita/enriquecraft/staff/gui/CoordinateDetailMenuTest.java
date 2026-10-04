@@ -81,7 +81,7 @@ class CoordinateDetailMenuTest {
                 "Dimensión: Nether",
                 "Posición: 10.50, 64.00, -20.25",
                 "Guardada por: <red>Ana",
-                "Fecha: " + Timestamps.format(WHEN)),
+                "Fecha: " + Timestamps.date(WHEN)),
                 shown.get(DataComponents.LORE).lines().stream().map(Component::getString).toList());
     }
 

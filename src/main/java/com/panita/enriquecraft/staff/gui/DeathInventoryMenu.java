@@ -121,7 +121,7 @@ public final class DeathInventoryMenu extends UiMenu {
 
     private List<Component> infoLines() {
         return List.of(
-                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_NAME).with("date", Timestamps.format(record.diedAt()))),
+                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_NAME).with("date", Timestamps.dateTime(record.diedAt()))),
                 factory().text(Message.plain(StaffMessages.Deaths.ENTRY_CAUSE).with("cause", record.cause())),
                 factory().text(Message.plain(StaffMessages.Deaths.ENTRY_DIMENSION)
                         .with("dimension", Dimensions.displayName(record.dimension()))),

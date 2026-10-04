@@ -53,7 +53,7 @@ public final class CustomItemView {
                 .with("item", item.stack().getHoverName())
                 .with("count", item.stack().getCount()));
         messenger.send(source, Message.plain(StaffMessages.Items.INFO_SAVED_BY).with("player", item.savedByName()));
-        messenger.send(source, Message.plain(StaffMessages.Items.INFO_DATE).with("date", Timestamps.format(item.savedAt())));
+        messenger.send(source, Message.plain(StaffMessages.Items.INFO_DATE).with("date", Timestamps.dateTime(item.savedAt())));
     }
 
     /** Gives the staff member an exact copy; whatever does not fit in the inventory drops at their feet. */

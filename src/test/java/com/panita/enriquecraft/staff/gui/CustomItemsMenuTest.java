@@ -76,7 +76,7 @@ class CustomItemsMenuTest {
                 "",
                 "ID: enriquecraft:espada",
                 "Guardado por: <red>Ana",
-                "Fecha: " + Timestamps.format(NOW),
+                "Fecha: " + Timestamps.dateTime(NOW),
                 "Clic izquierdo para obtener una copia"), lore);
     }
 

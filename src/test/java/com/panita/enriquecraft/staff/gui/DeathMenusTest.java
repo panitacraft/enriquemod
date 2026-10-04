@@ -176,7 +176,7 @@ class DeathMenusTest {
 
         ItemStack first = UiTesting.itemAt(list, 10).stack();
         assertEquals(Items.SKELETON_SKULL, first.getItem());
-        assertEquals("Muerte del " + Timestamps.format(newer.diedAt()), first.get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("Muerte del " + Timestamps.dateTime(newer.diedAt()), first.get(DataComponents.CUSTOM_NAME).getString());
         List<String> lore = first.get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
         assertEquals(List.of(
                 "Causa: Ana was slain by <red>Zombie",
@@ -185,7 +185,7 @@ class DeathMenusTest {
                 "Objetos: 1",
                 "Nivel de experiencia: 17",
                 "Clic izquierdo para inspeccionar"), lore);
-        assertEquals("Muerte del " + Timestamps.format(older.diedAt()),
+        assertEquals("Muerte del " + Timestamps.dateTime(older.diedAt()),
                 UiTesting.itemAt(list, 11).stack().get(DataComponents.CUSTOM_NAME).getString());
         assertEquals("Objetos: 7", UiTesting.itemAt(list, 11).stack().get(DataComponents.LORE).lines().get(3).getString());
     }

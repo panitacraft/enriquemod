@@ -52,7 +52,7 @@ public final class CustomItemsMenu extends UiPagedMenu<SavedItem> {
                 factory().text(Message.plain("")),
                 factory().text(Message.plain(StaffMessages.Items.ENTRY_ID).with("id", "enriquecraft:" + item.name())),
                 factory().text(Message.plain(StaffMessages.Items.ENTRY_SAVED_BY).with("player", item.savedByName())),
-                factory().text(Message.plain(StaffMessages.Items.ENTRY_DATE).with("date", Timestamps.format(item.savedAt()))),
+                factory().text(Message.plain(StaffMessages.Items.ENTRY_DATE).with("date", Timestamps.dateTime(item.savedAt()))),
                 factory().text(StaffMessages.Items.ENTRY_CLICK_HINT));
         // No label: the button is the item itself, so it keeps its own name and lore.
         return builder.button(item.stack().copy(), Component.empty(), details, click -> {

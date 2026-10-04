@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.client.ui;
 
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -93,7 +94,7 @@ final class UiLayouts {
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
-                case FOOTER -> button.icon().isEmpty()
+                case FOOTER -> button.icon().isEmpty() || button.role() == ButtonRole.CONFIRM
                         ? UiButtonWidget.action(font, button, actions)
                         : UiButtonWidget.cell(font, button, actions);
                 default -> UiButtonWidget.action(font, button, actions);

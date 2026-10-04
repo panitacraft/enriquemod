@@ -56,7 +56,7 @@ public final class DeathListMenu extends UiPagedMenu<DeathRecord> {
     @Override
     protected UiElement render(UiBuilder builder, DeathRecord record) {
         Component name = factory().text(
-                Message.plain(StaffMessages.Deaths.ENTRY_NAME).with("date", Timestamps.format(record.diedAt())));
+                Message.plain(StaffMessages.Deaths.ENTRY_NAME).with("date", Timestamps.dateTime(record.diedAt())));
         List<Component> details = List.of(
                 factory().text(Message.plain(StaffMessages.Deaths.ENTRY_CAUSE).with("cause", record.cause())),
                 factory().text(Message.plain(StaffMessages.Deaths.ENTRY_DIMENSION)

@@ -101,6 +101,6 @@ public final class CoordinateDetailMenu extends UiMenu {
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_SAVED_BY)
                         .with("player", coordinate.savedByName())),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DATE)
-                        .with("date", Timestamps.format(coordinate.savedAt()))));
+                        .with("date", Timestamps.date(coordinate.savedAt()))));
     }
 }
