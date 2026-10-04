@@ -13,6 +13,11 @@ public final class CopyText {
     private CopyText() {
     }
 
+    /** The value as plain text, marked so that a click copies it as it reads. */
+    public static Component of(String value) {
+        return of(Component.literal(value), value);
+    }
+
     /** The text, marked so that a click copies {@code value}. */
     public static Component of(Component text, String value) {
         return text.copy().withStyle(style -> style.withClickEvent(new ClickEvent.CopyToClipboard(value)));

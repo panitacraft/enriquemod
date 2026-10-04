@@ -53,16 +53,28 @@ public sealed interface UiElement {
      * @param id    identifies the button within one description; unique, assigned by the server
      * @param role  what the button is for; navigation roles are placed by the client companion
      * @param badge a short mark drawn over the item, such as a check; empty for none
+     * @param tint  an RGB color the client companion gives an action instead of the one its role implies, so a
+     *              kind of action can have an identity of its own, or {@link #NO_TINT}
      */
-    record Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge)
-            implements UiElement {
+    record Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge,
+                  int tint) implements UiElement {
         public static final int MAX_BADGE_LENGTH = 4;
+        public static final int NO_TINT = 0;
+        public static final int MAX_TINT = 0xFFFFFF;
 
         public Button {
             tooltip = List.copyOf(tooltip);
             if (badge.length() > MAX_BADGE_LENGTH) {
                 throw new IllegalArgumentException("A badge is at most " + MAX_BADGE_LENGTH + " characters: " + badge);
             }
+            if (tint < NO_TINT || tint > MAX_TINT) {
+                throw new IllegalArgumentException("A tint is an RGB color, not " + tint);
+            }
+        }
+
+        /** A button without a tint. */
+        public Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge) {
+            this(id, role, icon, label, tooltip, badge, NO_TINT);
         }
 
         /** A button without a badge. */

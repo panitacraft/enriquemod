@@ -255,4 +255,25 @@ final class UiElementCodecTest {
             assertEquals(role, assertInstanceOf(UiElement.Button.class, decode(buffer)).role());
         }
     }
+
+    @Test
+    void aTintedButtonSurvivesARoundTripAndAnUntintedOneStaysUntinted() {
+        RegistryFriendlyByteBuf tinted = MinecraftTestSupport.buffer();
+        RegistryFriendlyByteBuf plain = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(tinted, new UiElement.Button(1, com.panita.enriquecraft.core.network.ButtonRole.NONE,
+                new ItemStack(Items.CHEST), Component.literal("x"), List.of(), "", 0x9C6B3A));
+        UiElementCodec.STREAM_CODEC.encode(plain, new UiElement.Button(2, com.panita.enriquecraft.core.network.ButtonRole.NONE,
+                new ItemStack(Items.CHEST), Component.literal("x"), List.of()));
+
+        assertEquals(0x9C6B3A, assertInstanceOf(UiElement.Button.class, decode(tinted)).tint());
+        assertEquals(UiElement.Button.NO_TINT, assertInstanceOf(UiElement.Button.class, decode(plain)).tint());
+    }
+
+    @Test
+    void aTintMustBeAnRgbColor() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> new UiElement.Button(1,
+                com.panita.enriquecraft.core.network.ButtonRole.NONE, new ItemStack(Items.CHEST), Component.literal("x"),
+                List.of(), "", 0x1000000));
+    }
 }

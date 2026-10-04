@@ -53,9 +53,25 @@ public final class UiBuilder {
      */
     public UiElement.Button button(ButtonRole role, ItemStack icon, Component label, List<Component> tooltip,
                                    String badge, Consumer<UiClick> action) {
+        return button(role, icon, label, tooltip, badge, UiElement.Button.NO_TINT, action);
+    }
+
+    /**
+     * An action in a color of its own, for a kind of action that should be recognized at a glance. A chest
+     * ignores the color.
+     *
+     * @param tint an RGB color, see {@link Tints}
+     */
+    public UiElement.Button button(ButtonRole role, ItemStack icon, Component label, List<Component> tooltip,
+                                   int tint, Consumer<UiClick> action) {
+        return button(role, icon, label, tooltip, "", tint, action);
+    }
+
+    private UiElement.Button button(ButtonRole role, ItemStack icon, Component label, List<Component> tooltip,
+                                    String badge, int tint, Consumer<UiClick> action) {
         int id = nextId++;
         handlers.put(id, action);
-        return new UiElement.Button(id, role, icon, label, tooltip, badge);
+        return new UiElement.Button(id, role, icon, label, tooltip, badge, tint);
     }
 
     /**
