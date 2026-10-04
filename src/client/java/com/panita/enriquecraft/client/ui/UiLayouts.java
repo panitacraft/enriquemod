@@ -28,6 +28,7 @@ final class UiLayouts {
     private static final int DETAIL_ICON = UiButtonWidget.BIG_ICON;
     // A scroll area never takes more than this share of the window, whatever the server asked for.
     private static final double MAX_SCROLL_SHARE = 0.45;
+    private static final int MIN_SCROLL_HEIGHT = 48;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -37,10 +38,22 @@ final class UiLayouts {
     private final Font font;
     private final UiActions actions;
     private final List<UiDropdownWidget> dropdowns = new ArrayList<>();
+    private final int scrollReduction;
+    private boolean hasScroll;
 
-    UiLayouts(Font font, UiActions actions) {
+    /**
+     * @param scrollReduction how much shorter than they would be scroll areas should be built, to make the
+     *                        screen fit the window
+     */
+    UiLayouts(Font font, UiActions actions, int scrollReduction) {
         this.font = font;
         this.actions = actions;
+        this.scrollReduction = scrollReduction;
+    }
+
+    /** Whether anything built so far can give height back by scrolling. */
+    boolean hasScroll() {
+        return hasScroll;
     }
 
     LayoutElement build(UiElement element) {
@@ -122,7 +135,10 @@ final class UiLayouts {
         content.addChild(build(scroll.content(), Place.COLUMN));
         content.arrangeElements();
         int windowShare = (int) (Minecraft.getInstance().getWindow().getGuiScaledHeight() * MAX_SCROLL_SHARE);
-        int height = Math.min(scroll.maxHeight(), windowShare);
+        // The layout is exactly as tall as the limit it is given, so the limit must not exceed the content.
+        hasScroll = true;
+        int height = Math.min(content.getHeight(), Math.min(scroll.maxHeight(), windowShare));
+        height = Math.min(height, Math.max(MIN_SCROLL_HEIGHT, height - scrollReduction));
         ScrollableLayout scrollable = new ScrollableLayout(Minecraft.getInstance(), content, height);
         scrollable.arrangeElements();
         return scrollable;

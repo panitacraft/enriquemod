@@ -36,6 +36,7 @@ final class ServerUiScreen extends Screen implements UiActions {
     private static final int ACCENT_WIDTH = 28;
     private static final int ICON_SIZE = 20;
     private static final float TITLE_SCALE = 1.4F;
+    private static final int SCREEN_MARGIN = 16;
 
     private final int sessionId;
     private final ItemStack icon;
@@ -66,7 +67,20 @@ final class ServerUiScreen extends Screen implements UiActions {
     @Override
     protected void init() {
         parts = ScreenParts.split(root);
-        UiLayouts layouts = new UiLayouts(font, this);
+        UiLayouts layouts = new UiLayouts(font, this, 0);
+        assemble(layouts);
+        // A panel taller than the window gives the difference back through its scroll areas.
+        int overflow = content.getHeight() - (height - SCREEN_MARGIN);
+        if (overflow > 0 && layouts.hasScroll()) {
+            layouts = new UiLayouts(font, this, overflow);
+            assemble(layouts);
+        }
+        content.visitWidgets(this::addRenderableWidget);
+        dropdowns = layouts.dropdowns();
+    }
+
+    /** Builds the whole panel, header to footer, and centers it. */
+    private void assemble(UiLayouts layouts) {
 
         LinearLayout headerStart = LinearLayout.horizontal().spacing(8);
         if (parts.back() != null) {
@@ -114,8 +128,6 @@ final class ServerUiScreen extends Screen implements UiActions {
         }
         content.arrangeElements();
         FrameLayout.centerInRectangle(content, 0, 0, width, height);
-        content.visitWidgets(this::addRenderableWidget);
-        dropdowns = layouts.dropdowns();
     }
 
     /** The page buttons with the page indicator between them; empty when the screen is not a list. */
@@ -128,7 +140,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         UiElement.Button next = parts.next();
         pager.addChild(UiButtonWidget.glyph(font, "<", previous == null ? null : previous.label(), false, previous != null,
                 (mouse, shift) -> press(previous.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
-        pager.addChild(new UiLayouts(font, this).text(Component.literal(parts.page().page() + " / " + parts.page().pages())),
+        pager.addChild(new UiLayouts(font, this, 0).text(Component.literal(parts.page().page() + " / " + parts.page().pages())),
                 settings -> settings.alignVerticallyMiddle());
         pager.addChild(UiButtonWidget.glyph(font, ">", next == null ? null : next.label(), false, next != null,
                 (mouse, shift) -> press(next.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
