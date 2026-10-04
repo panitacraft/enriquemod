@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class CustomItemsMenuTest {
 
@@ -63,7 +64,7 @@ class CustomItemsMenuTest {
     }
 
     @Test
-    void theItemKeepsItsOwnLoreAndGetsTheDetailsAfterIt() {
+    void theItemKeepsItsOwnLoreThenGetsTheIdAndWhatEachClickDoes() {
         ItemStack held = new ItemStack(Items.DIAMOND_SWORD);
         held.set(DataComponents.LORE, new ItemLore(List.of(Component.literal("Lore propio"))));
         save("espada", held);
@@ -74,11 +75,37 @@ class CustomItemsMenuTest {
         assertEquals(List.of(
                 "Lore propio",
                 "",
-                "ID: enriquecraft:espada",
-                "Guardado por: <red>Ana",
-                "Fecha: " + Timestamps.dateTime(NOW),
-                "Clic izquierdo para obtener una copia"), lore);
+                "enriquecraft:espada",
+                "",
+                "◀ Clic Izq. para obtener copia",
+                "▶ Clic Der. para info"), lore);
     }
+
+    @Test
+    void theSearchBoxMatchesTheIdAndTheDisplayName() {
+        ItemStack named = new ItemStack(Items.DIAMOND_SWORD);
+        named.set(DataComponents.CUSTOM_NAME, Component.literal("Filo de fuego"));
+        save("espada", named);
+        save("palo", new ItemStack(Items.STICK));
+        UiTesting.drawAsChest(menu);
+
+        UiTesting.submit(menu, "fuego");
+        assertEquals(Items.DIAMOND_SWORD, shown(10).getItem());
+        assertNull(UiTesting.itemAt(menu, 11));
+
+        UiTesting.submit(menu, "palo");
+        assertEquals(Items.STICK, shown(10).getItem());
+    }
+
+    @Test
+    void thereIsNoFilterDropdown() {
+        save("espada", new ItemStack(Items.DIAMOND_SWORD));
+
+        UiTesting.drawAsChest(menu);
+
+        assertEquals(Items.STAINED_GLASS_PANE.black(), shown(47).getItem());
+    }
+
 
     @Test
     void showingTheItemNeverChangesTheSavedOne() {

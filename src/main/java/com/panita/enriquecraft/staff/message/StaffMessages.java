@@ -85,9 +85,39 @@ public final class StaffMessages {
 
         public static final String MENU_TITLE = "Objetos personalizados";
         public static final String ENTRY_ID = "<gray>ID: <white>{id}";
+        public static final String ENTRY_ID_LINE = "<dark_gray>{id}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardado por: <white>{player}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
-        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para obtener una copia";
+
+        public static final String DETAIL_TITLE = "Detalles del objeto";
+        public static final String DETAIL_GET = "<green>Obtener copia";
+        public static final String DETAIL_GET_LORE = "<gray>Te da una copia de este objeto";
+        public static final String DETAIL_DELETE = "<red>Eliminar";
+        public static final String DETAIL_DELETE_LORE = "<gray>Elimina este objeto guardado";
+
+        public static final String DELETE_TITLE = "Eliminar objeto";
+        public static final String DELETE_HEADLINE = "<red>¿Eliminar <gold>{name}</gold>?";
+        public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
+
+        public static final String META_LINE = "<gray>{label}: <white>{value}";
+        public static final String META_SECTION = "<gray>{label}:";
+        public static final String META_VALUE = "<white>  {value}";
+        public static final String META_NONE = "<gray>Sin datos adicionales";
+        public static final String META_COUNT = "Cantidad";
+        public static final String META_DURABILITY = "Durabilidad";
+        public static final String META_ENCHANTMENTS = "Encantamientos";
+        public static final String META_STORED_ENCHANTMENTS = "Encantamientos guardados";
+        public static final String META_ATTRIBUTES = "Atributos";
+        public static final String META_MODEL_DATA = "Datos de modelo";
+        public static final String META_ITEM_MODEL = "Modelo";
+        public static final String META_DYE = "Color";
+        public static final String META_UNBREAKABLE = "Irrompible";
+        public static final String META_YES = "Sí";
+        public static final String META_REPAIR_COST = "Coste de reparación";
+        public static final String META_RARITY = "Rareza";
+        public static final String META_TOOLTIP_HIDDEN = "Tooltip oculto";
+        public static final String META_HIDDEN_COMPONENTS = "Datos ocultos en el tooltip";
+        public static final String META_OTHER = "Otros datos";
 
         private Items() {
         }
