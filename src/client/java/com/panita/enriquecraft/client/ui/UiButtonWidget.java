@@ -229,8 +229,8 @@ final class UiButtonWidget extends AbstractButton {
                 drawBadge(graphics, getX() + getWidth() - 1, getY() + getHeight() - 1);
             }
             case TOOL -> {
-                UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverFill : tone.fill,
-                        hovered ? tone.hoverBorder : tone.border);
+                UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverFill() : tone.fill(),
+                        hovered ? tone.hoverBorder() : tone.border());
                 int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
                 int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
                 graphics.item(icon, iconX, iconY);
@@ -249,8 +249,8 @@ final class UiButtonWidget extends AbstractButton {
                         getY() + CARD_MARGIN + CARD_ICON + CARD_TITLE_GAP, UiTheme.TEXT);
             }
             case LABELED -> {
-                UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverBorder : tone.border,
-                        hovered ? tone.hoverBorder : tone.border);
+                UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverBorder() : tone.border(),
+                        hovered ? tone.hoverBorder() : tone.border());
                 graphics.text(font, getMessage(), getX() + (getWidth() - font.width(getMessage())) / 2,
                         getY() + (getHeight() - font.lineHeight) / 2 + 1, LABEL_COLOR);
             }

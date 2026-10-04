@@ -12,6 +12,8 @@ import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,10 +136,14 @@ final class UiLayouts {
 
     /**
      * An answer is a colored pill with its label; an action is its item on a tinted surface, red when it
-     * discards and green when it gives back, so no action looks like an item cell.
+     * discards, green when it gives back and in the color the server chose when it has one, so no action
+     * looks like an item cell.
      */
     private UiButtonWidget footerButton(UiElement.Button button) {
         boolean withItem = !button.icon().isEmpty();
+        if (withItem && button.tint() != UiElement.Button.NO_TINT) {
+            return UiButtonWidget.tool(font, button, UiTheme.Tone.of(button.tint()), actions);
+        }
         return switch (button.role()) {
             case CONFIRM -> UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, actions);
             case CANCEL -> UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, actions);
@@ -176,11 +182,19 @@ final class UiLayouts {
         return scrollable;
     }
 
+    /**
+     * Heads and skulls are drawn smaller than other items: the game draws an item once at its normal size and
+     * stretches that, so the more a rounded model is stretched the blockier it gets.
+     */
+    private int largeIconSize(ItemStack stack) {
+        return compact || stack.is(ItemTags.SKULLS) ? COMPACT_ICON : DETAIL_ICON;
+    }
+
     /** The item large, its name under it, and the lines about it, all centered. */
     private LinearLayout detail(UiElement.Detail detail) {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
         if (!detail.icon().isEmpty()) {
-            int size = compact ? COMPACT_ICON : DETAIL_ICON;
+            int size = largeIconSize(detail.icon());
             LayoutElement icon = detail.iconId() == UiElement.Detail.NOT_PRESSABLE
                     ? new UiItemWidget(detail.icon(), size)
                     : UiButtonWidget.big(font, detail.icon(), size, detail.iconTooltip(),

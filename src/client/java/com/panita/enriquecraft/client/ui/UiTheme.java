@@ -23,22 +23,28 @@ final class UiTheme {
     static final int DANGER = 0xFFB3362F;
 
     /** What an action looks like, so it never resembles an item cell: a tinted surface per purpose. */
-    enum Tone {
-        ACTION(0xFF22344A, 0xFF2C4560, 0xFF4A7BB5, 0xFF6FA3E0),
-        SUCCESS(0xFF1F4D33, 0xFF286642, 0xFF3FA66B, 0xFF5FCB8D),
-        DANGER(0xFF5A2320, 0xFF7A2E2A, 0xFFB3362F, 0xFFE05A50);
+    record Tone(int fill, int hoverFill, int border, int hoverBorder) {
+        static final Tone ACTION = new Tone(0xFF22344A, 0xFF2C4560, 0xFF4A7BB5, 0xFF6FA3E0);
+        static final Tone SUCCESS = new Tone(0xFF1F4D33, 0xFF286642, 0xFF3FA66B, 0xFF5FCB8D);
+        static final Tone DANGER = new Tone(0xFF5A2320, 0xFF7A2E2A, 0xFFB3362F, 0xFFE05A50);
 
-        final int fill;
-        final int hoverFill;
-        final int border;
-        final int hoverBorder;
-
-        Tone(int fill, int hoverFill, int border, int hoverBorder) {
-            this.fill = fill;
-            this.hoverFill = hoverFill;
-            this.border = border;
-            this.hoverBorder = hoverBorder;
+        /** A tone built around one color the server chose: it is the border, and the surface is a dark shade of it. */
+        static Tone of(int rgb) {
+            int border = 0xFF000000 | rgb;
+            return new Tone(mix(border, 0xFF101010, 0.55F), mix(border, 0xFF101010, 0.4F), border,
+                    mix(border, 0xFFFFFFFF, 0.25F));
         }
+    }
+
+    /** Each color channel part of the way from {@code from} to {@code to}. */
+    private static int mix(int from, int to, float amount) {
+        int result = 0xFF000000;
+        for (int shift = 0; shift <= 16; shift += 8) {
+            int a = (from >> shift) & 0xFF;
+            int b = (to >> shift) & 0xFF;
+            result |= Math.round(a + (b - a) * amount) << shift;
+        }
+        return result;
     }
 
     /** The font of titles; defined in {@code assets/enriquecraft/font/title.json}. */

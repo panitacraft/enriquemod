@@ -16,6 +16,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import org.joml.Matrix3x2f;
 
 import java.util.List;
 
@@ -33,20 +34,23 @@ final class ServerUiScreen extends Screen implements UiActions {
     private static final int MIN_WIDTH = 180;
     private static final int HEADER_HEIGHT = 24;
     private static final int FOOTER_HEIGHT = 20;
-    private static final int ACCENT_WIDTH = 28;
     private static final int ICON_SIZE = 20;
     private static final float TITLE_SCALE = 1.4F;
     private static final int SCREEN_MARGIN = 16;
+    private static final long OPEN_MILLIS = 160;
+    private static final float OPEN_SCALE_FROM = 0.96F;
+    private static final float OPEN_SLIDE = 6.0F;
 
     private final int sessionId;
     private final ItemStack icon;
+    // Set when the screen is made, not when it is built, so a refresh does not play the opening again.
+    private final long openedAt = System.currentTimeMillis();
     private UiElement root;
     private ScreenParts parts = ScreenParts.split(new UiElement.Spacer());
     private List<UiDropdownWidget> dropdowns = List.of();
     private List<UiTitleEditWidget> titleEdits = List.of();
     private LinearLayout content;
     private FrameLayout header;
-    private UiTitleWidget titleWidget;
     private FrameLayout footer;
 
     ServerUiScreen(int sessionId, Component title, ItemStack icon, UiElement root) {
@@ -112,8 +116,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         if (!icon.isEmpty()) {
             headerStart.addChild(new UiItemWidget(icon, ICON_SIZE), settings -> settings.alignVerticallyMiddle());
         }
-        titleWidget = new UiTitleWidget(font, title, TITLE_SCALE);
-        headerStart.addChild(titleWidget, settings -> settings.alignVerticallyMiddle());
+        headerStart.addChild(new UiTitleWidget(font, title, TITLE_SCALE), settings -> settings.alignVerticallyMiddle());
         headerStart.arrangeElements();
         UiButtonWidget close = UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
 
@@ -236,8 +239,40 @@ final class ServerUiScreen extends Screen implements UiActions {
         return super.keyPressed(event);
     }
 
+    /** How far the opening has come, from 0 to 1, easing out so it settles softly. */
+    private float openProgress() {
+        float time = Math.min(1.0F, (System.currentTimeMillis() - openedAt) / (float) OPEN_MILLIS);
+        float remaining = 1.0F - time;
+        return 1.0F - remaining * remaining * remaining;
+    }
+
+    /** The dimming behind the panel stays put while the panel eases in. */
+    @Override
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        Matrix3x2f transform = new Matrix3x2f(graphics.pose());
+        graphics.pose().identity();
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
+        graphics.pose().set(transform);
+    }
+
+    /** The panel grows a little and rises into place when it opens, so moving between screens is gentle. */
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        float opened = openProgress();
+        graphics.pose().pushMatrix();
+        if (opened < 1.0F) {
+            float centerX = width / 2.0F;
+            float centerY = height / 2.0F;
+            float scale = OPEN_SCALE_FROM + (1.0F - OPEN_SCALE_FROM) * opened;
+            graphics.pose().translate(centerX, centerY + (1.0F - opened) * OPEN_SLIDE);
+            graphics.pose().scale(scale, scale);
+            graphics.pose().translate(-centerX, -centerY);
+        }
+        extractPanel(graphics, mouseX, mouseY, partialTick);
+        graphics.pose().popMatrix();
+    }
+
+    private void extractPanel(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         int left = content.getX() - PADDING;
         int top = content.getY() - PADDING;
         int panelWidth = content.getWidth() + 2 * PADDING;
@@ -245,9 +280,8 @@ final class ServerUiScreen extends Screen implements UiActions {
         UiTheme.pill(graphics, left, top, panelWidth, panelHeight, UiTheme.PANEL, UiTheme.PANEL_BORDER);
 
         int dividerY = header.getY() + header.getHeight() + SECTION_SPACING / 2;
-        graphics.fill(left + 1, dividerY, left + panelWidth - 1, dividerY + 1, UiTheme.DIVIDER);
-        // The accent sits under the start of the title, wherever the back arrow and icon leave it.
-        graphics.fill(titleWidget.getX(), dividerY, titleWidget.getX() + ACCENT_WIDTH, dividerY + 1, UiTheme.ACCENT);
+        // The whole line under the header is the accent color, so the bar reads as one piece.
+        graphics.fill(left + 1, dividerY, left + panelWidth - 1, dividerY + 1, UiTheme.ACCENT);
         if (footer != null) {
             int footerDividerY = footer.getY() - SECTION_SPACING / 2;
             graphics.fill(left + 1, footerDividerY, left + panelWidth - 1, footerDividerY + 1, UiTheme.DIVIDER);
