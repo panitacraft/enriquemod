@@ -101,4 +101,21 @@ class CoordinateServiceTest {
 
         assertEquals(List.of(saved), reloaded.all());
     }
+
+    @Test
+    void updatingTheIconChangesOnlyThatCoordinate() {
+        service.add(coordinate("base"));
+        service.add(coordinate("mina"));
+
+        assertTrue(service.updateIcon("BASE", Items.DIAMOND));
+
+        assertEquals(Items.DIAMOND, service.find("base").orElseThrow().icon());
+        assertEquals(Items.COMPASS, service.find("mina").orElseThrow().icon());
+        assertEquals("base", service.find("base").orElseThrow().name());
+    }
+
+    @Test
+    void updatingTheIconOfAMissingCoordinateDoesNothing() {
+        assertFalse(service.updateIcon("nope", Items.DIAMOND));
+    }
 }

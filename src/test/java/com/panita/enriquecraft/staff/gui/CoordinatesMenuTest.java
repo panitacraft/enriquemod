@@ -8,7 +8,9 @@ import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import com.panita.enriquecraft.staff.service.CoordinateService;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -61,33 +63,46 @@ class CoordinatesMenuTest {
 
         assertEquals(Items.COMPASS, shown(10).getItem());
         assertEquals(Items.BEACON, shown(11).getItem());
-        assertEquals("alfa", shown(10).get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("→ alfa", shown(10).get(DataComponents.CUSTOM_NAME).getString());
     }
 
     @Test
-    void theLoreShowsEveryDetail() {
+    void theTooltipShowsOnlyTheDimensionAndWhatEachClickDoes() {
         service.add(coordinate("base", Items.COMPASS));
 
         UiTesting.drawAsChest(menu);
 
         List<String> lore = shown(10).get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
         assertEquals(List.of(
-                "Dimensión: Nether",
-                "Posición: 10.50, 64.00, -20.25",
-                "Guardada por: <red>Ana",
-                "Fecha: " + com.panita.enriquecraft.core.message.Timestamps.format(Instant.parse("2026-09-30T04:12:00Z")),
-                "Clic izquierdo para teletransportarte"), lore);
+                "Nether",
+                "",
+                "◀ Clic izquierdo para ir",
+                "▶ Clic derecho para ver más detalles"), lore);
     }
 
     @Test
-    void namesAndPlayersAreShownLiterallyNotAsTags() {
+    void theDimensionTakesItsOwnColor() {
         service.add(coordinate("base", Items.COMPASS));
 
         UiTesting.drawAsChest(menu);
 
-        assertEquals("Guardada por: <red>Ana",
-                shown(10).get(DataComponents.LORE).lines().get(2).getString());
+        Component dimension = shown(10).get(DataComponents.LORE).lines().getFirst();
+        assertEquals(TextColor.fromLegacyFormat(ChatFormatting.RED), firstColor(dimension));
     }
+
+    private static TextColor firstColor(Component component) {
+        if (component.getStyle().getColor() != null) {
+            return component.getStyle().getColor();
+        }
+        for (Component sibling : component.getSiblings()) {
+            TextColor color = firstColor(sibling);
+            if (color != null) {
+                return color;
+            }
+        }
+        return null;
+    }
+
 
     @Test
     void noCoordinatesShowsTheEmptyMarker() {
@@ -118,8 +133,8 @@ class CoordinatesMenuTest {
 
         UiTesting.submit(menu, "BASE");
 
-        assertEquals("Base_norte", shown(10).get(DataComponents.CUSTOM_NAME).getString());
-        assertEquals("base_sur", shown(11).get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("→ Base_norte", shown(10).get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("→ base_sur", shown(11).get(DataComponents.CUSTOM_NAME).getString());
         assertNull(UiTesting.itemAt(menu, 12));
     }
 }

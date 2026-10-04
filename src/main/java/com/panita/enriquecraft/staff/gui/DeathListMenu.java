@@ -39,6 +39,11 @@ public final class DeathListMenu extends UiPagedMenu<DeathRecord> {
     }
 
     @Override
+    protected ItemStack icon() {
+        return new ItemStack(Items.SKELETON_SKULL);
+    }
+
+    @Override
     protected Component title() {
         return factory().text(Message.plain(StaffMessages.Deaths.LIST_TITLE).with("player", playerName));
     }

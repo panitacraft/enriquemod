@@ -48,6 +48,11 @@ public final class DeathInventoryMenu extends UiMenu {
     }
 
     @Override
+    protected ItemStack icon() {
+        return new ItemStack(Items.SKELETON_SKULL);
+    }
+
+    @Override
     protected Component title() {
         return factory().text(Message.plain(StaffMessages.Deaths.INSPECT_TITLE).with("player", record.playerName()));
     }

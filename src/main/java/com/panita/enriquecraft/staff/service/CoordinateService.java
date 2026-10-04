@@ -4,6 +4,7 @@ import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,6 +58,18 @@ public final class CoordinateService {
         updated.add(coordinate);
         store.set(List.copyOf(updated));
         return AddResult.ADDED;
+    }
+
+    /** Changes the item a coordinate is shown as; returns whether there was a coordinate with that name. */
+    public boolean updateIcon(String name, Item icon) {
+        Optional<SavedCoordinate> existing = find(name);
+        if (existing.isEmpty()) {
+            return false;
+        }
+        List<SavedCoordinate> updated = new ArrayList<>(store.get());
+        updated.set(updated.indexOf(existing.get()), existing.get().withIcon(icon));
+        store.set(List.copyOf(updated));
+        return true;
     }
 
     /** Removes a coordinate; returns whether there was one with that name. */

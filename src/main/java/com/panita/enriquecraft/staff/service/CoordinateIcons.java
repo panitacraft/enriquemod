@@ -18,7 +18,7 @@ public final class CoordinateIcons {
     }
 
     /** The available icons. Built on first use, because items exist only once Minecraft has started. */
-    static List<Item> all() {
+    public static List<Item> all() {
         if (icons == null) {
             icons = List.of(
                     // Navigation and markers

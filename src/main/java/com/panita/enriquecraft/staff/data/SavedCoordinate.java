@@ -45,6 +45,11 @@ public record SavedCoordinate(String name, ResourceKey<Level> dimension, double 
             BuiltInRegistries.ITEM.byNameCodec().fieldOf("icon").forGetter(SavedCoordinate::icon)
     ).apply(instance, SavedCoordinate::new));
 
+    /** The same coordinate, shown as another item. */
+    public SavedCoordinate withIcon(Item icon) {
+        return new SavedCoordinate(name, dimension, x, y, z, yaw, pitch, savedBy, savedByName, savedAt, icon);
+    }
+
     /** Saves the exact spot where a player stands now. */
     public static SavedCoordinate at(ServerPlayer player, String name, Item icon) {
         return new SavedCoordinate(name, player.level().dimension(), player.getX(), player.getY(), player.getZ(),

@@ -31,12 +31,26 @@ public final class StaffMessages {
         public static final String DIMENSION_UNAVAILABLE = "La dimensión de <bold>{name}</bold> ({dimension}) no está disponible.";
 
         public static final String MENU_TITLE = "Coordenadas guardadas";
-        public static final String ENTRY_NAME = "<gold>{name}";
+        public static final String ENTRY_NAME = "<gold>→ {name}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
+        public static final String ENTRY_DIMENSION_ONLY = "{dimension}";
         public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardada por: <white>{player}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
-        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para teletransportarte";
+        public static final String ENTRY_GO_HINT = "<green>◀ Clic izquierdo para ir";
+        public static final String ENTRY_DETAILS_HINT = "<aqua>▶ Clic derecho para ver más detalles";
+
+        public static final String DETAIL_TITLE = "Detalles de la coordenada";
+        public static final String DETAIL_NAME = "<gold>{name}";
+        public static final String DETAIL_TELEPORT = "<green>Ir a esta coordenada";
+        public static final String DETAIL_TELEPORT_LORE = "<gray>Te teletransporta hasta aquí";
+        public static final String DETAIL_CHANGE_ICON = "<yellow>Cambiar icono";
+        public static final String DETAIL_CHANGE_ICON_LORE = "<gray>Elige otro objeto para representarla";
+        public static final String BACK = "<yellow>Volver";
+
+        public static final String ICON_MENU_TITLE = "Elegir icono";
+        public static final String ICON_PICK_HINT = "<green>Clic izquierdo para elegir este icono";
+        public static final String ICON_CURRENT = "<yellow>Icono actual";
 
         private Coordinates() {
         }

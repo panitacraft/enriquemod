@@ -11,6 +11,8 @@ import com.panita.enriquecraft.staff.message.CustomItemView;
 import com.panita.enriquecraft.staff.message.StaffMessages;
 import com.panita.enriquecraft.staff.service.CustomItemService;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.List;
 
@@ -27,6 +29,11 @@ public final class CustomItemsMenu extends UiPagedMenu<SavedItem> {
         super(ui, null);
         this.service = service;
         this.view = view;
+    }
+
+    @Override
+    protected ItemStack icon() {
+        return new ItemStack(Items.ENCHANTED_BOOK);
     }
 
     @Override
