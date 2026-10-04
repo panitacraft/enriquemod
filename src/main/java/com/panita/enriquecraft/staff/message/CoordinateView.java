@@ -29,6 +29,11 @@ public final class CoordinateView {
         return String.format(Locale.ROOT, "%.2f", value);
     }
 
+    /** The block a position is in, which is what staff read in menus; the exact position stays in the data. */
+    public static int block(double value) {
+        return (int) Math.floor(value);
+    }
+
     public void saved(CommandSourceStack source, SavedCoordinate coordinate) {
         messenger.send(source, Message.success(StaffMessages.Coordinates.SAVED).prefixed()
                 .with("name", coordinate.name())

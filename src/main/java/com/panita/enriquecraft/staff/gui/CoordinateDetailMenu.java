@@ -123,17 +123,12 @@ public final class CoordinateDetailMenu extends UiMenu {
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)
                         .with("dimension", Dimensions.coloredName(coordinate.dimension()))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_POSITION)
-                        .with("x", blockCoordinate(coordinate.x()))
-                        .with("y", blockCoordinate(coordinate.y()))
-                        .with("z", blockCoordinate(coordinate.z()))),
+                        .with("x", CoordinateView.block(coordinate.x()))
+                        .with("y", CoordinateView.block(coordinate.y()))
+                        .with("z", CoordinateView.block(coordinate.z()))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_SAVED_BY)
                         .with("player", PlayerHeads.inline(coordinate.savedBy(), Component.literal(coordinate.savedByName())))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DATE)
                         .with("date", Timestamps.date(coordinate.savedAt()))));
-    }
-
-    /** The block a position is in, which is what staff read; the exact position is kept in the data. */
-    private static int blockCoordinate(double value) {
-        return (int) Math.floor(value);
     }
 }
