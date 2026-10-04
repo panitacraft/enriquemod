@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * One description of a screen: what to show, and what each of its buttons and fields does.
+ * One description of a screen: what to show, and what each of its buttons, fields and dropdowns does.
  *
  * @param nextId the first id a later description of the same screen may use
  */
 record UiLayout(UiElement root, Map<Integer, Consumer<UiClick>> handlers, Map<Integer, UiInputHandler> inputs,
-                int nextId) {
+                Map<Integer, UiSelectHandler> selects, int nextId) {
 }

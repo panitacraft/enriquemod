@@ -50,7 +50,7 @@ final class UiChestMenu extends Menu {
     }
 
     private ChestLayout.Plan describe() {
-        return ChestLayout.plan(owner.layout(0), owner.chestStyle(), owner.factory(),
+        return ChestLayout.plan(owner.chestLayout(0), owner.chestStyle(), owner.factory(),
                 (player, field, answer) -> owner.ui().prompt(player, owner, field, answer));
     }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A screen that lists entries a page at a time in a grid. Below the grid are previous, close (with
@@ -35,6 +36,11 @@ public abstract class UiPagedMenu<T> extends UiMenu {
 
     private int page;
     private String query = "";
+    private int filterIndex;
+
+    /** One way to narrow the list: what it is called in the dropdown, and which entries it keeps. */
+    public record Filter<T>(Component name, Predicate<T> keeps) {
+    }
 
     protected UiPagedMenu(UiService ui, UiMenu previous) {
         super(ui, previous);
@@ -51,6 +57,15 @@ public abstract class UiPagedMenu<T> extends UiMenu {
      */
     protected Optional<Function<T, String>> searchText() {
         return Optional.empty();
+    }
+
+    /**
+     * The ways the list can be narrowed, offered in a dropdown next to the search box together with "no
+     * filter". Read again on every refresh, so the options can follow the data; at most
+     * {@link UiElement.Dropdown#MAX_OPTIONS} minus one are shown. None by default.
+     */
+    protected List<Filter<T>> filters() {
+        return List.of();
     }
 
     @Override
@@ -75,12 +90,24 @@ public abstract class UiPagedMenu<T> extends UiMenu {
     }
 
     private List<T> matching(List<T> all) {
+        List<T> kept = all;
         Optional<Function<T, String>> text = searchText();
-        if (text.isEmpty() || query.isEmpty()) {
-            return all;
+        if (text.isPresent() && !query.isEmpty()) {
+            String needle = query.toLowerCase(Locale.ROOT);
+            kept = kept.stream().filter(entry -> text.get().apply(entry).toLowerCase(Locale.ROOT).contains(needle)).toList();
         }
-        String needle = query.toLowerCase(Locale.ROOT);
-        return all.stream().filter(entry -> text.get().apply(entry).toLowerCase(Locale.ROOT).contains(needle)).toList();
+        List<Filter<T>> filters = shownFilters();
+        filterIndex = Math.min(filterIndex, filters.size());
+        if (filterIndex > 0) {
+            Predicate<T> keeps = filters.get(filterIndex - 1).keeps();
+            kept = kept.stream().filter(keeps).toList();
+        }
+        return kept;
+    }
+
+    private List<Filter<T>> shownFilters() {
+        List<Filter<T>> filters = filters();
+        return filters.subList(0, Math.min(filters.size(), UiElement.Dropdown.MAX_OPTIONS - 1));
     }
 
     /** One chest row wide, so the controls land on the bottom edge of the frame. */
@@ -95,6 +122,7 @@ public abstract class UiPagedMenu<T> extends UiMenu {
                         click -> previous().open(click.player()));
         UiElement search = searchText().isEmpty() ? none
                 : builder.input(factory().text(Messages.Gui.SEARCH), query, SEARCH_LENGTH, submit -> search(submit.text()));
+        UiElement filter = filterDropdown(builder, none);
         UiElement previousPage = PAGINATOR.hasPrevious(page) ? builder.button(ButtonRole.PREVIOUS, new ItemStack(Items.ARROW),
                 factory().text(Messages.Gui.PREVIOUS), List.of(), click -> turn(-1)) : none;
         UiElement close = builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE),
@@ -104,7 +132,23 @@ public abstract class UiPagedMenu<T> extends UiMenu {
 
         // The page indicator sits in a slot that is empty in a chest, so the chest looks as it always did.
         UiElement pageIndicator = new UiElement.Page(page + 1, PAGINATOR.pageCount(total));
-        return new UiElement.Row(List.of(back, search, none, previousPage, close, nextPage, pageIndicator, none, none));
+        return new UiElement.Row(List.of(back, search, filter, previousPage, close, nextPage, pageIndicator, none, none));
+    }
+
+    /** The dropdown that narrows the list, or a spacer when the menu has no filters. */
+    private UiElement filterDropdown(UiBuilder builder, UiElement none) {
+        List<Filter<T>> filters = shownFilters();
+        if (filters.isEmpty()) {
+            return none;
+        }
+        List<Component> options = new ArrayList<>();
+        options.add(factory().text(Messages.Gui.FILTER_NONE));
+        filters.forEach(filter -> options.add(filter.name()));
+        return builder.dropdown(factory().text(Messages.Gui.FILTER), options, filterIndex, select -> {
+            filterIndex = select.option();
+            page = 0;
+            refresh();
+        });
     }
 
     private void search(String text) {

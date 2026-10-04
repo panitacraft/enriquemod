@@ -31,6 +31,8 @@ public final class UiElementCodec {
     private static final byte TEXT_INPUT = 6;
     private static final byte PAGE = 7;
     private static final byte DETAIL = 8;
+    private static final byte SCROLL = 9;
+    private static final byte DROPDOWN = 10;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -80,6 +82,7 @@ public final class UiElementCodec {
                 ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, button.icon());
                 ComponentSerialization.STREAM_CODEC.encode(buffer, button.label());
                 TOOLTIP.encode(buffer, button.tooltip());
+                buffer.writeUtf(button.badge(), UiElement.Button.MAX_BADGE_LENGTH * 4);
             }
             case UiElement.TextInput input -> {
                 buffer.writeByte(TEXT_INPUT);
@@ -98,6 +101,20 @@ public final class UiElementCodec {
                 ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, detail.icon());
                 ComponentSerialization.STREAM_CODEC.encode(buffer, detail.title());
                 TOOLTIP.encode(buffer, detail.lines());
+                buffer.writeVarInt(detail.iconId() + 1);
+                TOOLTIP.encode(buffer, detail.iconTooltip());
+            }
+            case UiElement.Scroll scroll -> {
+                buffer.writeByte(SCROLL);
+                buffer.writeVarInt(scroll.maxHeight());
+                write(buffer, scroll.content(), depth + 1);
+            }
+            case UiElement.Dropdown dropdown -> {
+                buffer.writeByte(DROPDOWN);
+                buffer.writeVarInt(dropdown.id());
+                ComponentSerialization.STREAM_CODEC.encode(buffer, dropdown.label());
+                TOOLTIP.encode(buffer, dropdown.options());
+                buffer.writeVarInt(dropdown.selected());
             }
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
@@ -130,21 +147,56 @@ public final class UiElementCodec {
                 }
             }
             case LABEL -> new UiElement.Label(ComponentSerialization.STREAM_CODEC.decode(buffer));
-            case BUTTON -> new UiElement.Button(
-                    buffer.readVarInt(),
-                    buffer.readEnum(ButtonRole.class),
-                    ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
-                    ComponentSerialization.STREAM_CODEC.decode(buffer),
-                    TOOLTIP.decode(buffer));
+            case BUTTON -> readButton(buffer);
             case TEXT_INPUT -> readTextInput(buffer);
             case PAGE -> readPage(buffer);
             case DETAIL -> new UiElement.Detail(
                     ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
                     ComponentSerialization.STREAM_CODEC.decode(buffer),
+                    TOOLTIP.decode(buffer),
+                    buffer.readVarInt() - 1,
                     TOOLTIP.decode(buffer));
+            case SCROLL -> readScroll(buffer, depth);
+            case DROPDOWN -> readDropdown(buffer);
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
         };
+    }
+
+    private static UiElement readButton(RegistryFriendlyByteBuf buffer) {
+        int id = buffer.readVarInt();
+        ButtonRole role = buffer.readEnum(ButtonRole.class);
+        ItemStack icon = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer);
+        Component label = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        List<Component> tooltip = TOOLTIP.decode(buffer);
+        String badge = buffer.readUtf(UiElement.Button.MAX_BADGE_LENGTH * 4);
+        try {
+            return new UiElement.Button(id, role, icon, label, tooltip, badge);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
+    }
+
+    private static UiElement readScroll(RegistryFriendlyByteBuf buffer, int depth) {
+        int maxHeight = buffer.readVarInt();
+        UiElement content = read(buffer, depth + 1);
+        try {
+            return new UiElement.Scroll(content, maxHeight);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
+    }
+
+    private static UiElement readDropdown(RegistryFriendlyByteBuf buffer) {
+        int id = buffer.readVarInt();
+        Component label = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        List<Component> options = TOOLTIP.decode(buffer);
+        int selected = buffer.readVarInt();
+        try {
+            return new UiElement.Dropdown(id, label, options, selected);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
     }
 
     private static UiElement readPage(RegistryFriendlyByteBuf buffer) {

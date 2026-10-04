@@ -49,12 +49,58 @@ public sealed interface UiElement {
      * with an icon but no label stands for the item itself, and shows its name and tooltip, followed by
      * the extra tooltip lines.
      *
-     * @param id   identifies the button within one description; unique, assigned by the server
-     * @param role what the button is for; navigation roles are placed by the client companion
+     * @param id    identifies the button within one description; unique, assigned by the server
+     * @param role  what the button is for; navigation roles are placed by the client companion
+     * @param badge a short mark drawn over the item, such as a check; empty for none
      */
-    record Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip) implements UiElement {
+    record Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge)
+            implements UiElement {
+        public static final int MAX_BADGE_LENGTH = 4;
+
         public Button {
             tooltip = List.copyOf(tooltip);
+            if (badge.length() > MAX_BADGE_LENGTH) {
+                throw new IllegalArgumentException("A badge is at most " + MAX_BADGE_LENGTH + " characters: " + badge);
+            }
+        }
+
+        /** A button without a badge. */
+        public Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip) {
+            this(id, role, icon, label, tooltip, "");
+        }
+    }
+
+    /**
+     * A choice among a few options, shown as a button that opens a list. Choosing one tells the server
+     * its position; what to do about it is up to the server, which sends the screen again. A chest shows
+     * an item that moves to the next option on a left click and to the previous one on a right click.
+     *
+     * @param id       identifies the dropdown within one description; unique, assigned by the server
+     * @param label    names what is being chosen
+     * @param selected the position of the option chosen now
+     */
+    record Dropdown(int id, Component label, List<Component> options, int selected) implements UiElement {
+        public static final int MAX_OPTIONS = 32;
+
+        public Dropdown {
+            options = List.copyOf(options);
+            if (options.isEmpty() || options.size() > MAX_OPTIONS || selected < 0 || selected >= options.size()) {
+                throw new IllegalArgumentException("Option " + selected + " does not exist among " + options.size());
+            }
+        }
+    }
+
+    /**
+     * Content that may be taller than the space it gets, shown with a scroll bar by the client companion.
+     * A chest cannot scroll, so it shows the content as if it were not wrapped.
+     *
+     * @param maxHeight the most height, in GUI pixels, the content takes before it scrolls
+     */
+    record Scroll(UiElement content, int maxHeight) implements UiElement {
+        public Scroll {
+            if (maxHeight < 1) {
+                throw new IllegalArgumentException("A scroll area needs a positive height");
+            }
         }
     }
 
@@ -91,10 +137,23 @@ public sealed interface UiElement {
     /**
      * One thing shown in full: its item, its name and some lines about it. The client companion draws the
      * item large with the text under it; a chest shows the item with the name and the lines as its tooltip.
+     * The item can be pressable, for example to change it.
+     *
+     * @param iconId      identifies the pressable item within one description, or {@link #NOT_PRESSABLE}
+     * @param iconTooltip what pressing the item does, shown when hovering it
      */
-    record Detail(ItemStack icon, Component title, List<Component> lines) implements UiElement {
+    record Detail(ItemStack icon, Component title, List<Component> lines, int iconId, List<Component> iconTooltip)
+            implements UiElement {
+        public static final int NOT_PRESSABLE = -1;
+
         public Detail {
             lines = List.copyOf(lines);
+            iconTooltip = List.copyOf(iconTooltip);
+        }
+
+        /** A detail whose item cannot be pressed. */
+        public Detail(ItemStack icon, Component title, List<Component> lines) {
+            this(icon, title, lines, NOT_PRESSABLE, List.of());
         }
     }
 

@@ -41,6 +41,12 @@ public final class UiTesting {
         handler.action().accept(new UiSubmit(null, text));
     }
 
+    /** Chooses an option of the only dropdown of the menu, as a player picking it would. */
+    public static void select(UiMenu menu, int option) {
+        UiSelectHandler handler = menu.layout(0).selects().values().iterator().next();
+        handler.action().accept(new UiSelect(null, option));
+    }
+
     /** The tree the menu currently describes. */
     public static UiElement root(UiMenu menu) {
         return menu.layout(0).root();

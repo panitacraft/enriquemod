@@ -37,6 +37,15 @@ public abstract class UiMenu {
     /** The screen as it is right now. */
     protected abstract UiElement describe(UiBuilder builder);
 
+    /**
+     * The screen as a chest shows it; by default the same as {@link #describe}. Override it only when a
+     * chest needs another arrangement, such as the slot-faithful view of an inventory that the client
+     * companion shows as a scrolling grid.
+     */
+    protected UiElement describeChest(UiBuilder builder) {
+        return describe(builder);
+    }
+
     /** An item shown beside the title by the client companion; none by default. A chest has no place for it. */
     protected ItemStack icon() {
         return ItemStack.EMPTY;
@@ -78,6 +87,11 @@ public abstract class UiMenu {
     final UiLayout layout(int firstId) {
         UiBuilder builder = new UiBuilder(firstId);
         return builder.build(describe(builder));
+    }
+
+    final UiLayout chestLayout(int firstId) {
+        UiBuilder builder = new UiBuilder(firstId);
+        return builder.build(describeChest(builder));
     }
 
     final ServerPlayer viewer() {

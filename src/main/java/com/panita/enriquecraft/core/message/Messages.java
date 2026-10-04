@@ -26,6 +26,8 @@ public final class Messages {
         public static final String PAGE_INDICATOR = "<gray>Página <white>{page}</white> de <white>{pages}</white>";
         public static final String EMPTY = "<gray>No hay nada que mostrar";
         public static final String SEARCH = "<yellow>Buscar";
+        public static final String FILTER = "<yellow>Filtrar";
+        public static final String FILTER_NONE = "<gray>Sin filtro";
         public static final String CLICK_LEFT = "<color #A8E6CF>◀ Clic Izq. para {action}";
         public static final String CLICK_RIGHT = "<color #A0D2F0>▶ Clic Der. para {action}";
         public static final String INPUT_CURRENT = "<gray>Actual: <white>{value}</white>";

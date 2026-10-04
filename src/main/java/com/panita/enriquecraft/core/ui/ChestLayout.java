@@ -87,6 +87,8 @@ final class ChestLayout {
     private static void collectBands(UiElement element, List<UiElement> bands) {
         if (element instanceof UiElement.Column column) {
             column.children().forEach(child -> collectBands(child, bands));
+        } else if (element instanceof UiElement.Scroll scroll) {
+            collectBands(scroll.content(), bands);
         } else {
             bands.add(element);
         }
@@ -133,8 +135,9 @@ final class ChestLayout {
             case UiElement.Label label -> MenuItem.display(factory.item(Items.PAPER).name(label.text()).build());
             case UiElement.Spacer ignored -> null;
             case UiElement.Page ignored -> null;
-            case UiElement.Detail detail -> MenuItem.display(factory.item(detail.icon().isEmpty() ? new ItemStack(Items.PAPER) : detail.icon())
-                    .name(detail.title()).loreLines(detail.lines()).build());
+            case UiElement.Detail detail -> detail(detail);
+            case UiElement.Dropdown dropdown -> MenuItem.button(stack(dropdown), click -> choose(dropdown, click));
+            case UiElement.Scroll scroll -> throw containerInsideAnotherContainer();
             case UiElement.Row ignored -> throw containerInsideAnotherContainer();
             case UiElement.Column ignored -> throw containerInsideAnotherContainer();
             case UiElement.Grid ignored -> throw containerInsideAnotherContainer();
@@ -147,10 +150,58 @@ final class ChestLayout {
     private ItemStack stack(UiElement.Button button) {
         ItemStack icon = button.icon().isEmpty() ? new ItemStack(Items.PAPER) : button.icon();
         ItemBuilder builder = factory.item(icon);
-        if (!button.label().getString().isEmpty()) {
-            builder.name(button.label());
+        boolean named = !button.label().getString().isEmpty();
+        if (named) {
+            builder.name(button.badge().isEmpty() ? button.label()
+                    : Component.literal(button.badge() + " ").append(button.label()));
+        } else if (!button.badge().isEmpty()) {
+            // An item that keeps its own name has no room for the mark in it, so the mark leads the lore.
+            builder.loreLines(List.of(Component.literal(button.badge())));
         }
         return builder.loreLines(button.tooltip()).build();
+    }
+
+    /** The item with the text as its tooltip, and its action when it can be pressed. */
+    private MenuItem detail(UiElement.Detail detail) {
+        List<Component> lines = new ArrayList<>(detail.lines());
+        if (detail.iconId() != UiElement.Detail.NOT_PRESSABLE) {
+            lines.add(Component.empty());
+            lines.addAll(detail.iconTooltip());
+        }
+        ItemStack shown = factory.item(detail.icon().isEmpty() ? new ItemStack(Items.PAPER) : detail.icon())
+                .name(detail.title()).loreLines(lines).build();
+        if (detail.iconId() == UiElement.Detail.NOT_PRESSABLE) {
+            return MenuItem.display(shown);
+        }
+        return MenuItem.button(shown, click -> handler(detail.iconId()).accept(UiClick.from(click)));
+    }
+
+    /** A hopper that lists the options and moves through them: next on a left click, previous on a right click. */
+    private ItemStack stack(UiElement.Dropdown dropdown) {
+        List<Component> lines = new ArrayList<>();
+        for (int option = 0; option < dropdown.options().size(); option++) {
+            Component name = dropdown.options().get(option);
+            lines.add(option == dropdown.selected()
+                    ? Component.literal("▸ ").withStyle(style -> style.withColor(0xA8E6CF)).append(name)
+                    : Component.literal("  ").append(name));
+        }
+        lines.add(Component.empty());
+        lines.add(ClickHints.left(factory, "siguiente"));
+        lines.add(ClickHints.right(factory, "anterior"));
+        return factory.item(Items.HOPPER).name(dropdown.label()).loreLines(lines).build();
+    }
+
+    private void choose(UiElement.Dropdown dropdown, MenuClick click) {
+        UiSelectHandler handler = layout.selects().get(dropdown.id());
+        if (handler == null) {
+            throw new IllegalStateException("The dropdown " + dropdown.id() + " has no action");
+        }
+        int count = dropdown.options().size();
+        if (click.isLeft()) {
+            handler.action().accept(new UiSelect(click.player(), (dropdown.selected() + 1) % count));
+        } else if (click.isRight()) {
+            handler.action().accept(new UiSelect(click.player(), (dropdown.selected() + count - 1) % count));
+        }
     }
 
     private ItemStack stack(UiElement.TextInput input) {
