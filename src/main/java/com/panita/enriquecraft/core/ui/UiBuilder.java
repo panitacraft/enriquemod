@@ -12,12 +12,18 @@ import java.util.function.Consumer;
 /**
  * Creates the interactive elements of one description of a screen. It gives every button an id and
  * remembers what the button does, so the client only ever has to say which one was pressed.
- * A new builder is used for every description, so ids never outlive the description they belong to.
+ * <p>
+ * Ids keep counting across the descriptions of one showing of a screen, so a press that was already
+ * on its way when the screen changed can never land on a different button.
  */
 public final class UiBuilder {
 
     private final Map<Integer, Consumer<UiClick>> handlers = new HashMap<>();
     private int nextId;
+
+    UiBuilder(int firstId) {
+        this.nextId = firstId;
+    }
 
     /**
      * @param icon    shown on the button; use {@link ItemStack#EMPTY} for none
@@ -31,7 +37,7 @@ public final class UiBuilder {
         return new UiElement.Button(id, icon, label, tooltip);
     }
 
-    Map<Integer, Consumer<UiClick>> handlers() {
-        return handlers;
+    UiLayout build(UiElement root) {
+        return new UiLayout(root, handlers, nextId);
     }
 }

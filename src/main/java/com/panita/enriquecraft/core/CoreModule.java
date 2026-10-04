@@ -16,6 +16,7 @@ import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.service.HelpService;
 import com.panita.enriquecraft.core.service.ServerInfoService;
 import com.panita.enriquecraft.core.ui.UiService;
+import com.panita.enriquecraft.core.ui.UiSessions;
 
 /**
  * The core module: messaging, help, and the general commands every other module relies on.
@@ -24,6 +25,7 @@ public final class CoreModule implements EnriquecraftModule {
 
     @Override
     public void registerServices(ServiceRegistry services) {
+        ClientCapabilities capabilities = new ClientCapabilities();
         BossBarChannel bossBars = new BossBarChannel();
         MessageFormatter formatter = new MessageFormatter(services.get(CoreConfig.class));
         Messenger messenger = new Messenger(formatter, new TitleChannel(), bossBars);
@@ -36,9 +38,11 @@ public final class CoreModule implements EnriquecraftModule {
         services.register(ConfigReportView.class, new ConfigReportView(messenger));
         MenuFactory menuFactory = new MenuFactory(formatter);
         services.register(MenuFactory.class, menuFactory);
-        services.register(UiService.class, new UiService(menuFactory));
+        services.register(ClientCapabilities.class, capabilities);
+        UiSessions uiSessions = new UiSessions();
+        services.register(UiSessions.class, uiSessions);
+        services.register(UiService.class, new UiService(menuFactory, capabilities, uiSessions));
         services.register(PlayerOnly.class, new PlayerOnly(messenger));
         services.register(ServerInfoService.class, new ServerInfoService());
-        services.register(ClientCapabilities.class, new ClientCapabilities());
     }
 }

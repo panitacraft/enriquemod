@@ -46,6 +46,6 @@ final class UiChestMenu extends Menu {
     }
 
     private ChestLayout.Plan describe() {
-        return ChestLayout.plan(owner.layout(), owner.framed(), owner.factory());
+        return ChestLayout.plan(owner.layout(0), owner.framed(), owner.factory());
     }
 }

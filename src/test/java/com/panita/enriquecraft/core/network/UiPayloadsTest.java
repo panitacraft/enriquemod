@@ -1,0 +1,61 @@
+package com.panita.enriquecraft.core.network;
+
+import com.panita.enriquecraft.MinecraftTestSupport;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
+final class UiPayloadsTest {
+
+    private static <T> T roundTrip(StreamCodec<? super RegistryFriendlyByteBuf, T> codec, T payload) {
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+        codec.encode(buffer, payload);
+        return codec.decode(buffer);
+    }
+
+    @Test
+    void openCarriesTheSessionTheTitleAndTheTree() {
+        UiElement tree = new UiElement.Row(List.of(
+                new UiElement.Button(5, new ItemStack(Items.COMPASS), Component.literal("Base"), List.of())));
+
+        OpenUiS2C decoded = roundTrip(OpenUiS2C.STREAM_CODEC, new OpenUiS2C(12, Component.literal("Título"), tree));
+
+        assertEquals(12, decoded.sessionId());
+        assertEquals("Título", decoded.title().getString());
+        UiElement.Row row = assertInstanceOf(UiElement.Row.class, decoded.root());
+        assertEquals(5, assertInstanceOf(UiElement.Button.class, row.children().getFirst()).id());
+    }
+
+    @Test
+    void updateCarriesTheSessionAndTheTree() {
+        UpdateUiS2C decoded = roundTrip(UpdateUiS2C.STREAM_CODEC, new UpdateUiS2C(3, new UiElement.Spacer()));
+
+        assertEquals(3, decoded.sessionId());
+        assertInstanceOf(UiElement.Spacer.class, decoded.root());
+    }
+
+    @Test
+    void closeCarriesTheSession() {
+        assertEquals(new CloseUiS2C(9), roundTrip(CloseUiS2C.STREAM_CODEC, new CloseUiS2C(9)));
+    }
+
+    @Test
+    void aClickCarriesEverythingTheServerChecks() {
+        UiClickC2S click = new UiClickC2S(4, 17, 1, true);
+
+        assertEquals(click, roundTrip(UiClickC2S.STREAM_CODEC, click));
+    }
+
+    @Test
+    void closedCarriesTheSession() {
+        assertEquals(new UiClosedC2S(6), roundTrip(UiClosedC2S.STREAM_CODEC, new UiClosedC2S(6)));
+    }
+}

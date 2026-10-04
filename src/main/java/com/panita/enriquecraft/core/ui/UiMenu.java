@@ -47,7 +47,7 @@ public abstract class UiMenu {
 
     public final void open(ServerPlayer player) {
         viewer = player;
-        open = true;
+        opened();
         ui.open(player, this);
     }
 
@@ -69,10 +69,9 @@ public abstract class UiMenu {
         return previous;
     }
 
-    final UiLayout layout() {
-        UiBuilder builder = new UiBuilder();
-        UiElement root = describe(builder);
-        return new UiLayout(root, builder.handlers());
+    final UiLayout layout(int firstId) {
+        UiBuilder builder = new UiBuilder(firstId);
+        return builder.build(describe(builder));
     }
 
     final ServerPlayer viewer() {
@@ -85,6 +84,11 @@ public abstract class UiMenu {
 
     final void showingAs(Menu chest) {
         this.chest = chest;
+    }
+
+    /** Marks the menu as being shown, so that closing it reaches {@link #onClose()}. */
+    final void opened() {
+        open = true;
     }
 
     final void closed() {
