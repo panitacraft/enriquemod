@@ -5,6 +5,7 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.junit.jupiter.api.Test;
@@ -131,5 +132,39 @@ final class UiElementCodecTest {
     void aGridMustFitItsChildren() {
         assertThrows(IllegalArgumentException.class,
                 () -> new UiElement.Grid(1, 1, List.of(new UiElement.Spacer(), new UiElement.Spacer())));
+    }
+
+    @Test
+    void aTextInputSurvivesARoundTrip() {
+        UiElement input = new UiElement.TextInput(4, Component.literal("Buscar"), "base", 32);
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(buffer, input);
+
+        UiElement.TextInput decoded = assertInstanceOf(UiElement.TextInput.class, decode(buffer));
+        assertEquals(4, decoded.id());
+        assertEquals("Buscar", decoded.hint().getString());
+        assertEquals("base", decoded.value());
+        assertEquals(32, decoded.maxLength());
+    }
+
+    @Test
+    void aTextInputThatCannotHoldItsValueIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new UiElement.TextInput(0, Component.empty(), "abc", 2));
+        assertThrows(IllegalArgumentException.class, () -> new UiElement.TextInput(0, Component.empty(), "", 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new UiElement.TextInput(0, Component.empty(), "", UiElement.TextInput.MAX_LENGTH + 1));
+    }
+
+    @Test
+    void aTextInputWithAnImpossibleLimitIsRejectedWhenDecoding() {
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+        buffer.writeByte(6);
+        buffer.writeVarInt(0);
+        ComponentSerialization.STREAM_CODEC.encode(buffer, Component.empty());
+        buffer.writeUtf("abc");
+        buffer.writeVarInt(1);
+
+        assertThrows(DecoderException.class, () -> decode(buffer));
     }
 }

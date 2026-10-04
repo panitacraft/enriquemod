@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.core.network;
 
 import com.panita.enriquecraft.MinecraftTestSupport;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -12,6 +13,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class UiPayloadsTest {
 
@@ -57,5 +59,23 @@ final class UiPayloadsTest {
     @Test
     void closedCarriesTheSession() {
         assertEquals(new UiClosedC2S(6), roundTrip(UiClosedC2S.STREAM_CODEC, new UiClosedC2S(6)));
+    }
+
+    @Test
+    void aSubmitCarriesTheTypedText() {
+        UiSubmitC2S submit = new UiSubmitC2S(2, 8, "base ñ");
+
+        assertEquals(submit, roundTrip(UiSubmitC2S.STREAM_CODEC, submit));
+    }
+
+    @Test
+    void aSubmitLongerThanAnyFieldIsRejectedWhenDecoding() {
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+        buffer.writeVarInt(1);
+        buffer.writeVarInt(1);
+        buffer.writeUtf("x".repeat(1000), 1000);
+
+        assertThrows(DecoderException.class,
+                () -> UiSubmitC2S.STREAM_CODEC.decode(buffer));
     }
 }

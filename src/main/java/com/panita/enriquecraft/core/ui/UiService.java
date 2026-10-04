@@ -7,10 +7,12 @@ import com.panita.enriquecraft.core.network.CloseUiS2C;
 import com.panita.enriquecraft.core.network.OpenUiS2C;
 import com.panita.enriquecraft.core.network.UpdateUiS2C;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Consumer;
 
 /**
  * Shows {@link UiMenu}s to players in the form their client can display: the client companion's own
@@ -21,11 +23,13 @@ public final class UiService {
     private final MenuFactory factory;
     private final ClientCapabilities capabilities;
     private final UiSessions sessions;
+    private final ChatPrompts prompts;
 
-    public UiService(MenuFactory factory, ClientCapabilities capabilities, UiSessions sessions) {
+    public UiService(MenuFactory factory, ClientCapabilities capabilities, UiSessions sessions, ChatPrompts prompts) {
         this.factory = factory;
         this.capabilities = capabilities;
         this.sessions = sessions;
+        this.prompts = prompts;
     }
 
     /** Creates the texts and items that screens are made of. */
@@ -63,6 +67,21 @@ public final class UiService {
             ServerPlayNetworking.send(player, new CloseUiS2C(session.getAsInt()));
         } else {
             player.closeContainer();
+        }
+    }
+
+    /** Asks for a value in chat, then shows the menu again, unless the answer sent the player elsewhere. */
+    void prompt(ServerPlayer player, UiMenu menu, Component field, Consumer<String> answer) {
+        player.closeContainer();
+        prompts.ask(player, field, text -> {
+            answer.accept(text);
+            reopen(player, menu);
+        }, () -> reopen(player, menu));
+    }
+
+    private static void reopen(ServerPlayer player, UiMenu menu) {
+        if (player.containerMenu == player.inventoryMenu) {
+            menu.open(player);
         }
     }
 

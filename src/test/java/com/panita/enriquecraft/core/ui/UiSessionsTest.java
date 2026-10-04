@@ -86,7 +86,7 @@ class UiSessionsTest {
         return sessions.begin(viewer, menu, menu.layout(0));
     }
 
-    private UiSessions.ClickResult press(UUID viewer, int session, int element) {
+    private UiSessions.ActionResult press(UUID viewer, int session, int element) {
         return sessions.click(viewer, null, new UiClickC2S(session, element, 0, false));
     }
 
@@ -95,14 +95,14 @@ class UiSessionsTest {
         ButtonsMenu menu = menu(3);
         int session = show(player, menu);
 
-        assertEquals(UiSessions.ClickResult.HANDLED, press(player, session, 1));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(player, session, 1));
 
         assertEquals(List.of(1), menu.pressed);
     }
 
     @Test
     void aPressWithoutASessionIsStale() {
-        assertEquals(UiSessions.ClickResult.STALE, press(player, 1, 0));
+        assertEquals(UiSessions.ActionResult.STALE, press(player, 1, 0));
     }
 
     @Test
@@ -110,7 +110,7 @@ class UiSessionsTest {
         ButtonsMenu menu = menu(1);
         int session = show(player, menu);
 
-        assertEquals(UiSessions.ClickResult.STALE, press(player, session + 1, 0));
+        assertEquals(UiSessions.ActionResult.STALE, press(player, session + 1, 0));
         assertTrue(menu.pressed.isEmpty());
     }
 
@@ -121,7 +121,7 @@ class UiSessionsTest {
         UUID intruder = UUID.randomUUID();
         show(intruder, menu(1));
 
-        assertEquals(UiSessions.ClickResult.STALE, press(intruder, session, 0));
+        assertEquals(UiSessions.ActionResult.STALE, press(intruder, session, 0));
         assertTrue(menu.pressed.isEmpty());
     }
 
@@ -130,9 +130,9 @@ class UiSessionsTest {
         ButtonsMenu menu = menu(2);
         int session = show(player, menu);
 
-        assertEquals(UiSessions.ClickResult.UNKNOWN_BUTTON, press(player, session, 7));
+        assertEquals(UiSessions.ActionResult.UNKNOWN_ELEMENT, press(player, session, 7));
         clock.addAndGet(100 * MILLISECOND);
-        assertEquals(UiSessions.ClickResult.UNKNOWN_BUTTON, press(player, session, -1));
+        assertEquals(UiSessions.ActionResult.UNKNOWN_ELEMENT, press(player, session, -1));
         assertTrue(menu.pressed.isEmpty());
     }
 
@@ -141,10 +141,10 @@ class UiSessionsTest {
         ButtonsMenu menu = menu(1);
         int session = show(player, menu);
 
-        assertEquals(UiSessions.ClickResult.INVALID,
+        assertEquals(UiSessions.ActionResult.INVALID,
                 sessions.click(player, null, new UiClickC2S(session, 0, 2, false)));
         clock.addAndGet(100 * MILLISECOND);
-        assertEquals(UiSessions.ClickResult.INVALID,
+        assertEquals(UiSessions.ActionResult.INVALID,
                 sessions.click(player, null, new UiClickC2S(session, 0, -1, false)));
         assertTrue(menu.pressed.isEmpty());
     }
@@ -154,11 +154,11 @@ class UiSessionsTest {
         ButtonsMenu menu = menu(1);
         int session = show(player, menu);
 
-        assertEquals(UiSessions.ClickResult.HANDLED, press(player, session, 0));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(player, session, 0));
         clock.addAndGet(10 * MILLISECOND);
-        assertEquals(UiSessions.ClickResult.TOO_FAST, press(player, session, 0));
+        assertEquals(UiSessions.ActionResult.TOO_FAST, press(player, session, 0));
         clock.addAndGet(60 * MILLISECOND);
-        assertEquals(UiSessions.ClickResult.HANDLED, press(player, session, 0));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(player, session, 0));
 
         assertEquals(2, menu.pressed.size());
     }
@@ -173,7 +173,7 @@ class UiSessionsTest {
 
         press(player, firstSession, 0);
 
-        assertEquals(UiSessions.ClickResult.HANDLED, press(other, secondSession, 0));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(other, secondSession, 0));
     }
 
     @Test
@@ -182,11 +182,11 @@ class UiSessionsTest {
         int session = show(player, menu);
         menu.failing = true;
 
-        assertEquals(UiSessions.ClickResult.HANDLED, press(player, session, 0));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(player, session, 0));
 
         menu.failing = false;
         clock.addAndGet(100 * MILLISECOND);
-        assertEquals(UiSessions.ClickResult.HANDLED, press(player, session, 0));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(player, session, 0));
         assertEquals(List.of(0), menu.pressed);
     }
 
@@ -200,7 +200,7 @@ class UiSessionsTest {
 
         assertEquals(1, first.closes);
         assertNotEquals(firstSession, secondSession);
-        assertEquals(UiSessions.ClickResult.STALE, press(player, firstSession, 0));
+        assertEquals(UiSessions.ActionResult.STALE, press(player, firstSession, 0));
         assertEquals(0, second.closes);
     }
 
@@ -223,7 +223,7 @@ class UiSessionsTest {
         sessions.closedByClient(player, session);
 
         assertEquals(1, menu.closes);
-        assertEquals(UiSessions.ClickResult.STALE, press(player, session, 0));
+        assertEquals(UiSessions.ActionResult.STALE, press(player, session, 0));
     }
 
     @Test
@@ -262,10 +262,10 @@ class UiSessionsTest {
 
         assertEquals(session, showing.sessionId());
         assertEquals(2, showing.nextElementId());
-        assertEquals(UiSessions.ClickResult.UNKNOWN_BUTTON, press(player, session, 0),
+        assertEquals(UiSessions.ActionResult.UNKNOWN_ELEMENT, press(player, session, 0),
                 "a press meant for the previous description cannot land on a new button");
         clock.addAndGet(100 * MILLISECOND);
-        assertEquals(UiSessions.ClickResult.HANDLED, press(player, session, 2));
+        assertEquals(UiSessions.ActionResult.HANDLED, press(player, session, 2));
         assertEquals(List.of(0), menu.pressed, "button 2 of the new description is the first button");
     }
 

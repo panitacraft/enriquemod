@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.core.ui;
 
 import com.panita.enriquecraft.core.network.UiClickC2S;
+import com.panita.enriquecraft.core.network.UiSubmitC2S;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +16,9 @@ import java.util.function.LongSupplier;
 
 /**
  * The screens currently shown by the client companion, one per player. With no vanilla container
- * behind them, nothing else would stop a player from pressing the buttons of a screen that is gone,
- * so every press the client reports is checked here before anything runs: the client is untrusted.
+ * behind them, nothing else would stop a player from using the buttons of a screen that is gone,
+ * so every press and every value the client reports is checked here before anything runs: the
+ * client is untrusted.
  * <p>
  * A session ends when the screen is closed from either side, when another screen replaces it, and
  * when the player dies or disconnects.
@@ -25,18 +27,18 @@ public final class UiSessions {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UiSessions.class);
 
-    /** A person cannot press buttons faster than this; anything quicker is dropped. */
-    private static final long MIN_CLICK_INTERVAL_NANOS = 50_000_000L;
+    /** A person cannot act faster than this; anything quicker is dropped. */
+    private static final long MIN_ACTION_INTERVAL_NANOS = 50_000_000L;
 
-    /** What became of a press reported by a client. */
-    enum ClickResult {
+    /** What became of an action reported by a client. */
+    enum ActionResult {
         HANDLED,
         /** The screen it belongs to is gone or was replaced, which happens in normal play. */
         STALE,
         TOO_FAST,
-        /** The button does not exist in the screen's current description. */
-        UNKNOWN_BUTTON,
-        /** The mouse button is not one the screen accepts. */
+        /** The element does not exist in the screen's current description, or is not that kind of element. */
+        UNKNOWN_ELEMENT,
+        /** The action carries something the element does not accept. */
         INVALID
     }
 
@@ -48,9 +50,10 @@ public final class UiSessions {
         private final int id;
         private final UiMenu menu;
         private Map<Integer, Consumer<UiClick>> handlers;
+        private Map<Integer, UiInputHandler> inputs;
         private int nextElementId;
-        private long lastClick;
-        private boolean clicked;
+        private long lastAction;
+        private boolean acted;
 
         private Session(int id, UiMenu menu, UiLayout layout) {
             this.id = id;
@@ -60,6 +63,7 @@ public final class UiSessions {
 
         private void replace(UiLayout layout) {
             handlers = layout.handlers();
+            inputs = layout.inputs();
             nextElementId = layout.nextId();
         }
     }
@@ -126,32 +130,66 @@ public final class UiSessions {
         click(player.getUUID(), player, click);
     }
 
-    ClickResult click(UUID playerId, ServerPlayer player, UiClickC2S click) {
-        Session session = sessions.get(playerId);
-        if (session == null || session.id != click.sessionId()) {
-            return ClickResult.STALE;
-        }
-        long now = clock.getAsLong();
-        if (session.clicked && now - session.lastClick < MIN_CLICK_INTERVAL_NANOS) {
-            return ClickResult.TOO_FAST;
-        }
-        session.clicked = true;
-        session.lastClick = now;
+    /** Runs the action behind a value reported by a client, if the value is valid. */
+    public void submit(ServerPlayer player, UiSubmitC2S submit) {
+        submit(player.getUUID(), player, submit);
+    }
 
+    ActionResult click(UUID playerId, ServerPlayer player, UiClickC2S click) {
+        Session session = sessions.get(playerId);
+        Optional<ActionResult> rejection = admit(session, click.sessionId());
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
         if (click.button() < 0 || click.button() > 1) {
             LOGGER.warn("{} sent a press with mouse button {}", playerId, click.button());
-            return ClickResult.INVALID;
+            return ActionResult.INVALID;
         }
         Consumer<UiClick> handler = session.handlers.get(click.elementId());
         if (handler == null) {
             // Also what a press looks like when it crossed the screen's update on the wire.
-            return ClickResult.UNKNOWN_BUTTON;
+            return ActionResult.UNKNOWN_ELEMENT;
         }
+        return run(playerId, () -> handler.accept(new UiClick(player, click.button(), click.shift())));
+    }
+
+    ActionResult submit(UUID playerId, ServerPlayer player, UiSubmitC2S submit) {
+        Session session = sessions.get(playerId);
+        Optional<ActionResult> rejection = admit(session, submit.sessionId());
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+        UiInputHandler input = session.inputs.get(submit.elementId());
+        if (input == null) {
+            return ActionResult.UNKNOWN_ELEMENT;
+        }
+        if (submit.text().length() > input.maxLength() || submit.text().chars().anyMatch(Character::isISOControl)) {
+            LOGGER.warn("{} sent a value the field does not accept", playerId);
+            return ActionResult.INVALID;
+        }
+        return run(playerId, () -> input.action().accept(new UiSubmit(player, submit.text())));
+    }
+
+    /** Checks that the action belongs to the player's current screen and is not coming too fast. */
+    private Optional<ActionResult> admit(Session session, int sessionId) {
+        if (session == null || session.id != sessionId) {
+            return Optional.of(ActionResult.STALE);
+        }
+        long now = clock.getAsLong();
+        if (session.acted && now - session.lastAction < MIN_ACTION_INTERVAL_NANOS) {
+            return Optional.of(ActionResult.TOO_FAST);
+        }
+        session.acted = true;
+        session.lastAction = now;
+        return Optional.empty();
+    }
+
+    private static ActionResult run(UUID playerId, Runnable action) {
         try {
-            handler.accept(new UiClick(player, click.button(), click.shift()));
+            action.run();
         } catch (RuntimeException e) {
             LOGGER.error("A screen action failed for {}", playerId, e);
         }
-        return ClickResult.HANDLED;
+        return ActionResult.HANDLED;
     }
 }

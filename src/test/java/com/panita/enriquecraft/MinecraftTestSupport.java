@@ -9,6 +9,7 @@ import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.message.channel.BossBarChannel;
 import com.panita.enriquecraft.core.message.channel.TitleChannel;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
+import com.panita.enriquecraft.core.ui.ChatPrompts;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.core.ui.UiSessions;
 import io.netty.buffer.Unpooled;
@@ -69,7 +70,8 @@ public final class MinecraftTestSupport {
     }
 
     public static UiService uiService(Path configDirectory) {
-        return new UiService(menuFactory(configDirectory), new ClientCapabilities(), new UiSessions());
+        return new UiService(menuFactory(configDirectory), new ClientCapabilities(), new UiSessions(),
+                new ChatPrompts(messenger(configDirectory)));
     }
 
     /** A buffer that can carry items and components, as the ones of a real connection can. */

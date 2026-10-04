@@ -10,15 +10,16 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Creates the interactive elements of one description of a screen. It gives every button an id and
- * remembers what the button does, so the client only ever has to say which one was pressed.
+ * Creates the interactive elements of one description of a screen. It gives every button and field
+ * an id and remembers what it does, so the client only ever has to say which one was used.
  * <p>
  * Ids keep counting across the descriptions of one showing of a screen, so a press that was already
- * on its way when the screen changed can never land on a different button.
+ * on its way when the screen changed can never land on a different element.
  */
 public final class UiBuilder {
 
     private final Map<Integer, Consumer<UiClick>> handlers = new HashMap<>();
+    private final Map<Integer, UiInputHandler> inputs = new HashMap<>();
     private int nextId;
 
     UiBuilder(int firstId) {
@@ -37,7 +38,22 @@ public final class UiBuilder {
         return new UiElement.Button(id, icon, label, tooltip);
     }
 
+    /**
+     * A field the player types a value into. Players without the client companion type it in chat
+     * instead, so the action must not assume anything about how the value arrived.
+     *
+     * @param hint      names what the value is for
+     * @param value     what the field holds now
+     * @param maxLength the longest value the action accepts, at most {@link UiElement.TextInput#MAX_LENGTH}
+     * @param action    runs on the server with the confirmed value; an empty value means the field was cleared
+     */
+    public UiElement.TextInput input(Component hint, String value, int maxLength, Consumer<UiSubmit> action) {
+        int id = nextId++;
+        inputs.put(id, new UiInputHandler(maxLength, action));
+        return new UiElement.TextInput(id, hint, value, maxLength);
+    }
+
     UiLayout build(UiElement root) {
-        return new UiLayout(root, handlers, nextId);
+        return new UiLayout(root, handlers, inputs, nextId);
     }
 }

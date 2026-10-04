@@ -55,6 +55,22 @@ public sealed interface UiElement {
         }
     }
 
+    /**
+     * A field the player types a value into; the value reaches the server when the player confirms it.
+     *
+     * @param id    identifies the field within one description; unique, assigned by the server
+     * @param value what the field holds when it appears
+     */
+    record TextInput(int id, Component hint, String value, int maxLength) implements UiElement {
+        public static final int MAX_LENGTH = 256;
+
+        public TextInput {
+            if (maxLength < 1 || maxLength > MAX_LENGTH || value.length() > maxLength) {
+                throw new IllegalArgumentException("A field of up to " + maxLength + " characters cannot hold \"" + value + "\"");
+            }
+        }
+    }
+
     /** An empty cell that keeps its neighbours in place. */
     record Spacer() implements UiElement {
     }

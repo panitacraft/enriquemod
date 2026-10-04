@@ -25,6 +25,10 @@ public final class Messages {
         public static final String BACK = "<yellow>Volver";
         public static final String PAGE_INDICATOR = "<gray>Página <white>{page}</white> de <white>{pages}</white>";
         public static final String EMPTY = "<gray>No hay nada que mostrar";
+        public static final String INPUT_CURRENT = "<gray>Actual: <white>{value}</white>";
+        public static final String INPUT_EDIT = "<yellow>Clic izquierdo para escribir en el chat";
+        public static final String INPUT_CLEAR = "<yellow>Clic derecho para borrar";
+        public static final String PROMPT = "<gray>Escribe en el chat el nuevo valor de <white>{field}</white> o escribe <white>cancelar</white> para volver.";
 
         private Gui() {
         }

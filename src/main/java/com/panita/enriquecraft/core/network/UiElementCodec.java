@@ -28,6 +28,7 @@ public final class UiElementCodec {
     private static final byte LABEL = 3;
     private static final byte BUTTON = 4;
     private static final byte SPACER = 5;
+    private static final byte TEXT_INPUT = 6;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -77,6 +78,13 @@ public final class UiElementCodec {
                 ComponentSerialization.STREAM_CODEC.encode(buffer, button.label());
                 TOOLTIP.encode(buffer, button.tooltip());
             }
+            case UiElement.TextInput input -> {
+                buffer.writeByte(TEXT_INPUT);
+                buffer.writeVarInt(input.id());
+                ComponentSerialization.STREAM_CODEC.encode(buffer, input.hint());
+                buffer.writeUtf(input.value(), UiElement.TextInput.MAX_LENGTH);
+                buffer.writeVarInt(input.maxLength());
+            }
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
     }
@@ -113,9 +121,22 @@ public final class UiElementCodec {
                     ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
                     ComponentSerialization.STREAM_CODEC.decode(buffer),
                     TOOLTIP.decode(buffer));
+            case TEXT_INPUT -> readTextInput(buffer);
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
         };
+    }
+
+    private static UiElement readTextInput(RegistryFriendlyByteBuf buffer) {
+        int id = buffer.readVarInt();
+        Component hint = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        String value = buffer.readUtf(UiElement.TextInput.MAX_LENGTH);
+        int maxLength = buffer.readVarInt();
+        try {
+            return new UiElement.TextInput(id, hint, value, maxLength);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
     }
 
     private static List<UiElement> readChildren(RegistryFriendlyByteBuf buffer, int depth) {

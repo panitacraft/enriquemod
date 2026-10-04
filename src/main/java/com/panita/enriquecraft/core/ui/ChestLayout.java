@@ -1,9 +1,15 @@
 package com.panita.enriquecraft.core.ui;
 
+import com.panita.enriquecraft.core.gui.ItemBuilder;
+import com.panita.enriquecraft.core.gui.MenuClick;
 import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.gui.MenuFrame;
 import com.panita.enriquecraft.core.gui.MenuItem;
+import com.panita.enriquecraft.core.message.Message;
+import com.panita.enriquecraft.core.message.Messages;
 import com.panita.enriquecraft.core.network.UiElement;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -20,6 +26,9 @@ import java.util.function.Consumer;
  * a grid takes as many rows as it declares, and any other element sits centered in a row of its own.
  * A framed screen keeps its outer edge for decoration: every band but the last goes inside the
  * frame, and the last band takes the bottom edge, where controls belong.
+ * <p>
+ * A chest cannot hold a text field, so a field becomes an item: a left click asks for the value in
+ * chat, and a right click clears it.
  */
 final class ChestLayout {
 
@@ -30,22 +39,30 @@ final class ChestLayout {
     record Plan(int rows, Map<Integer, MenuItem> items) {
     }
 
-    private final Map<Integer, Consumer<UiClick>> handlers;
+    /** Asks a player for a value, in a way that works without a text field. */
+    @FunctionalInterface
+    interface InputPrompter {
+        void ask(ServerPlayer player, Component field, Consumer<String> answer);
+    }
+
+    private final UiLayout layout;
     private final MenuFactory factory;
+    private final InputPrompter prompter;
     private final Map<Integer, MenuItem> items = new HashMap<>();
 
-    private ChestLayout(Map<Integer, Consumer<UiClick>> handlers, MenuFactory factory) {
-        this.handlers = handlers;
+    private ChestLayout(UiLayout layout, MenuFactory factory, InputPrompter prompter) {
+        this.layout = layout;
         this.factory = factory;
+        this.prompter = prompter;
     }
 
-    static Plan plan(UiLayout layout, boolean framed, MenuFactory factory) {
-        return new ChestLayout(layout.handlers(), factory).arrange(layout.root(), framed);
+    static Plan plan(UiLayout layout, boolean framed, MenuFactory factory, InputPrompter prompter) {
+        return new ChestLayout(layout, factory, prompter).arrange(framed);
     }
 
-    private Plan arrange(UiElement root, boolean framed) {
+    private Plan arrange(boolean framed) {
         List<UiElement> bands = new ArrayList<>();
-        collectBands(root, bands);
+        collectBands(layout.root(), bands);
         if (bands.isEmpty()) {
             throw new IllegalStateException("A screen needs at least one element");
         }
@@ -112,6 +129,7 @@ final class ChestLayout {
     private void put(int slot, UiElement element) {
         MenuItem item = switch (element) {
             case UiElement.Button button -> MenuItem.button(stack(button), click -> handler(button.id()).accept(UiClick.from(click)));
+            case UiElement.TextInput input -> MenuItem.button(stack(input), click -> edit(input, click));
             case UiElement.Label label -> MenuItem.display(factory.item(Items.PAPER).name(label.text()).build());
             case UiElement.Spacer ignored -> null;
             case UiElement.Row ignored -> throw containerInsideAnotherContainer();
@@ -125,15 +143,43 @@ final class ChestLayout {
 
     private ItemStack stack(UiElement.Button button) {
         ItemStack icon = button.icon().isEmpty() ? new ItemStack(Items.PAPER) : button.icon();
-        var builder = factory.item(icon);
+        ItemBuilder builder = factory.item(icon);
         if (!button.label().getString().isEmpty()) {
             builder.name(button.label());
         }
         return builder.loreLines(button.tooltip()).build();
     }
 
+    private ItemStack stack(UiElement.TextInput input) {
+        List<Component> lore = new ArrayList<>();
+        if (!input.value().isEmpty()) {
+            lore.add(factory.text(Message.plain(Messages.Gui.INPUT_CURRENT).with("value", input.value())));
+        }
+        lore.add(factory.text(Messages.Gui.INPUT_EDIT));
+        lore.add(factory.text(Messages.Gui.INPUT_CLEAR));
+        return factory.item(Items.NAME_TAG).name(input.hint()).loreLines(lore).build();
+    }
+
+    private void edit(UiElement.TextInput input, MenuClick click) {
+        UiInputHandler handler = layout.inputs().get(input.id());
+        if (handler == null) {
+            throw new IllegalStateException("The field " + input.id() + " has no action");
+        }
+        ServerPlayer player = click.player();
+        if (click.isRight()) {
+            handler.action().accept(new UiSubmit(player, ""));
+        } else if (click.isLeft()) {
+            prompter.ask(player, input.hint(), answer -> handler.action().accept(new UiSubmit(player, clamp(answer, handler.maxLength()))));
+        }
+    }
+
+    /** Chat messages can be longer than a field allows; the field keeps what fits. */
+    private static String clamp(String text, int maxLength) {
+        return text.length() > maxLength ? text.substring(0, maxLength) : text;
+    }
+
     private Consumer<UiClick> handler(int id) {
-        Consumer<UiClick> handler = handlers.get(id);
+        Consumer<UiClick> handler = layout.handlers().get(id);
         if (handler == null) {
             throw new IllegalStateException("The button " + id + " has no action");
         }

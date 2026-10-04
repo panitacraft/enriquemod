@@ -15,6 +15,7 @@ import com.panita.enriquecraft.core.message.channel.TitleChannel;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.service.HelpService;
 import com.panita.enriquecraft.core.service.ServerInfoService;
+import com.panita.enriquecraft.core.ui.ChatPrompts;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.core.ui.UiSessions;
 
@@ -39,9 +40,11 @@ public final class CoreModule implements EnriquecraftModule {
         MenuFactory menuFactory = new MenuFactory(formatter);
         services.register(MenuFactory.class, menuFactory);
         services.register(ClientCapabilities.class, capabilities);
+        ChatPrompts chatPrompts = new ChatPrompts(messenger);
+        services.register(ChatPrompts.class, chatPrompts);
         UiSessions uiSessions = new UiSessions();
         services.register(UiSessions.class, uiSessions);
-        services.register(UiService.class, new UiService(menuFactory, capabilities, uiSessions));
+        services.register(UiService.class, new UiService(menuFactory, capabilities, uiSessions, chatPrompts));
         services.register(PlayerOnly.class, new PlayerOnly(messenger));
         services.register(ServerInfoService.class, new ServerInfoService());
     }
