@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.staff.gui;
 
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiPagedMenu;
@@ -50,9 +51,9 @@ public final class CoordinateIconMenu extends UiPagedMenu<Item> {
     protected UiElement render(UiBuilder builder, Item item) {
         boolean current = service.find(name).map(SavedCoordinate::icon).filter(item::equals).isPresent();
         ItemStack shown = current ? factory().item(item).glint().build() : new ItemStack(item);
-        String hint = current ? StaffMessages.Coordinates.ICON_CURRENT : StaffMessages.Coordinates.ICON_PICK_HINT;
+        Component hint = current ? factory().text(StaffMessages.Coordinates.ICON_CURRENT) : ClickHints.left(factory(), "elegir");
         // No label: the button is the item itself, so it keeps its own name.
-        return builder.button(shown, Component.empty(), List.of(factory().text(hint)), click -> {
+        return builder.button(shown, Component.empty(), List.of(hint), click -> {
             if (click.isLeft()) {
                 service.updateIcon(name, item);
                 previous().open(click.player());

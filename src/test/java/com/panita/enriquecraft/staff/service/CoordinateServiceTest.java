@@ -118,4 +118,39 @@ class CoordinateServiceTest {
     void updatingTheIconOfAMissingCoordinateDoesNothing() {
         assertFalse(service.updateIcon("nope", Items.DIAMOND));
     }
+
+    @Test
+    void updatingTheDisplayNameKeepsTheIdAndTrims() {
+        service.add(coordinate("base"));
+
+        assertTrue(service.updateDisplayName("BASE", "  Mi base  "));
+
+        assertEquals("Mi base", service.find("base").orElseThrow().displayName());
+        assertEquals("base", service.find("base").orElseThrow().name());
+    }
+
+    @Test
+    void anInvalidDisplayNameIsRefusedAndNothingChanges() {
+        service.add(coordinate("base"));
+
+        assertFalse(service.updateDisplayName("base", "   "));
+        assertFalse(service.updateDisplayName("base", "x".repeat(33)));
+
+        assertEquals("base", service.find("base").orElseThrow().displayName());
+    }
+
+    @Test
+    void theDisplayNameOfAMissingCoordinateCannotBeChanged() {
+        assertFalse(service.updateDisplayName("nope", "Algo"));
+    }
+
+    @Test
+    void aDisplayNameSurvivesReloadingTheFile() {
+        service.add(coordinate("base"));
+        service.updateDisplayName("base", "Mi base");
+
+        CoordinateService reloaded = new CoordinateService(worldData);
+
+        assertEquals("Mi base", reloaded.find("base").orElseThrow().displayName());
+    }
 }

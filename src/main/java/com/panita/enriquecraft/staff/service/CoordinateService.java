@@ -72,6 +72,23 @@ public final class CoordinateService {
         return true;
     }
 
+    /**
+     * Gives a coordinate another display name, which does not change its id.
+     *
+     * @return whether the text is a valid display name and there is a coordinate with that name
+     */
+    public boolean updateDisplayName(String name, String displayName) {
+        String trimmed = displayName.trim();
+        Optional<SavedCoordinate> existing = find(name);
+        if (existing.isEmpty() || !SavedCoordinate.isValidDisplayName(trimmed)) {
+            return false;
+        }
+        List<SavedCoordinate> updated = new ArrayList<>(store.get());
+        updated.set(updated.indexOf(existing.get()), existing.get().withDisplayName(trimmed));
+        store.set(List.copyOf(updated));
+        return true;
+    }
+
     /** Removes a coordinate; returns whether there was one with that name. */
     public boolean remove(String name) {
         Optional<SavedCoordinate> existing = find(name);

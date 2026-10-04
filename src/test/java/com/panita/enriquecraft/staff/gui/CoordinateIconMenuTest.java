@@ -71,7 +71,7 @@ class CoordinateIconMenuTest {
 
     @Test
     void eachIconSaysWhatClickingItDoes() {
-        assertEquals("Clic izquierdo para elegir este icono",
+        assertEquals("◀ Clic Izq. para elegir",
                 shown(10).get(DataComponents.LORE).lines().getFirst().getString());
         assertEquals("Icono actual", shown(13).get(DataComponents.LORE).lines().getFirst().getString());
     }

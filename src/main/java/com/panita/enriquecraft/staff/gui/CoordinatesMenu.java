@@ -15,23 +15,31 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Every saved coordinate as an icon, searchable by name. Hovering shows its name and dimension; left
- * click teleports there, and right click opens everything about it.
+ * Every saved coordinate as an icon, searchable by name and filterable by dimension, date or person.
+ * Hovering shows its name and dimension; left click teleports there, and right click opens everything
+ * about it.
  */
 public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
 
     private final CoordinateService service;
     private final CoordinateView view;
+    private final Clock clock;
 
     public CoordinatesMenu(UiService ui, CoordinateService service, CoordinateView view) {
+        this(ui, service, view, Clock.systemDefaultZone());
+    }
+
+    CoordinatesMenu(UiService ui, CoordinateService service, CoordinateView view, Clock clock) {
         super(ui, null);
         this.service = service;
         this.view = view;
+        this.clock = clock;
     }
 
     @Override
@@ -49,15 +57,21 @@ public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
         return service.all();
     }
 
+    /** Both what staff see and the id they type in commands can be searched. */
     @Override
     protected Optional<Function<SavedCoordinate, String>> searchText() {
-        return Optional.of(SavedCoordinate::name);
+        return Optional.of(coordinate -> coordinate.displayName() + " " + coordinate.name());
+    }
+
+    @Override
+    protected List<Filter<SavedCoordinate>> filters() {
+        return CoordinateFilters.of(service.all(), factory(), clock);
     }
 
     @Override
     protected UiElement render(UiBuilder builder, SavedCoordinate coordinate) {
         Component name = factory().text(
-                Message.plain(StaffMessages.Coordinates.ENTRY_NAME).with("name", coordinate.name()));
+                Message.plain(StaffMessages.Coordinates.ENTRY_NAME).with("name", coordinate.displayName()));
         // Only what tells coordinates apart at a glance; the rest is one right click away.
         List<Component> tooltip = List.of(
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)

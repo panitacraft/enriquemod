@@ -32,6 +32,7 @@ public final class StaffMessages {
 
         public static final String MENU_TITLE = "Coordenadas guardadas";
         public static final String ENTRY_NAME = "<gold>→ {name}";
+        public static final String ENTRY_ID = "<gray>ID: <white>{id}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
         public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardada por: <white>{player}";
@@ -39,15 +40,24 @@ public final class StaffMessages {
 
         public static final String DETAIL_TITLE = "Detalles de la coordenada";
         public static final String DETAIL_NAME = "<gold>{name}";
+        public static final String DETAIL_NAME_HINT = "<yellow>Nombre visible";
         public static final String DETAIL_TELEPORT = "<green>Ir a esta coordenada";
         public static final String DETAIL_TELEPORT_LORE = "<gray>Te teletransporta hasta aquí";
-        public static final String DETAIL_CHANGE_ICON = "<yellow>Cambiar icono";
-        public static final String DETAIL_CHANGE_ICON_LORE = "<gray>Elige otro objeto para representarla";
-        public static final String BACK = "<yellow>Volver";
+        public static final String DETAIL_DELETE = "<red>Eliminar";
+        public static final String DETAIL_DELETE_LORE = "<gray>Elimina esta coordenada";
+
+        public static final String DELETE_TITLE = "Eliminar coordenada";
+        public static final String DELETE_HEADLINE = "<red>¿Eliminar <gold>{name}</gold>?";
+        public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
 
         public static final String ICON_MENU_TITLE = "Elegir icono";
-        public static final String ICON_PICK_HINT = "<green>Clic izquierdo para elegir este icono";
         public static final String ICON_CURRENT = "<yellow>Icono actual";
+
+        public static final String FILTER_DIMENSION = "<gray>Dimensión: <white>{dimension}";
+        public static final String FILTER_TODAY = "<gray>Fecha: <white>hoy";
+        public static final String FILTER_WEEK = "<gray>Fecha: <white>últimos 7 días";
+        public static final String FILTER_MONTH = "<gray>Fecha: <white>últimos 30 días";
+        public static final String FILTER_USER = "<gray>Usuario: <white>{player}";
 
         private Coordinates() {
         }
