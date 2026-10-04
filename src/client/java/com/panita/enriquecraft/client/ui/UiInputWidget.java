@@ -11,13 +11,13 @@ import net.minecraft.client.input.KeyEvent;
  */
 final class UiInputWidget extends EditBox {
 
-    private static final int WIDTH = 140;
+    private static final int WIDTH = 130;
 
     private final int id;
     private final UiActions actions;
 
     UiInputWidget(Font font, UiElement.TextInput input, UiActions actions) {
-        super(font, 0, 0, WIDTH, UiButtonWidget.SIZE, input.hint());
+        super(font, 0, 0, WIDTH, UiButtonWidget.GLYPH_SIZE, input.hint());
         this.id = input.id();
         this.actions = actions;
         setMaxLength(input.maxLength());
