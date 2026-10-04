@@ -10,7 +10,9 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -36,6 +38,10 @@ final class UiButtonWidget extends AbstractButton {
     static final int ACTION_HEIGHT = 20;
     static final int GLYPH_SIZE = 18;
     static final int BIG_ICON = 48;
+    static final int CARD_WIDTH = 84;
+    private static final int CARD_ICON = 32;
+    private static final int CARD_MARGIN = 8;
+    private static final int CARD_TITLE_GAP = 7;
 
     private static final int BIG_PADDING = 8;
     private static final int ICON_SIZE = 16;
@@ -47,7 +53,7 @@ final class UiButtonWidget extends AbstractButton {
     private static final int LABEL_COLOR = 0xFFFFFFFF;
 
     private enum Look {
-        CELL, TOOL, LABELED, ACTION, GLYPH, BIG
+        CELL, TOOL, CARD, LABELED, ACTION, GLYPH, BIG
     }
 
     /** What happens when the button is pressed. */
@@ -94,6 +100,18 @@ final class UiButtonWidget extends AbstractButton {
         UiButtonWidget widget = new UiButtonWidget(font, Look.TOOL, tone, TOOL_SIZE, TOOL_SIZE, shownLabel(button),
                 button.icon(), null, button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.describe(button, true);
+        return widget;
+    }
+
+    /**
+     * A card: one item above a short title in the game's own font, always the same size, so a row of cards stays
+     * uniform whatever the titles say; a title that does not fit is cut.
+     */
+    static UiButtonWidget card(Font font, ItemStack icon, Component title, List<Component> tooltip, Press press) {
+        int height = CARD_MARGIN + CARD_ICON + CARD_TITLE_GAP + font.lineHeight + CARD_MARGIN;
+        UiButtonWidget widget = new UiButtonWidget(font, Look.CARD, UiTheme.Tone.ACTION, CARD_WIDTH, height, title, icon,
+                null, "", false, press);
+        widget.tooltipLines = List.copyOf(tooltip);
         return widget;
     }
 
@@ -213,13 +231,22 @@ final class UiButtonWidget extends AbstractButton {
             case TOOL -> {
                 UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverFill : tone.fill,
                         hovered ? tone.hoverBorder : tone.border);
-                // A bar along the bottom edge makes it read as a control, not as something that is held.
-                graphics.fill(getX() + 3, getY() + getHeight() - 3, getX() + getWidth() - 3, getY() + getHeight() - 2,
-                        hovered ? tone.hoverBorder : tone.border);
                 int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
-                int iconY = getY() + (getHeight() - 3 - ICON_SIZE) / 2 + 1;
+                int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
                 graphics.item(icon, iconX, iconY);
                 graphics.itemDecorations(font, icon, iconX, iconY);
+            }
+            case CARD -> {
+                surface(graphics, hovered);
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(getX() + (getWidth() - CARD_ICON) / 2.0F, getY() + CARD_MARGIN);
+                graphics.pose().scale(CARD_ICON / (float) ICON_SIZE, CARD_ICON / (float) ICON_SIZE);
+                graphics.item(icon, 0, 0);
+                graphics.pose().popMatrix();
+                int room = getWidth() - 2 * PADDING;
+                FormattedCharSequence title = Language.getInstance().getVisualOrder(font.substrByWidth(getMessage(), room));
+                graphics.text(font, title, getX() + (getWidth() - font.width(title)) / 2,
+                        getY() + CARD_MARGIN + CARD_ICON + CARD_TITLE_GAP, UiTheme.TEXT);
             }
             case LABELED -> {
                 UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverBorder : tone.border,

@@ -114,7 +114,11 @@ final class UiLayouts {
             case UiElement.Scroll scroll -> scroll(scroll);
             case UiElement.Label label -> text(label.text());
             case UiElement.Page page -> text(Component.literal(page.page() + " / " + page.pages()));
-            case UiElement.Detail detail -> detail(detail);
+            // In a row, a pressable detail is a card; elsewhere it is the full view of one thing.
+            case UiElement.Detail detail -> place == Place.ROW && detail.iconId() != UiElement.Detail.NOT_PRESSABLE
+                    ? UiButtonWidget.card(font, detail.icon(), detail.title(), detail.iconTooltip(),
+                            (mouse, shift) -> actions.press(detail.iconId(), mouse, shift))
+                    : detail(detail);
             case UiElement.TextInput input -> new UiInputWidget(font, input, actions);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Divider ignored -> new UiDividerWidget();

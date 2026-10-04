@@ -46,6 +46,7 @@ final class ServerUiScreen extends Screen implements UiActions {
     private List<UiTitleEditWidget> titleEdits = List.of();
     private LinearLayout content;
     private FrameLayout header;
+    private UiTitleWidget titleWidget;
     private FrameLayout footer;
 
     ServerUiScreen(int sessionId, Component title, ItemStack icon, UiElement root) {
@@ -111,7 +112,8 @@ final class ServerUiScreen extends Screen implements UiActions {
         if (!icon.isEmpty()) {
             headerStart.addChild(new UiItemWidget(icon, ICON_SIZE), settings -> settings.alignVerticallyMiddle());
         }
-        headerStart.addChild(new UiTitleWidget(font, title, TITLE_SCALE), settings -> settings.alignVerticallyMiddle());
+        titleWidget = new UiTitleWidget(font, title, TITLE_SCALE);
+        headerStart.addChild(titleWidget, settings -> settings.alignVerticallyMiddle());
         headerStart.arrangeElements();
         UiButtonWidget close = UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
 
@@ -244,7 +246,8 @@ final class ServerUiScreen extends Screen implements UiActions {
 
         int dividerY = header.getY() + header.getHeight() + SECTION_SPACING / 2;
         graphics.fill(left + 1, dividerY, left + panelWidth - 1, dividerY + 1, UiTheme.DIVIDER);
-        graphics.fill(content.getX(), dividerY, content.getX() + ACCENT_WIDTH, dividerY + 1, UiTheme.ACCENT);
+        // The accent sits under the start of the title, wherever the back arrow and icon leave it.
+        graphics.fill(titleWidget.getX(), dividerY, titleWidget.getX() + ACCENT_WIDTH, dividerY + 1, UiTheme.ACCENT);
         if (footer != null) {
             int footerDividerY = footer.getY() - SECTION_SPACING / 2;
             graphics.fill(left + 1, footerDividerY, left + panelWidth - 1, footerDividerY + 1, UiTheme.DIVIDER);
