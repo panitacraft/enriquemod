@@ -3,8 +3,8 @@ package com.panita.enriquecraft.staff.gui;
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.framework.data.WorldData;
-import com.panita.enriquecraft.core.gui.MenuFactory;
-import com.panita.enriquecraft.core.gui.MenuTesting;
+import com.panita.enriquecraft.core.ui.UiService;
+import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.core.message.Timestamps;
 import com.panita.enriquecraft.staff.config.StaffConfig;
 import com.panita.enriquecraft.staff.data.DeathRecord;
@@ -38,13 +38,13 @@ class DeathMenusTest {
     @TempDir
     Path directory;
 
-    private MenuFactory factory;
+    private UiService ui;
     private DeathInventoryService service;
     private DeathInventoryView view;
 
     @BeforeEach
     void create() {
-        factory = MinecraftTestSupport.menuFactory(directory.resolve("config"));
+        ui = MinecraftTestSupport.uiService(directory.resolve("config"));
         WorldData worldData = new WorldData();
         worldData.attach(directory.resolve("world"), MinecraftTestSupport.ops());
         StaffConfig config = new ConfigManager(directory.resolve("config")).bind("staff", StaffConfig.class);
@@ -79,13 +79,13 @@ class DeathMenusTest {
     }
 
     private DeathInventoryMenu inspector(DeathRecord record) {
-        DeathInventoryMenu menu = new DeathInventoryMenu(factory, service, view, record, null);
-        MenuTesting.draw(menu);
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record, null);
+        UiTesting.drawAsChest(menu);
         return menu;
     }
 
     private static Item itemAt(DeathInventoryMenu menu, int slot) {
-        return MenuTesting.itemAt(menu, slot).stack().getItem();
+        return UiTesting.itemAt(menu, slot).stack().getItem();
     }
 
     @Test
@@ -99,14 +99,14 @@ class DeathMenusTest {
         assertEquals(Items.IRON_LEGGINGS, itemAt(menu, 38));
         assertEquals(Items.IRON_BOOTS, itemAt(menu, 39));
         assertEquals(Items.SHIELD, itemAt(menu, 41));
-        assertEquals(5, MenuTesting.itemAt(menu, 0).stack().getCount());
+        assertEquals(5, UiTesting.itemAt(menu, 0).stack().getCount());
     }
 
     @Test
     void inspectorItemsKeepTheirOwnLoreAndGetTheHintAfterIt() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
-        List<String> lore = MenuTesting.itemAt(menu, 27).stack().get(DataComponents.LORE).lines().stream()
+        List<String> lore = UiTesting.itemAt(menu, 27).stack().get(DataComponents.LORE).lines().stream()
                 .map(Component::getString).toList();
 
         assertEquals(List.of("Lore propio", "", "Clic izquierdo para obtener una copia"), lore);
@@ -148,7 +148,7 @@ class DeathMenusTest {
     void theDeleteButtonAsksForShift() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
-        List<String> lore = MenuTesting.itemAt(menu, 52).stack().get(DataComponents.LORE).lines().stream()
+        List<String> lore = UiTesting.itemAt(menu, 52).stack().get(DataComponents.LORE).lines().stream()
                 .map(Component::getString).toList();
 
         assertEquals("Mayús + clic izquierdo para confirmar.", lore.get(lore.size() - 1));
@@ -158,7 +158,7 @@ class DeathMenusTest {
     void theRestoreButtonWarnsThatThePlayerMustBeOnline() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
-        List<String> lore = MenuTesting.itemAt(menu, 50).stack().get(DataComponents.LORE).lines().stream()
+        List<String> lore = UiTesting.itemAt(menu, 50).stack().get(DataComponents.LORE).lines().stream()
                 .map(Component::getString).toList();
 
         assertEquals("El jugador debe estar conectado.", lore.get(lore.size() - 1));
@@ -170,11 +170,11 @@ class DeathMenusTest {
         DeathRecord newer = record(30, List.of(new ItemStack(Items.APPLE, 2)));
         service.add(older);
         service.add(newer);
-        DeathListMenu list = new DeathListMenu(factory, service, view, ANA, "Ana");
+        DeathListMenu list = new DeathListMenu(ui, service, view, ANA, "Ana");
 
-        MenuTesting.draw(list);
+        UiTesting.drawAsChest(list);
 
-        ItemStack first = MenuTesting.itemAt(list, 10).stack();
+        ItemStack first = UiTesting.itemAt(list, 10).stack();
         assertEquals(Items.SKELETON_SKULL, first.getItem());
         assertEquals("Muerte del " + Timestamps.format(newer.diedAt()), first.get(DataComponents.CUSTOM_NAME).getString());
         List<String> lore = first.get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
@@ -186,17 +186,17 @@ class DeathMenusTest {
                 "Nivel de experiencia: 17",
                 "Clic izquierdo para inspeccionar"), lore);
         assertEquals("Muerte del " + Timestamps.format(older.diedAt()),
-                MenuTesting.itemAt(list, 11).stack().get(DataComponents.CUSTOM_NAME).getString());
-        assertEquals("Objetos: 7", MenuTesting.itemAt(list, 11).stack().get(DataComponents.LORE).lines().get(3).getString());
+                UiTesting.itemAt(list, 11).stack().get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("Objetos: 7", UiTesting.itemAt(list, 11).stack().get(DataComponents.LORE).lines().get(3).getString());
     }
 
     @Test
     void aPlayerWithoutDeathsGetsTheEmptyMarker() {
-        DeathListMenu list = new DeathListMenu(factory, service, view, ANA, "Ana");
+        DeathListMenu list = new DeathListMenu(ui, service, view, ANA, "Ana");
 
-        MenuTesting.draw(list);
+        UiTesting.drawAsChest(list);
 
-        assertEquals(Items.PAPER, MenuTesting.itemAt(list, 22).stack().getItem());
-        assertNull(MenuTesting.itemAt(list, 10));
+        assertEquals(Items.PAPER, UiTesting.itemAt(list, 22).stack().getItem());
+        assertNull(UiTesting.itemAt(list, 10));
     }
 }

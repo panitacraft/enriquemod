@@ -1,16 +1,16 @@
 package com.panita.enriquecraft.staff.gui;
 
-import com.panita.enriquecraft.core.gui.MenuFactory;
-import com.panita.enriquecraft.core.gui.MenuItem;
-import com.panita.enriquecraft.core.gui.PaginatedMenu;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Timestamps;
+import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.UiBuilder;
+import com.panita.enriquecraft.core.ui.UiPagedMenu;
+import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.data.SavedItem;
 import com.panita.enriquecraft.staff.message.CustomItemView;
 import com.panita.enriquecraft.staff.message.StaffMessages;
 import com.panita.enriquecraft.staff.service.CustomItemService;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -18,13 +18,13 @@ import java.util.List;
  * Every saved custom item, shown as the real item with a few extra lines of lore. Left click gives
  * the staff member an exact copy, without those extra lines.
  */
-public final class CustomItemsMenu extends PaginatedMenu<SavedItem> {
+public final class CustomItemsMenu extends UiPagedMenu<SavedItem> {
 
     private final CustomItemService service;
     private final CustomItemView view;
 
-    public CustomItemsMenu(MenuFactory factory, CustomItemService service, CustomItemView view) {
-        super(factory, null);
+    public CustomItemsMenu(UiService ui, CustomItemService service, CustomItemView view) {
+        super(ui, null);
         this.service = service;
         this.view = view;
     }
@@ -40,15 +40,15 @@ public final class CustomItemsMenu extends PaginatedMenu<SavedItem> {
     }
 
     @Override
-    protected MenuItem render(SavedItem item) {
-        ItemStack shown = factory().item(item.stack())
-                .lore(Message.plain(""),
-                        Message.plain(StaffMessages.Items.ENTRY_ID).with("id", "enriquecraft:" + item.name()),
-                        Message.plain(StaffMessages.Items.ENTRY_SAVED_BY).with("player", item.savedByName()),
-                        Message.plain(StaffMessages.Items.ENTRY_DATE).with("date", Timestamps.format(item.savedAt())),
-                        Message.plain(StaffMessages.Items.ENTRY_CLICK_HINT))
-                .build();
-        return MenuItem.button(shown, click -> {
+    protected UiElement render(UiBuilder builder, SavedItem item) {
+        List<Component> details = List.of(
+                factory().text(Message.plain("")),
+                factory().text(Message.plain(StaffMessages.Items.ENTRY_ID).with("id", "enriquecraft:" + item.name())),
+                factory().text(Message.plain(StaffMessages.Items.ENTRY_SAVED_BY).with("player", item.savedByName())),
+                factory().text(Message.plain(StaffMessages.Items.ENTRY_DATE).with("date", Timestamps.format(item.savedAt()))),
+                factory().text(StaffMessages.Items.ENTRY_CLICK_HINT));
+        // No label: the button is the item itself, so it keeps its own name and lore.
+        return builder.button(item.stack().copy(), Component.empty(), details, click -> {
             if (click.isLeft()) {
                 view.give(click.player(), item);
             }
