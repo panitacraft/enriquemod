@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * One piece of a server-described screen. The tree is pure description: it holds no behavior, so it
@@ -141,9 +142,12 @@ public sealed interface UiElement {
      *
      * @param iconId      identifies the pressable item within one description, or {@link #NOT_PRESSABLE}
      * @param iconTooltip what pressing the item does, shown when hovering it
+     * @param editableTitle when present, the client companion lets the player edit the title in place and
+     *                      confirm it with a check; a chest ignores it, so a menu offers a field of its own there
+     *                      (an empty title is simply not drawn)
      */
-    record Detail(ItemStack icon, Component title, List<Component> lines, int iconId, List<Component> iconTooltip)
-            implements UiElement {
+    record Detail(ItemStack icon, Component title, List<Component> lines, int iconId, List<Component> iconTooltip,
+                  Optional<TextInput> editableTitle) implements UiElement {
         public static final int NOT_PRESSABLE = -1;
 
         public Detail {
@@ -151,9 +155,19 @@ public sealed interface UiElement {
             iconTooltip = List.copyOf(iconTooltip);
         }
 
+        /** A detail with a pressable item and a fixed title. */
+        public Detail(ItemStack icon, Component title, List<Component> lines, int iconId, List<Component> iconTooltip) {
+            this(icon, title, lines, iconId, iconTooltip, Optional.empty());
+        }
+
         /** A detail whose item cannot be pressed. */
         public Detail(ItemStack icon, Component title, List<Component> lines) {
             this(icon, title, lines, NOT_PRESSABLE, List.of());
+        }
+
+        /** The same detail with a title the player can edit. */
+        public Detail withEditableTitle(TextInput input) {
+            return new Detail(icon, title, lines, iconId, iconTooltip, Optional.of(input));
         }
     }
 

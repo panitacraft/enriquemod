@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Reads and writes a {@link UiElement} tree. Written by hand because the tree is recursive and the
@@ -87,10 +88,7 @@ public final class UiElementCodec {
             }
             case UiElement.TextInput input -> {
                 buffer.writeByte(TEXT_INPUT);
-                buffer.writeVarInt(input.id());
-                ComponentSerialization.STREAM_CODEC.encode(buffer, input.hint());
-                buffer.writeUtf(input.value(), UiElement.TextInput.MAX_LENGTH);
-                buffer.writeVarInt(input.maxLength());
+                writeTextInput(buffer, input);
             }
             case UiElement.Page page -> {
                 buffer.writeByte(PAGE);
@@ -104,6 +102,8 @@ public final class UiElementCodec {
                 TOOLTIP.encode(buffer, detail.lines());
                 buffer.writeVarInt(detail.iconId() + 1);
                 TOOLTIP.encode(buffer, detail.iconTooltip());
+                buffer.writeBoolean(detail.editableTitle().isPresent());
+                detail.editableTitle().ifPresent(input -> writeTextInput(buffer, input));
             }
             case UiElement.Scroll scroll -> {
                 buffer.writeByte(SCROLL);
@@ -152,12 +152,7 @@ public final class UiElementCodec {
             case BUTTON -> readButton(buffer);
             case TEXT_INPUT -> readTextInput(buffer);
             case PAGE -> readPage(buffer);
-            case DETAIL -> new UiElement.Detail(
-                    ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
-                    ComponentSerialization.STREAM_CODEC.decode(buffer),
-                    TOOLTIP.decode(buffer),
-                    buffer.readVarInt() - 1,
-                    TOOLTIP.decode(buffer));
+            case DETAIL -> readDetail(buffer);
             case SCROLL -> readScroll(buffer, depth);
             case DROPDOWN -> readDropdown(buffer);
             case DIVIDER -> new UiElement.Divider();
@@ -212,7 +207,25 @@ public final class UiElementCodec {
         }
     }
 
-    private static UiElement readTextInput(RegistryFriendlyByteBuf buffer) {
+    private static void writeTextInput(RegistryFriendlyByteBuf buffer, UiElement.TextInput input) {
+        buffer.writeVarInt(input.id());
+        ComponentSerialization.STREAM_CODEC.encode(buffer, input.hint());
+        buffer.writeUtf(input.value(), UiElement.TextInput.MAX_LENGTH);
+        buffer.writeVarInt(input.maxLength());
+    }
+
+    private static UiElement readDetail(RegistryFriendlyByteBuf buffer) {
+        ItemStack icon = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer);
+        Component title = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        List<Component> lines = TOOLTIP.decode(buffer);
+        int iconId = buffer.readVarInt() - 1;
+        List<Component> iconTooltip = TOOLTIP.decode(buffer);
+        Optional<UiElement.TextInput> editableTitle = buffer.readBoolean()
+                ? Optional.of(readTextInput(buffer)) : Optional.empty();
+        return new UiElement.Detail(icon, title, lines, iconId, iconTooltip, editableTitle);
+    }
+
+    private static UiElement.TextInput readTextInput(RegistryFriendlyByteBuf buffer) {
         int id = buffer.readVarInt();
         Component hint = ComponentSerialization.STREAM_CODEC.decode(buffer);
         String value = buffer.readUtf(UiElement.TextInput.MAX_LENGTH);

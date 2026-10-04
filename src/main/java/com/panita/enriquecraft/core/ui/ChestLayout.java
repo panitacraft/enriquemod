@@ -166,7 +166,9 @@ final class ChestLayout {
     private MenuItem detail(UiElement.Detail detail) {
         List<Component> lines = new ArrayList<>(detail.lines());
         if (detail.iconId() != UiElement.Detail.NOT_PRESSABLE) {
-            lines.add(Component.empty());
+            if (!lines.isEmpty()) {
+                lines.add(Component.empty());
+            }
             lines.addAll(detail.iconTooltip());
         }
         ItemStack shown = factory.item(detail.icon().isEmpty() ? new ItemStack(Items.PAPER) : detail.icon())

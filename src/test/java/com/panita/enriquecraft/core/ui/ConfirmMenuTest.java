@@ -69,7 +69,7 @@ class ConfirmMenuTest {
         UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
         UiElement.Row controls = assertInstanceOf(UiElement.Row.class, root.children().getLast());
 
-        assertEquals(ButtonRole.BACK, assertInstanceOf(UiElement.Button.class, controls.children().get(0)).role());
+        assertEquals(ButtonRole.CANCEL, assertInstanceOf(UiElement.Button.class, controls.children().get(0)).role());
         assertEquals(ButtonRole.CONFIRM, assertInstanceOf(UiElement.Button.class, controls.children().get(5)).role());
     }
 }

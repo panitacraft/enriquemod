@@ -13,7 +13,7 @@ public final class NetworkProtocol {
      * Bumped on every change to a payload's layout. The server treats a client with a different
      * version as vanilla, so a mismatch degrades to the vanilla experience instead of breaking.
      */
-    public static final int VERSION = 4;
+    public static final int VERSION = 5;
 
     private NetworkProtocol() {
     }

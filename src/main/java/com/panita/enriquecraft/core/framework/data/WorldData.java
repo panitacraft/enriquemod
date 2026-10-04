@@ -4,9 +4,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
 import net.minecraft.nbt.Tag;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * The data files of the mod for the world that is currently running. Files live in the world
@@ -60,6 +64,21 @@ public final class WorldData {
         this.directory = directory;
         this.ops = ops;
         registered.forEach(store -> store.load(directory, ops));
+    }
+
+    /**
+     * The names of the files directly inside a folder of the mod's data, sorted; empty when there is no
+     * world or no such folder.
+     */
+    public List<String> fileNames(String relativeDirectory) {
+        if (directory == null || !Files.isDirectory(directory.resolve(relativeDirectory))) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.list(directory.resolve(relativeDirectory))) {
+            return files.filter(Files::isRegularFile).map(file -> file.getFileName().toString()).sorted().toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Called when the world stops. */

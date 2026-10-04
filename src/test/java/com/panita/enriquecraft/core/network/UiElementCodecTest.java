@@ -218,4 +218,41 @@ final class UiElementCodecTest {
         assertEquals("Base", decoded.title().getString());
         assertEquals(List.of("uno", "dos"), decoded.lines().stream().map(Component::getString).toList());
     }
+
+    @Test
+    void anEditableTitleAndAPressableItemSurviveARoundTrip() {
+        UiElement.TextInput field = new UiElement.TextInput(7, Component.literal("Nombre"), "Mi base", 32);
+        UiElement detail = new UiElement.Detail(new ItemStack(Items.DIAMOND), Component.literal("Base"), List.of(), 3,
+                List.of(Component.literal("cambiar")), java.util.Optional.of(field));
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(buffer, detail);
+
+        UiElement.Detail decoded = assertInstanceOf(UiElement.Detail.class, decode(buffer));
+        assertEquals(3, decoded.iconId());
+        assertEquals(field.id(), decoded.editableTitle().orElseThrow().id());
+        assertEquals("Mi base", decoded.editableTitle().orElseThrow().value());
+        assertEquals(32, decoded.editableTitle().orElseThrow().maxLength());
+    }
+
+    @Test
+    void aDetailWithoutAnEditableTitleDecodesWithout() {
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(buffer, new UiElement.Detail(new ItemStack(Items.DIAMOND), Component.literal("Base"), List.of()));
+
+        assertEquals(java.util.Optional.empty(), assertInstanceOf(UiElement.Detail.class, decode(buffer)).editableTitle());
+    }
+
+    @Test
+    void everyButtonRoleSurvivesARoundTrip() {
+        for (com.panita.enriquecraft.core.network.ButtonRole role : com.panita.enriquecraft.core.network.ButtonRole.values()) {
+            RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+            UiElementCodec.STREAM_CODEC.encode(buffer, new UiElement.Button(1, role, new ItemStack(Items.DIAMOND),
+                    Component.literal("x"), List.of()));
+
+            assertEquals(role, assertInstanceOf(UiElement.Button.class, decode(buffer)).role());
+        }
+    }
 }

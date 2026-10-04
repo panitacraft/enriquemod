@@ -13,7 +13,8 @@ import java.util.function.Consumer;
 
 /**
  * Asks the player to confirm something that cannot be undone, such as deleting a record. Every such
- * question looks the same: what is about to happen, then confirm or cancel. Cancelling, and the back
+ * question looks the same: what is about to happen, then confirm or cancel (red and green in the client
+ * companion, which draws them as labels without an item; a chest shows the items). Cancelling, and the back
  * navigation of the client companion, return to the screen it was opened from. What follows a
  * confirmation, such as where to go next, is up to the action.
  */
@@ -59,7 +60,7 @@ public final class ConfirmMenu extends UiMenu {
 
     @Override
     protected UiElement describe(UiBuilder builder) {
-        UiElement cancel = builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(Messages.Gui.CANCEL),
+        UiElement cancel = builder.button(ButtonRole.CANCEL, new ItemStack(Items.OAK_DOOR), factory().text(Messages.Gui.CANCEL),
                 List.of(), click -> previous().open(click.player()));
         UiElement confirm = builder.button(ButtonRole.CONFIRM, new ItemStack(Items.EMERALD_BLOCK),
                 factory().text(Messages.Gui.CONFIRM), List.of(), click -> {
