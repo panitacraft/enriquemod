@@ -26,9 +26,11 @@ final class UiLayouts {
     private static final int GRID_SPACING = 3;
     private static final int GAP = 12;
     private static final int DETAIL_ICON = UiButtonWidget.BIG_ICON;
+    private static final float TITLE_SCALE = 1.25F;
     // A scroll area never takes more than this share of the window, whatever the server asked for.
     private static final double MAX_SCROLL_SHARE = 0.45;
-    private static final int MIN_SCROLL_HEIGHT = 48;
+    private static final int MIN_SCROLL_HEIGHT = 30;
+    private static final int COMPACT_ICON = 32;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -38,14 +40,19 @@ final class UiLayouts {
     private final Font font;
     private final UiActions actions;
     private final List<UiDropdownWidget> dropdowns = new ArrayList<>();
+    private final List<UiTitleEditWidget> titleEdits = new ArrayList<>();
     private final int scrollReduction;
+    private final boolean compact;
     private boolean hasScroll;
 
     /**
      * @param scrollReduction how much shorter than they would be scroll areas should be built, to make the
      *                        screen fit the window
+     * @param compact         whether to draw the large icons of detail views smaller, for a window that is
+     *                        too small even with the scroll areas at their least
      */
-    UiLayouts(Font font, UiActions actions, int scrollReduction) {
+    UiLayouts(Font font, UiActions actions, int scrollReduction, boolean compact) {
+        this.compact = compact;
         this.font = font;
         this.actions = actions;
         this.scrollReduction = scrollReduction;
@@ -58,6 +65,11 @@ final class UiLayouts {
 
     LayoutElement build(UiElement element) {
         return build(element, Place.COLUMN);
+    }
+
+    /** The editable titles built so far; the screen lets Escape drop an edit in progress. */
+    List<UiTitleEditWidget> titleEdits() {
+        return titleEdits;
     }
 
     /** The dropdowns built so far; the screen draws their lists above everything else. */
@@ -108,13 +120,29 @@ final class UiLayouts {
             case UiElement.Divider ignored -> new UiDividerWidget();
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
-                case FOOTER -> button.icon().isEmpty() || button.role() == ButtonRole.CONFIRM
-                        ? UiButtonWidget.action(font, button, actions)
-                        : UiButtonWidget.cell(font, button, actions);
+                case FOOTER -> footerButton(button);
                 default -> UiButtonWidget.action(font, button, actions);
             };
             // Grid cells keep their size so the grid stays aligned; elsewhere a spacer is just a gap.
             case UiElement.Spacer ignored -> place == Place.GRID ? new UiCellWidget() : SpacerElement.height(SPACING);
+        };
+    }
+
+    /**
+     * An answer is a colored pill with its label; an action is its item on a tinted surface, red when it
+     * discards and green when it gives back, so no action looks like an item cell.
+     */
+    private UiButtonWidget footerButton(UiElement.Button button) {
+        boolean withItem = !button.icon().isEmpty();
+        return switch (button.role()) {
+            case CONFIRM -> UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, actions);
+            case CANCEL -> UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, actions);
+            case DANGER -> withItem ? UiButtonWidget.tool(font, button, UiTheme.Tone.DANGER, actions)
+                    : UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, actions);
+            case SUCCESS -> withItem ? UiButtonWidget.tool(font, button, UiTheme.Tone.SUCCESS, actions)
+                    : UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, actions);
+            default -> withItem ? UiButtonWidget.tool(font, button, UiTheme.Tone.ACTION, actions)
+                    : UiButtonWidget.action(font, button, actions);
         };
     }
 
@@ -148,15 +176,38 @@ final class UiLayouts {
     private LinearLayout detail(UiElement.Detail detail) {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
         if (!detail.icon().isEmpty()) {
+            int size = compact ? COMPACT_ICON : DETAIL_ICON;
             LayoutElement icon = detail.iconId() == UiElement.Detail.NOT_PRESSABLE
-                    ? new UiItemWidget(detail.icon(), DETAIL_ICON)
-                    : UiButtonWidget.big(font, detail.icon(), detail.iconTooltip(),
+                    ? new UiItemWidget(detail.icon(), size)
+                    : UiButtonWidget.big(font, detail.icon(), size, detail.iconTooltip(),
                             (mouse, shift) -> actions.press(detail.iconId(), mouse, shift));
             column.addChild(icon, settings -> settings.alignHorizontallyCenter());
         }
-        column.addChild(new UiTitleWidget(font, detail.title(), 1.25F), settings -> settings.alignHorizontallyCenter().paddingVertical(4));
-        detail.lines().forEach(line -> column.addChild(new StringWidget(line, font), settings -> settings.alignHorizontallyCenter()));
+        if (detail.editableTitle().isPresent()) {
+            column.addChild(editableTitle(detail), settings -> settings.alignHorizontallyCenter().paddingVertical(4));
+        } else if (!detail.title().getString().isEmpty()) {
+            column.addChild(new UiTitleWidget(font, detail.title(), TITLE_SCALE), settings -> settings.alignHorizontallyCenter().paddingVertical(4));
+        }
+        detail.lines().forEach(line -> column.addChild(new UiLineWidget(font, line), settings -> settings.alignHorizontallyCenter()));
         return column;
+    }
+
+    /** A title that is a text field once clicked, with a check beside it that appears when the value changed. */
+    private LayoutElement editableTitle(UiElement.Detail detail) {
+        UiTitleEditWidget edit = new UiTitleEditWidget(font, detail.title(), detail.editableTitle().orElseThrow(), TITLE_SCALE, actions);
+        titleEdits.add(edit);
+        UiButtonWidget check = UiButtonWidget.check(font, Component.translatable("enriquecraft.ui.save"), (mouse, shift) -> edit.submit());
+        check.visible = false;
+        check.active = false;
+        edit.onDirty(dirty -> {
+            check.visible = dirty;
+            check.active = dirty;
+        });
+        // The check sits at the edge of a frame as wide on both sides, so the title stays centered.
+        FrameLayout frame = new FrameLayout(edit.getWidth() + 2 * (check.getWidth() + SPACING), edit.getHeight());
+        frame.addChild(edit, settings -> settings.alignHorizontallyCenter().alignVerticallyMiddle());
+        frame.addChild(check, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
+        return frame;
     }
 
     private LinearLayout column(List<UiElement> children) {

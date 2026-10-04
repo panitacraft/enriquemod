@@ -6,13 +6,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -21,27 +19,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A button of a server-described screen, drawn flat in the screen's theme. It comes in four looks:
- * a cell shows only its item, with the name and details in the tooltip, so many fit in a grid or a
- * row of actions; an action shows its item and label; a glyph is a single character, used for
- * navigation; a big one shows one item large, such as the icon of a detail view. Left and right clicks
- * are both reported, since the server decides what each of them does.
+ * A button of a server-described screen, drawn flat in the screen's theme. It comes in six looks:
+ * a cell shows only its item, with the name and details in the tooltip, so many fit in a grid;
+ * a tool is an action that shows only its item on a tinted surface, so it cannot be mistaken for an item
+ * cell; a labeled button is a colored pill with text, for answers such as confirm and cancel; an action
+ * shows its item and label; a glyph is a single character, used for navigation; a big one shows one
+ * item large, such as the icon of a detail view. Left and right clicks are both reported, since the
+ * server decides what each of them does.
+ * <p>
+ * Tooltips are drawn on one line per line of text, never wrapped, so an id or a long name stays whole.
  */
 final class UiButtonWidget extends AbstractButton {
 
     static final int CELL_SIZE = 22;
+    static final int TOOL_SIZE = 26;
     static final int ACTION_HEIGHT = 20;
     static final int GLYPH_SIZE = 18;
     static final int BIG_ICON = 48;
 
-    private static final int BIG_SIZE = BIG_ICON + 8;
+    private static final int BIG_PADDING = 8;
     private static final int ICON_SIZE = 16;
     private static final int PADDING = 5;
     private static final int MIN_ACTION_WIDTH = 40;
+    private static final int MIN_LABELED_WIDTH = 70;
+    private static final int LABELED_HEIGHT = 22;
     private static final int BADGE_COLOR = 0xFF7FE3A0;
+    private static final int LABEL_COLOR = 0xFFFFFFFF;
 
     private enum Look {
-        CELL, ACTION, GLYPH, BIG
+        CELL, TOOL, LABELED, ACTION, GLYPH, BIG
     }
 
     /** What happens when the button is pressed. */
@@ -52,17 +58,21 @@ final class UiButtonWidget extends AbstractButton {
 
     private final Font font;
     private final Look look;
+    private final UiTheme.Tone tone;
     private final ItemStack icon;
     private final String glyph;
     private final String badge;
     private final boolean danger;
     private final Press press;
+    private List<Component> tooltipLines = List.of();
+    private int bigIcon = BIG_ICON;
 
-    private UiButtonWidget(Font font, Look look, int width, int height, Component message, ItemStack icon, String glyph,
-                           String badge, boolean danger, Press press) {
+    private UiButtonWidget(Font font, Look look, UiTheme.Tone tone, int width, int height, Component message,
+                           ItemStack icon, String glyph, String badge, boolean danger, Press press) {
         super(0, 0, width, height, message);
         this.font = font;
         this.look = look;
+        this.tone = tone;
         this.icon = icon;
         this.glyph = glyph;
         this.badge = badge;
@@ -72,9 +82,37 @@ final class UiButtonWidget extends AbstractButton {
 
     /** A button that is only its item, with everything else in the tooltip. */
     static UiButtonWidget cell(Font font, UiElement.Button button, UiActions actions) {
-        UiButtonWidget widget = new UiButtonWidget(font, Look.CELL, CELL_SIZE, CELL_SIZE, shownLabel(button), button.icon(),
-                null, button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        UiButtonWidget widget = new UiButtonWidget(font, Look.CELL, UiTheme.Tone.ACTION, CELL_SIZE, CELL_SIZE,
+                shownLabel(button), button.icon(), null, button.badge(), false,
+                (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.describe(button, true);
+        return widget;
+    }
+
+    /** An action: its item alone on a tinted surface, named by the tooltip. */
+    static UiButtonWidget tool(Font font, UiElement.Button button, UiTheme.Tone tone, UiActions actions) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.TOOL, tone, TOOL_SIZE, TOOL_SIZE, shownLabel(button),
+                button.icon(), null, button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        widget.describe(button, true);
+        return widget;
+    }
+
+    /** A colored pill with the button's label and no item, for answering a question. */
+    static UiButtonWidget labeled(Font font, UiElement.Button button, UiTheme.Tone tone, UiActions actions) {
+        // Plain text: the server colors labels for a chest, and a colored label would not read on a colored button.
+        Component label = Component.literal(button.label().getString());
+        int width = Math.max(MIN_LABELED_WIDTH, font.width(label) + 4 * PADDING);
+        UiButtonWidget widget = new UiButtonWidget(font, Look.LABELED, tone, width, LABELED_HEIGHT, label, ItemStack.EMPTY,
+                null, "", false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        widget.describe(button, false);
+        return widget;
+    }
+
+    /** A small green check that saves an edit. */
+    static UiButtonWidget check(Font font, Component hint, Press press) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.LABELED, UiTheme.Tone.SUCCESS, TOOL_SIZE, LABELED_HEIGHT,
+                Component.literal("✔"), ItemStack.EMPTY, null, "", false, press);
+        widget.tooltipLines = List.of(hint);
         return widget;
     }
 
@@ -83,8 +121,8 @@ final class UiButtonWidget extends AbstractButton {
         Component label = shownLabel(button);
         int iconSpace = button.icon().isEmpty() ? 0 : ICON_SIZE + PADDING;
         int width = Math.max(MIN_ACTION_WIDTH, PADDING + iconSpace + font.width(label) + PADDING);
-        UiButtonWidget widget = new UiButtonWidget(font, Look.ACTION, width, ACTION_HEIGHT, label, button.icon(), null,
-                button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        UiButtonWidget widget = new UiButtonWidget(font, Look.ACTION, UiTheme.Tone.ACTION, width, ACTION_HEIGHT, label,
+                button.icon(), null, button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.describe(button, false);
         return widget;
     }
@@ -97,22 +135,21 @@ final class UiButtonWidget extends AbstractButton {
      * @param enabled disabled glyphs are dim and do nothing
      */
     static UiButtonWidget glyph(Font font, String glyph, Component hint, boolean danger, boolean enabled, Press press) {
-        UiButtonWidget widget = new UiButtonWidget(font, Look.GLYPH, GLYPH_SIZE, GLYPH_SIZE,
+        UiButtonWidget widget = new UiButtonWidget(font, Look.GLYPH, UiTheme.Tone.ACTION, GLYPH_SIZE, GLYPH_SIZE,
                 hint == null ? Component.literal(glyph) : hint, ItemStack.EMPTY, glyph, "", danger, press);
         widget.active = enabled;
         if (hint != null && enabled) {
-            widget.setTooltip(Tooltip.create(hint));
+            widget.tooltipLines = List.of(hint);
         }
         return widget;
     }
 
-    /** One item drawn large that can be pressed, such as the icon of a detail view. */
-    static UiButtonWidget big(Font font, ItemStack icon, List<Component> tooltip, Press press) {
-        UiButtonWidget widget = new UiButtonWidget(font, Look.BIG, BIG_SIZE, BIG_SIZE, Component.empty(), icon, null, "",
-                false, press);
-        if (!tooltip.isEmpty()) {
-            widget.setTooltip(Tooltip.create(joined(tooltip)));
-        }
+    /** One item drawn large, {@code size} pixels wide, that can be pressed, such as the icon of a detail view. */
+    static UiButtonWidget big(Font font, ItemStack icon, int size, List<Component> tooltip, Press press) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.BIG, UiTheme.Tone.ACTION, size + BIG_PADDING, size + BIG_PADDING,
+                Component.empty(), icon, null, "", false, press);
+        widget.bigIcon = size;
+        widget.tooltipLines = List.copyOf(tooltip);
         return widget;
     }
 
@@ -124,9 +161,7 @@ final class UiButtonWidget extends AbstractButton {
             lines.add(button.label());
         }
         lines.addAll(button.tooltip());
-        if (!lines.isEmpty()) {
-            setTooltip(Tooltip.create(joined(lines)));
-        }
+        tooltipLines = List.copyOf(lines);
     }
 
     /** A button that is only an item, such as a stack in an inventory view, is named and described by the item. */
@@ -143,17 +178,6 @@ final class UiButtonWidget extends AbstractButton {
         return icon.getTooltipLines(Item.TooltipContext.of(minecraft.level), minecraft.player, TooltipFlag.NORMAL);
     }
 
-    private static Component joined(List<Component> lines) {
-        MutableComponent text = Component.empty();
-        for (int index = 0; index < lines.size(); index++) {
-            if (index > 0) {
-                text.append(Component.literal("\n"));
-            }
-            text.append(lines.get(index));
-        }
-        return text;
-    }
-
     @Override
     public void onPress(InputWithModifiers input) {
         // The protocol numbers the buttons 0 and 1; Minecraft numbers them its own way.
@@ -164,6 +188,14 @@ final class UiButtonWidget extends AbstractButton {
     @Override
     protected boolean isValidClickButton(MouseButtonInfo button) {
         return button.button() == InputConstants.MOUSE_BUTTON_LEFT || button.button() == InputConstants.MOUSE_BUTTON_RIGHT;
+    }
+
+    /** Vanilla's tooltip splits every line at a fixed width; this one keeps each line whole. */
+    @Override
+    protected void extractTooltipForNextRenderPass(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        if (active && isHovered() && !tooltipLines.isEmpty()) {
+            graphics.setComponentTooltipForNextFrame(font, tooltipLines, mouseX, mouseY);
+        }
     }
 
     @Override
@@ -177,6 +209,23 @@ final class UiButtonWidget extends AbstractButton {
                 graphics.item(icon, iconX, iconY);
                 graphics.itemDecorations(font, icon, iconX, iconY);
                 drawBadge(graphics, getX() + getWidth() - 1, getY() + getHeight() - 1);
+            }
+            case TOOL -> {
+                UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverFill : tone.fill,
+                        hovered ? tone.hoverBorder : tone.border);
+                // A bar along the bottom edge makes it read as a control, not as something that is held.
+                graphics.fill(getX() + 3, getY() + getHeight() - 3, getX() + getWidth() - 3, getY() + getHeight() - 2,
+                        hovered ? tone.hoverBorder : tone.border);
+                int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
+                int iconY = getY() + (getHeight() - 3 - ICON_SIZE) / 2 + 1;
+                graphics.item(icon, iconX, iconY);
+                graphics.itemDecorations(font, icon, iconX, iconY);
+            }
+            case LABELED -> {
+                UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(), hovered ? tone.hoverBorder : tone.border,
+                        hovered ? tone.hoverBorder : tone.border);
+                graphics.text(font, getMessage(), getX() + (getWidth() - font.width(getMessage())) / 2,
+                        getY() + (getHeight() - font.lineHeight) / 2 + 1, LABEL_COLOR);
             }
             case ACTION -> {
                 surface(graphics, hovered);
@@ -202,8 +251,8 @@ final class UiButtonWidget extends AbstractButton {
             case BIG -> {
                 surface(graphics, hovered);
                 graphics.pose().pushMatrix();
-                graphics.pose().translate(getX() + (getWidth() - BIG_ICON) / 2.0F, getY() + (getHeight() - BIG_ICON) / 2.0F);
-                graphics.pose().scale(BIG_ICON / (float) ICON_SIZE, BIG_ICON / (float) ICON_SIZE);
+                graphics.pose().translate(getX() + (getWidth() - bigIcon) / 2.0F, getY() + (getHeight() - bigIcon) / 2.0F);
+                graphics.pose().scale(bigIcon / (float) ICON_SIZE, bigIcon / (float) ICON_SIZE);
                 graphics.item(icon, 0, 0);
                 graphics.pose().popMatrix();
             }

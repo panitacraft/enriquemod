@@ -22,6 +22,25 @@ final class UiTheme {
 
     static final int DANGER = 0xFFB3362F;
 
+    /** What an action looks like, so it never resembles an item cell: a tinted surface per purpose. */
+    enum Tone {
+        ACTION(0xFF22344A, 0xFF2C4560, 0xFF4A7BB5, 0xFF6FA3E0),
+        SUCCESS(0xFF1F4D33, 0xFF286642, 0xFF3FA66B, 0xFF5FCB8D),
+        DANGER(0xFF5A2320, 0xFF7A2E2A, 0xFFB3362F, 0xFFE05A50);
+
+        final int fill;
+        final int hoverFill;
+        final int border;
+        final int hoverBorder;
+
+        Tone(int fill, int hoverFill, int border, int hoverBorder) {
+            this.fill = fill;
+            this.hoverFill = hoverFill;
+            this.border = border;
+            this.hoverBorder = hoverBorder;
+        }
+    }
+
     /** The font of titles; defined in {@code assets/enriquecraft/font/title.json}. */
     static final FontDescription TITLE_FONT = new FontDescription.Resource(
             Identifier.fromNamespaceAndPath("enriquecraft", "title"));

@@ -22,6 +22,7 @@ public final class EnriquecraftClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ServerUiNetworking.register();
+        StaffMenuKey.register();
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> announce());
     }
 

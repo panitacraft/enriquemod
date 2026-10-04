@@ -13,25 +13,27 @@ import java.util.List;
  *
  * @param body     what fills the middle of the screen
  * @param back     the button that goes back, or null
+ * @param cancel   the button that turns down a question, or null; it also goes back, so Escape presses it when there is no back button
  * @param page     where a list is, or null when the screen is not a list
  * @param previous the button that shows the previous page, or null when there is none
  * @param next     the button that shows the next page, or null when there is none
  * @param fields   the text fields and dropdowns of the controls
  * @param actions  the other buttons of the controls
  */
-record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, UiElement.Button previous,
-                   UiElement.Button next, List<UiElement> fields, List<UiElement> actions) {
+record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cancel, UiElement.Page page,
+                   UiElement.Button previous, UiElement.Button next, List<UiElement> fields, List<UiElement> actions) {
 
     static ScreenParts split(UiElement root) {
         if (!(root instanceof UiElement.Column column) || column.children().size() < 2
                 || !(column.children().getLast() instanceof UiElement.Row controls)) {
-            return new ScreenParts(root, null, null, null, null, List.of(), List.of());
+            return new ScreenParts(root, null, null, null, null, null, List.of(), List.of());
         }
 
         List<UiElement> bands = column.children().subList(0, column.children().size() - 1);
         UiElement body = bands.size() == 1 ? bands.getFirst() : new UiElement.Column(bands);
 
         UiElement.Button back = null;
+        UiElement.Button cancel = null;
         UiElement.Page page = null;
         UiElement.Button previous = null;
         UiElement.Button next = null;
@@ -46,7 +48,11 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, U
                         case BACK -> back = button;
                         case PREVIOUS -> previous = button;
                         case NEXT -> next = button;
-                        case NONE, CONFIRM -> actions.add(button);
+                        case CANCEL -> {
+                            cancel = button;
+                            actions.add(button);
+                        }
+                        case NONE, CONFIRM, DANGER, SUCCESS -> actions.add(button);
                     }
                 }
                 case UiElement.Page indicator -> page = indicator;
@@ -56,6 +62,6 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Page page, U
                 default -> actions.add(element);
             }
         }
-        return new ScreenParts(body, back, page, previous, next, fields, actions);
+        return new ScreenParts(body, back, cancel, page, previous, next, fields, actions);
     }
 }

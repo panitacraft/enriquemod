@@ -43,6 +43,7 @@ final class ServerUiScreen extends Screen implements UiActions {
     private UiElement root;
     private ScreenParts parts = ScreenParts.split(new UiElement.Spacer());
     private List<UiDropdownWidget> dropdowns = List.of();
+    private List<UiTitleEditWidget> titleEdits = List.of();
     private LinearLayout content;
     private FrameLayout header;
     private FrameLayout footer;
@@ -67,25 +68,45 @@ final class ServerUiScreen extends Screen implements UiActions {
     @Override
     protected void init() {
         parts = ScreenParts.split(root);
-        UiLayouts layouts = new UiLayouts(font, this, 0);
-        assemble(layouts);
-        // A panel taller than the window gives the difference back through its scroll areas.
-        int overflow = content.getHeight() - (height - SCREEN_MARGIN);
+        UiLayouts layouts = layout(0, false);
+        // A panel taller than the window gives the difference back through its scroll areas, and when that is
+        // not enough it draws the large icons smaller.
+        int overflow = overflow();
         if (overflow > 0 && layouts.hasScroll()) {
-            layouts = new UiLayouts(font, this, overflow);
-            assemble(layouts);
+            layouts = layout(overflow, false);
+            overflow = overflow();
+        }
+        if (overflow > 0) {
+            layouts = layout(0, true);
+            overflow = overflow();
+            if (overflow > 0 && layouts.hasScroll()) {
+                layouts = layout(overflow, true);
+            }
         }
         content.visitWidgets(this::addRenderableWidget);
         dropdowns = layouts.dropdowns();
+        titleEdits = layouts.titleEdits();
+    }
+
+    private UiLayouts layout(int scrollReduction, boolean compact) {
+        UiLayouts layouts = new UiLayouts(font, this, scrollReduction, compact);
+        assemble(layouts);
+        return layouts;
+    }
+
+    /** How far the panel reaches beyond the window, or less than zero when it fits. */
+    private int overflow() {
+        return content.getHeight() - (height - SCREEN_MARGIN);
     }
 
     /** Builds the whole panel, header to footer, and centers it. */
     private void assemble(UiLayouts layouts) {
 
         LinearLayout headerStart = LinearLayout.horizontal().spacing(8);
-        if (parts.back() != null) {
-            headerStart.addChild(UiButtonWidget.glyph(font, "←", parts.back().label(), false, true,
-                    (mouse, shift) -> press(parts.back().id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
+        UiElement.Button goBack = goBack();
+        if (goBack != null) {
+            headerStart.addChild(UiButtonWidget.glyph(font, "←", goBack.label(), false, true,
+                    (mouse, shift) -> press(goBack.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
         }
         if (!icon.isEmpty()) {
             headerStart.addChild(new UiItemWidget(icon, ICON_SIZE), settings -> settings.alignVerticallyMiddle());
@@ -140,7 +161,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         UiElement.Button next = parts.next();
         pager.addChild(UiButtonWidget.glyph(font, "<", previous == null ? null : previous.label(), false, previous != null,
                 (mouse, shift) -> press(previous.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
-        pager.addChild(new UiLayouts(font, this, 0).text(Component.literal(parts.page().page() + " / " + parts.page().pages())),
+        pager.addChild(new UiLayouts(font, this, 0, false).text(Component.literal(parts.page().page() + " / " + parts.page().pages())),
                 settings -> settings.alignVerticallyMiddle());
         pager.addChild(UiButtonWidget.glyph(font, ">", next == null ? null : next.label(), false, next != null,
                 (mouse, shift) -> press(next.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
@@ -173,11 +194,17 @@ final class ServerUiScreen extends Screen implements UiActions {
         super.onClose();
     }
 
+    /** What goes back: the back button, or the cancel button of a question, which also leads back. */
+    private UiElement.Button goBack() {
+        return parts.back() != null ? parts.back() : parts.cancel();
+    }
+
     /** Escape goes back to the screen this one was opened from, and closes only when there is none. */
     @Override
     public void onClose() {
-        if (parts.back() != null) {
-            press(parts.back().id(), 0, false);
+        UiElement.Button goBack = goBack();
+        if (goBack != null) {
+            press(goBack.id(), 0, false);
         } else {
             closeAll();
         }
@@ -194,9 +221,12 @@ final class ServerUiScreen extends Screen implements UiActions {
         return super.mouseClicked(event, doubleClick);
     }
 
-    /** Escape closes an open list before it does anything else. */
+    /** Escape drops an edit in progress, or closes an open list, before it goes back. */
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (event.isEscape() && titleEdits.stream().anyMatch(UiTitleEditWidget::stopEditing)) {
+            return true;
+        }
         if (event.isEscape() && dropdowns.stream().anyMatch(UiDropdownWidget::isOpen)) {
             dropdowns.forEach(UiDropdownWidget::close);
             return true;

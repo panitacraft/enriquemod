@@ -8,6 +8,7 @@ import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
 
 /**
  * A dropdown of a server-described screen: a button that shows the current choice and opens a list of
@@ -61,8 +62,13 @@ final class UiDropdownWidget extends AbstractButton {
         UiTheme.pill(graphics, getX(), getY(), getWidth(), getHeight(),
                 hovered ? UiTheme.CELL_HOVER : UiTheme.CELL_EMPTY, open ? UiTheme.ACCENT : UiTheme.CELL_BORDER);
         // With no choice made it says what it is for; otherwise it says what is chosen.
-        var shown = dropdown.selected() == 0 ? dropdown.label() : dropdown.options().get(dropdown.selected());
-        graphics.text(font, shown, getX() + PADDING, getY() + (getHeight() - font.lineHeight) / 2, UiTheme.TEXT);
+        // The label is a prompt, as faint as the search field's hint, whatever color the server gave it; a
+        // choice is what is actually set.
+        var shown = dropdown.selected() == 0
+                ? Component.literal(dropdown.label().getString())
+                : dropdown.options().get(dropdown.selected());
+        graphics.text(font, shown, getX() + PADDING, getY() + (getHeight() - font.lineHeight) / 2,
+                dropdown.selected() == 0 ? UiTheme.MUTED : UiTheme.TEXT);
         graphics.text(font, open ? "▴" : "▾", getX() + getWidth() - PADDING - font.width("▾"),
                 getY() + (getHeight() - font.lineHeight) / 2, UiTheme.MUTED);
     }
