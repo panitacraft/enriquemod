@@ -5,8 +5,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
-import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.PlayerOnly;
+import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.commands.staff.StaffCommand;
 import com.panita.enriquecraft.staff.gui.CoordinatesMenu;
 import com.panita.enriquecraft.staff.message.CoordinateView;
@@ -25,14 +25,14 @@ import net.minecraft.server.permissions.PermissionLevel;
 public final class CoordsSubcommand implements ModCommand {
 
     private final PlayerOnly playerOnly;
-    private final MenuFactory menuFactory;
+    private final UiService ui;
     private final CoordinateService service;
     private final CoordinateView view;
 
-    public CoordsSubcommand(PlayerOnly playerOnly, MenuFactory menuFactory, CoordinateService service,
+    public CoordsSubcommand(PlayerOnly playerOnly, UiService ui, CoordinateService service,
                             CoordinateView view) {
         this.playerOnly = playerOnly;
-        this.menuFactory = menuFactory;
+        this.ui = ui;
         this.service = service;
         this.view = view;
     }
@@ -43,7 +43,7 @@ public final class CoordsSubcommand implements ModCommand {
     }
 
     private int openMenu(CommandContext<CommandSourceStack> context, ServerPlayer player) {
-        new CoordinatesMenu(menuFactory, service, view).open(player);
+        new CoordinatesMenu(ui, service, view).open(player);
         return Command.SINGLE_SUCCESS;
     }
 }

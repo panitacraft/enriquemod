@@ -3,8 +3,8 @@ package com.panita.enriquecraft.staff.gui;
 import net.minecraft.nbt.NbtOps;
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.data.WorldData;
-import com.panita.enriquecraft.core.gui.MenuFactory;
-import com.panita.enriquecraft.core.gui.MenuTesting;
+import com.panita.enriquecraft.core.ui.UiService;
+import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import com.panita.enriquecraft.staff.service.CoordinateService;
@@ -35,12 +35,12 @@ class CoordinatesMenuTest {
 
     @BeforeEach
     void createMenu() {
-        MenuFactory factory = MinecraftTestSupport.menuFactory(directory.resolve("config"));
+        UiService ui = MinecraftTestSupport.uiService(directory.resolve("config"));
         WorldData worldData = new WorldData();
         worldData.attach(directory.resolve("world"), NbtOps.INSTANCE);
         service = new CoordinateService(worldData);
         CoordinateView view = new CoordinateView(MinecraftTestSupport.messenger(directory.resolve("config")), service);
-        menu = new CoordinatesMenu(factory, service, view);
+        menu = new CoordinatesMenu(ui, service, view);
     }
 
     private static SavedCoordinate coordinate(String name, net.minecraft.world.item.Item icon) {
@@ -49,7 +49,7 @@ class CoordinatesMenuTest {
     }
 
     private ItemStack shown(int slot) {
-        return MenuTesting.itemAt(menu, slot).stack();
+        return UiTesting.itemAt(menu, slot).stack();
     }
 
     @Test
@@ -57,7 +57,7 @@ class CoordinatesMenuTest {
         service.add(coordinate("zeta", Items.BEACON));
         service.add(coordinate("alfa", Items.COMPASS));
 
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         assertEquals(Items.COMPASS, shown(10).getItem());
         assertEquals(Items.BEACON, shown(11).getItem());
@@ -68,7 +68,7 @@ class CoordinatesMenuTest {
     void theLoreShowsEveryDetail() {
         service.add(coordinate("base", Items.COMPASS));
 
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         List<String> lore = shown(10).get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
         assertEquals(List.of(
@@ -83,7 +83,7 @@ class CoordinatesMenuTest {
     void namesAndPlayersAreShownLiterallyNotAsTags() {
         service.add(coordinate("base", Items.COMPASS));
 
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         assertEquals("Guardada por: <red>Ana",
                 shown(10).get(DataComponents.LORE).lines().get(2).getString());
@@ -91,7 +91,7 @@ class CoordinatesMenuTest {
 
     @Test
     void noCoordinatesShowsTheEmptyMarker() {
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         assertEquals(Items.PAPER, shown(22).getItem());
     }
@@ -100,12 +100,12 @@ class CoordinatesMenuTest {
     void removingACoordinateAndRefreshingUpdatesTheList() {
         service.add(coordinate("uno", Items.COMPASS));
         service.add(coordinate("dos", Items.MAP));
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         service.remove("uno");
         menu.refresh();
 
         assertEquals(Items.MAP, shown(10).getItem());
-        assertNull(MenuTesting.itemAt(menu, 11));
+        assertNull(UiTesting.itemAt(menu, 11));
     }
 }
