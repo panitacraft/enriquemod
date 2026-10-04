@@ -3,6 +3,7 @@ package com.panita.enriquecraft.client.ui;
 import com.panita.enriquecraft.core.network.UiClickC2S;
 import com.panita.enriquecraft.core.network.UiClosedC2S;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.network.UiSubmitC2S;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.StringWidget;
@@ -12,10 +13,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * A screen the server described. It shows what it was sent and reports presses; everything that
- * happens next is decided by the server.
+ * A screen the server described. It shows what it was sent and reports presses and typed values;
+ * everything that happens next is decided by the server.
  */
-final class ServerUiScreen extends Screen {
+final class ServerUiScreen extends Screen implements UiActions {
 
     private static final int PADDING = 8;
     private static final int TITLE_SPACING = 8;
@@ -46,14 +47,26 @@ final class ServerUiScreen extends Screen {
     protected void init() {
         content = LinearLayout.vertical().spacing(TITLE_SPACING);
         content.addChild(new StringWidget(title, font), settings -> settings.alignHorizontallyCenter());
-        content.addChild(new UiLayouts(font, this::press).build(root), settings -> settings.alignHorizontallyCenter());
+        content.addChild(new UiLayouts(font, this).build(root), settings -> settings.alignHorizontallyCenter());
         content.arrangeElements();
         FrameLayout.centerInRectangle(content, 0, 0, width, height);
         content.visitWidgets(this::addRenderableWidget);
+        // Whoever opens a screen with a text field wants to type in it, and an update rebuilds the field.
+        content.visitWidgets(widget -> {
+            if (widget instanceof UiInputWidget && getFocused() == null) {
+                setInitialFocus(widget);
+            }
+        });
     }
 
-    private void press(int elementId, int button, boolean shift) {
+    @Override
+    public void press(int elementId, int button, boolean shift) {
         ClientPlayNetworking.send(new UiClickC2S(sessionId, elementId, button, shift));
+    }
+
+    @Override
+    public void submit(int elementId, String text) {
+        ClientPlayNetworking.send(new UiSubmitC2S(sessionId, elementId, text));
     }
 
     @Override

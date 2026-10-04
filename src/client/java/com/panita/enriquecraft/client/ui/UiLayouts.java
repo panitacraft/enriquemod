@@ -26,11 +26,11 @@ final class UiLayouts {
     }
 
     private final Font font;
-    private final ButtonPress press;
+    private final UiActions actions;
 
-    UiLayouts(Font font, ButtonPress press) {
+    UiLayouts(Font font, UiActions actions) {
         this.font = font;
-        this.press = press;
+        this.actions = actions;
     }
 
     LayoutElement build(UiElement element) {
@@ -43,7 +43,8 @@ final class UiLayouts {
             case UiElement.Row row -> row(row.children());
             case UiElement.Grid grid -> grid(grid);
             case UiElement.Label label -> new StringWidget(label.text(), font);
-            case UiElement.Button button -> new UiButtonWidget(font, button, place == Place.GRID, press);
+            case UiElement.TextInput input -> new UiInputWidget(font, input, actions);
+            case UiElement.Button button -> new UiButtonWidget(font, button, place == Place.GRID, actions);
             // Grid cells keep their size so the grid stays aligned; elsewhere a spacer is just a gap.
             case UiElement.Spacer ignored -> place == Place.GRID
                     ? new SpacerElement(UiButtonWidget.SIZE, UiButtonWidget.SIZE)

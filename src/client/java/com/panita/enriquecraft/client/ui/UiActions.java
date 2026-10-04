@@ -1,14 +1,19 @@
 package com.panita.enriquecraft.client.ui;
 
 /**
- * Reports a press on a button of a server-described screen.
+ * What a player can do on a server-described screen, reported to the server.
  */
-@FunctionalInterface
-interface ButtonPress {
+interface UiActions {
 
     /**
      * @param elementId the id the server gave the button
      * @param button    the mouse button: 0 is left, 1 is right
      */
     void press(int elementId, int button, boolean shift);
+
+    /**
+     * @param elementId the id the server gave the text field
+     * @param text      the value the player confirmed
+     */
+    void submit(int elementId, String text);
 }

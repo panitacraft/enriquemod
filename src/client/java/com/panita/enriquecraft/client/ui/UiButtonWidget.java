@@ -32,15 +32,15 @@ final class UiButtonWidget extends AbstractButton {
     private final int id;
     private final ItemStack icon;
     private final boolean compact;
-    private final ButtonPress press;
+    private final UiActions actions;
 
-    UiButtonWidget(Font font, UiElement.Button button, boolean compact, ButtonPress press) {
+    UiButtonWidget(Font font, UiElement.Button button, boolean compact, UiActions actions) {
         super(0, 0, width(font, button, compact), SIZE, button.label());
         this.font = font;
         this.id = button.id();
         this.icon = button.icon();
         this.compact = compact;
-        this.press = press;
+        this.actions = actions;
 
         List<Component> lines = new ArrayList<>();
         if (compact && !button.label().getString().isEmpty()) {
@@ -74,7 +74,7 @@ final class UiButtonWidget extends AbstractButton {
     @Override
     public void onPress(InputWithModifiers input) {
         int button = input instanceof MouseButtonEvent event ? event.button() : 0;
-        press.press(id, button, input.hasShiftDown());
+        actions.press(id, button, input.hasShiftDown());
     }
 
     @Override
