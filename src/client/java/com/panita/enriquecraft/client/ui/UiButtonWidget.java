@@ -103,6 +103,7 @@ final class UiButtonWidget extends AbstractButton {
 
     @Override
     protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        extractDefaultSprite(graphics);
         int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
         if (compact) {
             int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
