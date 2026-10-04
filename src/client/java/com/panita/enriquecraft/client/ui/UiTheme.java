@@ -1,6 +1,8 @@
 package com.panita.enriquecraft.client.ui;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.resources.Identifier;
 
 /**
  * The look of the client companion's screens: flat dark surfaces with soft corners and one accent
@@ -19,6 +21,10 @@ final class UiTheme {
     static final int CELL_BORDER = 0xFF303030;
 
     static final int DANGER = 0xFFB3362F;
+
+    /** The font of titles; defined in {@code assets/enriquecraft/font/title.json}. */
+    static final FontDescription TITLE_FONT = new FontDescription.Resource(
+            Identifier.fromNamespaceAndPath("enriquecraft", "title"));
 
     static final int TEXT = 0xFFF0F0F0;
     static final int MUTED = 0xFF8E8E8E;

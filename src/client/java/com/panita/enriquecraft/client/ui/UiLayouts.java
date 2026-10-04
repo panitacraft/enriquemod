@@ -21,6 +21,7 @@ final class UiLayouts {
     private static final int SPACING = 4;
     private static final int GRID_SPACING = 3;
     private static final int GAP = 12;
+    private static final int DETAIL_ICON = 48;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -66,6 +67,7 @@ final class UiLayouts {
             case UiElement.Grid grid -> grid(grid);
             case UiElement.Label label -> text(label.text());
             case UiElement.Page page -> text(Component.literal(page.page() + " / " + page.pages()));
+            case UiElement.Detail detail -> detail(detail);
             case UiElement.TextInput input -> new UiInputWidget(font, input, actions);
             case UiElement.Button button -> place == Place.GRID
                     ? UiButtonWidget.cell(font, button, actions)
@@ -78,6 +80,17 @@ final class UiLayouts {
     StringWidget text(Component text) {
         // Only the default: a text that carries its own colors keeps them.
         return new StringWidget(text.copy().withStyle(style -> style.withColor(UiTheme.MUTED & 0xFFFFFF)), font);
+    }
+
+    /** The item large, its name under it, and the lines about it, all centered. */
+    private LinearLayout detail(UiElement.Detail detail) {
+        LinearLayout column = LinearLayout.vertical().spacing(SPACING);
+        if (!detail.icon().isEmpty()) {
+            column.addChild(new UiItemWidget(detail.icon(), DETAIL_ICON), settings -> settings.alignHorizontallyCenter());
+        }
+        column.addChild(new UiTitleWidget(font, detail.title(), 1.25F), settings -> settings.alignHorizontallyCenter().paddingVertical(4));
+        detail.lines().forEach(line -> column.addChild(new StringWidget(line, font), settings -> settings.alignHorizontallyCenter()));
+        return column;
     }
 
     private LinearLayout column(List<UiElement> children) {

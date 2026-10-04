@@ -19,7 +19,7 @@ public final class ServerUiNetworking {
 
     public static void register() {
         ClientPlayNetworking.registerGlobalReceiver(OpenUiS2C.TYPE, (payload, context) ->
-                context.client().setScreenAndShow(new ServerUiScreen(payload.sessionId(), payload.title(), payload.root())));
+                context.client().setScreenAndShow(new ServerUiScreen(payload.sessionId(), payload.title(), payload.icon(), payload.root())));
         ClientPlayNetworking.registerGlobalReceiver(UpdateUiS2C.TYPE, (payload, context) ->
                 showing(context.client(), payload.sessionId()).ifPresent(screen -> screen.update(payload.root())));
         ClientPlayNetworking.registerGlobalReceiver(CloseUiS2C.TYPE, (payload, context) ->

@@ -12,6 +12,7 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -30,16 +31,20 @@ final class ServerUiScreen extends Screen implements UiActions {
     private static final int HEADER_HEIGHT = 24;
     private static final int FOOTER_HEIGHT = 20;
     private static final int ACCENT_WIDTH = 28;
+    private static final int ICON_SIZE = 20;
+    private static final float TITLE_SCALE = 1.4F;
 
     private final int sessionId;
+    private final ItemStack icon;
     private UiElement root;
     private LinearLayout content;
     private FrameLayout header;
     private FrameLayout footer;
 
-    ServerUiScreen(int sessionId, Component title, UiElement root) {
+    ServerUiScreen(int sessionId, Component title, ItemStack icon, UiElement root) {
         super(title);
         this.sessionId = sessionId;
+        this.icon = icon;
         this.root = root;
     }
 
@@ -63,7 +68,10 @@ final class ServerUiScreen extends Screen implements UiActions {
             headerStart.addChild(UiButtonWidget.glyph(font, "←", parts.back().label(), false, true,
                     (mouse, shift) -> press(parts.back().id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
         }
-        headerStart.addChild(new UiTitleWidget(font, title), settings -> settings.alignVerticallyMiddle());
+        if (!icon.isEmpty()) {
+            headerStart.addChild(new UiItemWidget(icon, ICON_SIZE), settings -> settings.alignVerticallyMiddle());
+        }
+        headerStart.addChild(new UiTitleWidget(font, title, TITLE_SCALE), settings -> settings.alignVerticallyMiddle());
         headerStart.arrangeElements();
         UiButtonWidget close = UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> onClose());
 
