@@ -22,11 +22,11 @@ class CoordinateIconsTest {
     }
 
     @Test
-    void thereAreTwentyFourDifferentRealItems() {
+    void thereAreManyDifferentRealItems() {
         List<Item> all = CoordinateIcons.all();
 
-        assertEquals(24, all.size());
-        assertEquals(24, new HashSet<>(all).size(), "no icon twice");
+        assertTrue(all.size() >= 80, "only " + all.size() + " icons");
+        assertEquals(all.size(), new HashSet<>(all).size(), "no icon twice");
         assertFalse(all.contains(Items.AIR));
     }
 
@@ -46,6 +46,6 @@ class CoordinateIconsTest {
             seen.add(CoordinateIcons.random(new Random(seed)));
         }
 
-        assertTrue(seen.size() > 12, "picked only " + seen.size() + " different icons in 200 tries");
+        assertTrue(seen.size() > 50, "picked only " + seen.size() + " different icons in 200 tries");
     }
 }
