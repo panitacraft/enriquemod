@@ -33,9 +33,11 @@ The mod is installed on the server and is the only required part. Players MUST b
 - The server sends custom payloads only to players whose client has announced support for that channel (`ServerPlayNetworking.canSend` or the configuration-phase equivalent). Never send custom payloads to a client that has not announced support.
 - Payload types, codecs, and the protocol version are shared in `src/main` (`network` package). Client and server exchange the protocol version on join. On a mismatch, the server treats that player as vanilla.
 - Client mixins are declared in the client mixin config and target client classes only.
+- Whether a player's client offers an enhancement is answered by one service, `ClientCapabilities.supports(player, ClientFeature)`. Features call it and fall back to vanilla on false; they never inspect protocol versions or channels themselves. A new enhancement adds one `ClientFeature` value, and the client adds it to its announced set only once it implements it.
+- The client sends `HelloC2S` on join, only after checking `ClientPlayNetworking.canSend`, because sending a payload the server did not register throws. What it announces is untrusted: the server accepts it only for the exact protocol version and only for features it knows.
 
 ### Environment
-- `fabric.mod.json` uses `"environment": "*"` once the first client enhancement is added. Until then it stays `"server"`.
+- `fabric.mod.json` uses `"environment": "*"` and declares the client entrypoint, since the capability announcement is the first client enhancement.
 
 ## 3. Language and Communication
 
@@ -145,6 +147,7 @@ com.panita.enriquecraft
 │  ├─ item/                 CustomItemTag, ItemGiving
 │  ├─ config/               CoreConfig (the core module's config section)
 │  ├─ message/              Messenger, Message, Messages (core's Spanish text), HelpView, PlayerOnly, channels
+│  ├─ network/              shared protocol: NetworkProtocol, HelloC2S, ClientFeature, ClientCapabilities
 │  ├─ service/              business logic (HelpService, ServerInfoService, ...)
 │  ├─ commands/             auto-discovered commands (see below)
 │  └─ listeners/            auto-discovered listeners
@@ -179,7 +182,7 @@ Rules:
 - `src/main` never depends on `src/client`. `src/client` may depend on `src/main`. The scanner never scans client packages.
 - The entrypoint only registers modules. Commands and listeners are never registered by hand.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
-- Do not create the client entrypoint or the client mixin config until the first client enhancement needs them.
+- Do not create the client mixin config until the first client enhancement needs a mixin.
 - Fabric events cannot be unregistered, so modules cannot be enabled or disabled while the server runs.
 
 ### Modules
