@@ -108,4 +108,18 @@ class CoordinatesMenuTest {
         assertEquals(Items.MAP, shown(10).getItem());
         assertNull(UiTesting.itemAt(menu, 11));
     }
+
+    @Test
+    void searchingByNameKeepsOnlyTheMatchingCoordinates() {
+        service.add(coordinate("Base_norte", Items.COMPASS));
+        service.add(coordinate("mina", Items.MAP));
+        service.add(coordinate("base_sur", Items.BEACON));
+        UiTesting.drawAsChest(menu);
+
+        UiTesting.submit(menu, "BASE");
+
+        assertEquals("Base_norte", shown(10).get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("base_sur", shown(11).get(DataComponents.CUSTOM_NAME).getString());
+        assertNull(UiTesting.itemAt(menu, 12));
+    }
 }

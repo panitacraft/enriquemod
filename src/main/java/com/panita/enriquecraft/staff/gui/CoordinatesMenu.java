@@ -15,9 +15,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
- * Every saved coordinate as an icon with its details. Left click teleports there.
+ * Every saved coordinate as an icon with its details, searchable by name. Left click teleports there.
  */
 public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
 
@@ -38,6 +40,11 @@ public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
     @Override
     protected List<SavedCoordinate> entries() {
         return service.all();
+    }
+
+    @Override
+    protected Optional<Function<SavedCoordinate, String>> searchText() {
+        return Optional.of(SavedCoordinate::name);
     }
 
     @Override
