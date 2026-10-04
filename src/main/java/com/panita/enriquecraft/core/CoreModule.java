@@ -12,6 +12,7 @@ import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.message.PlayerOnly;
 import com.panita.enriquecraft.core.message.channel.BossBarChannel;
 import com.panita.enriquecraft.core.message.channel.TitleChannel;
+import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.service.HelpService;
 import com.panita.enriquecraft.core.service.ServerInfoService;
 
@@ -35,5 +36,6 @@ public final class CoreModule implements EnriquecraftModule {
         services.register(MenuFactory.class, new MenuFactory(formatter));
         services.register(PlayerOnly.class, new PlayerOnly(messenger));
         services.register(ServerInfoService.class, new ServerInfoService());
+        services.register(ClientCapabilities.class, new ClientCapabilities());
     }
 }
