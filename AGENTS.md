@@ -14,6 +14,7 @@ This file is the source of truth for how work is done in this project. Every con
   - Placeholder API (`eu.pb4:placeholder-api`, LGPL-3.0): text tags and placeholders. Keep its license file intact when distributing.
   - Fabric Permissions API (`me.lucko:fabric-permissions-api`): LuckPerms-compatible permission nodes.
 - **Approved test libraries** (test scope only, never shipped): JUnit 5, and `fabric-loader-junit` (starts a minimal Fabric Loader inside tests, which Placeholder API needs to parse text).
+- **Bundled assets** (client companion only): the Poppins SemiBold font, used for screen titles, under the SIL Open Font License. Its license file sits beside it in `src/client/resources/assets/enriquecraft/font/` and must ship with the jar. Add a font or any other third-party asset only with the owner's approval, and keep its license next to it.
 
 ## 2. Non-Negotiable Constraint: Server-Authoritative With an Optional Client Companion
 
@@ -228,6 +229,7 @@ Rules:
 - Create a new menu object for every player and every opening; it holds the state of that viewing, such as the page or a search. `describe` is called again on `refresh()`, so read data there, not in the constructor. The shape of the tree (how many chest rows it needs) must not change while the menu is open.
 - Buttons and fields get their ids from `UiBuilder`; the client only reports an id, never a command. Actions receive a `UiClick` or a `UiSubmit`. Check `click.isLeft()` in a button action, and require `click.isShift()` for anything destructive, such as deleting a record. A text field's action must not assume how the value arrived (players without the companion type it in chat) and must treat an empty value as "cleared".
 - Standard navigation uses roles, not layout: give a button its `ButtonRole` (`CLOSE`, `BACK`, `PREVIOUS`, `NEXT`) and a list its `UiElement.Page`. The client companion places them itself (back and close in the header, search field and page buttons in the footer) and a chest ignores the roles, so never position them for the client. A screen whose last band is a row of controls gets that layout; keep that row last.
+- Show one thing in full (an item and everything about it) with a `UiElement.Detail`: the client companion draws the item large with the text under it, and a chest shows the item with the text as its tooltip. A menu names an item for the client's title with `icon()`; a chest has no place for it.
 - `UiSessions` checks every action a client reports before anything runs: the session, the element and its kind, the mouse button, the value's length and characters, and the pace. Never trust or re-implement that in a menu, and never add a way around it.
 - Chest decoration is `chestStyle()`: `PLAIN`, `FRAMED` (lists, with the last band on the bottom edge) or `FILLED` (every slot without an element is filler). Choose the style that keeps the chest looking as it should.
 - Close a menu with `ui().close(player)`, never `player.closeContainer()`: a custom screen has no container behind it.
