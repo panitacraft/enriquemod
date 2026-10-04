@@ -2,6 +2,7 @@ package com.panita.enriquecraft.staff.gui;
 
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
@@ -59,11 +60,11 @@ public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
                 Message.plain(StaffMessages.Coordinates.ENTRY_NAME).with("name", coordinate.name()));
         // Only what tells coordinates apart at a glance; the rest is one right click away.
         List<Component> tooltip = List.of(
-                factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION_ONLY)
+                factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)
                         .with("dimension", Dimensions.coloredName(coordinate.dimension()))),
                 factory().text(Message.plain("")),
-                factory().text(StaffMessages.Coordinates.ENTRY_GO_HINT),
-                factory().text(StaffMessages.Coordinates.ENTRY_DETAILS_HINT));
+                ClickHints.left(factory(), "ir"),
+                ClickHints.right(factory(), "info"));
         return builder.button(new ItemStack(coordinate.icon()), name, tooltip, click -> {
             if (click.isLeft()) {
                 ui().close(click.player());

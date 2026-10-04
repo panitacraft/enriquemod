@@ -33,12 +33,9 @@ public final class StaffMessages {
         public static final String MENU_TITLE = "Coordenadas guardadas";
         public static final String ENTRY_NAME = "<gold>→ {name}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
-        public static final String ENTRY_DIMENSION_ONLY = "{dimension}";
         public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardada por: <white>{player}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
-        public static final String ENTRY_GO_HINT = "<green>◀ Clic izquierdo para ir";
-        public static final String ENTRY_DETAILS_HINT = "<aqua>▶ Clic derecho para ver más detalles";
 
         public static final String DETAIL_TITLE = "Detalles de la coordenada";
         public static final String DETAIL_NAME = "<gold>{name}";

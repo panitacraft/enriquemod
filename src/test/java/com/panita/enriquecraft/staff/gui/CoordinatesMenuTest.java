@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CoordinatesMenuTest {
 
@@ -74,10 +75,10 @@ class CoordinatesMenuTest {
 
         List<String> lore = shown(10).get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
         assertEquals(List.of(
-                "Nether",
+                "Dimensión: Nether",
                 "",
-                "◀ Clic izquierdo para ir",
-                "▶ Clic derecho para ver más detalles"), lore);
+                "◀ Clic Izq. para ir",
+                "▶ Clic Der. para info"), lore);
     }
 
     @Test
@@ -87,20 +88,14 @@ class CoordinatesMenuTest {
         UiTesting.drawAsChest(menu);
 
         Component dimension = shown(10).get(DataComponents.LORE).lines().getFirst();
-        assertEquals(TextColor.fromLegacyFormat(ChatFormatting.RED), firstColor(dimension));
+        assertTrue(usesColor(dimension, TextColor.fromLegacyFormat(ChatFormatting.RED)));
     }
 
-    private static TextColor firstColor(Component component) {
-        if (component.getStyle().getColor() != null) {
-            return component.getStyle().getColor();
+    private static boolean usesColor(Component component, TextColor color) {
+        if (color.equals(component.getStyle().getColor())) {
+            return true;
         }
-        for (Component sibling : component.getSiblings()) {
-            TextColor color = firstColor(sibling);
-            if (color != null) {
-                return color;
-            }
-        }
-        return null;
+        return component.getSiblings().stream().anyMatch(sibling -> usesColor(sibling, color));
     }
 
 
