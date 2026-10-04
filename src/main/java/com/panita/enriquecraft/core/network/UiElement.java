@@ -49,9 +49,10 @@ public sealed interface UiElement {
      * with an icon but no label stands for the item itself, and shows its name and tooltip, followed by
      * the extra tooltip lines.
      *
-     * @param id identifies the button within one description; unique, assigned by the server
+     * @param id   identifies the button within one description; unique, assigned by the server
+     * @param role what the button is for; navigation roles are placed by the client companion
      */
-    record Button(int id, ItemStack icon, Component label, List<Component> tooltip) implements UiElement {
+    record Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip) implements UiElement {
         public Button {
             tooltip = List.copyOf(tooltip);
         }
@@ -69,6 +70,20 @@ public sealed interface UiElement {
         public TextInput {
             if (maxLength < 1 || maxLength > MAX_LENGTH || value.length() > maxLength) {
                 throw new IllegalArgumentException("A field of up to " + maxLength + " characters cannot hold \"" + value + "\"");
+            }
+        }
+    }
+
+    /**
+     * Where a list is: which page is showing out of how many. The client companion shows it next to the
+     * page buttons; a chest has no place for it and ignores it.
+     *
+     * @param page  the page showing, counted from 1
+     */
+    record Page(int page, int pages) implements UiElement {
+        public Page {
+            if (page < 1 || pages < page) {
+                throw new IllegalArgumentException("Page " + page + " of " + pages + " does not exist");
             }
         }
     }

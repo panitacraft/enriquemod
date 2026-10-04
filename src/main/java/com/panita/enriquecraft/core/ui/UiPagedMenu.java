@@ -3,6 +3,7 @@ package com.panita.enriquecraft.core.ui;
 import com.panita.enriquecraft.core.gui.Paginator;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -90,18 +91,20 @@ public abstract class UiPagedMenu<T> extends UiMenu {
                 .with("pages", PAGINATOR.pageCount(total));
 
         UiElement back = previous() == null ? none
-                : builder.button(new ItemStack(Items.OAK_DOOR), factory().text(Messages.Gui.BACK), List.of(),
+                : builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(Messages.Gui.BACK), List.of(),
                         click -> previous().open(click.player()));
         UiElement search = searchText().isEmpty() ? none
                 : builder.input(factory().text(Messages.Gui.SEARCH), query, SEARCH_LENGTH, submit -> search(submit.text()));
-        UiElement previousPage = PAGINATOR.hasPrevious(page) ? builder.button(new ItemStack(Items.ARROW),
+        UiElement previousPage = PAGINATOR.hasPrevious(page) ? builder.button(ButtonRole.PREVIOUS, new ItemStack(Items.ARROW),
                 factory().text(Messages.Gui.PREVIOUS), List.of(), click -> turn(-1)) : none;
-        UiElement close = builder.button(new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE),
+        UiElement close = builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE),
                 List.<Component>of(factory().text(indicator)), click -> ui().close(click.player()));
-        UiElement nextPage = PAGINATOR.hasNext(page, total) ? builder.button(new ItemStack(Items.ARROW),
+        UiElement nextPage = PAGINATOR.hasNext(page, total) ? builder.button(ButtonRole.NEXT, new ItemStack(Items.ARROW),
                 factory().text(Messages.Gui.NEXT), List.of(), click -> turn(1)) : none;
 
-        return new UiElement.Row(List.of(back, search, none, previousPage, close, nextPage, none, none, none));
+        // The page indicator sits in a slot that is empty in a chest, so the chest looks as it always did.
+        UiElement pageIndicator = new UiElement.Page(page + 1, PAGINATOR.pageCount(total));
+        return new UiElement.Row(List.of(back, search, none, previousPage, close, nextPage, pageIndicator, none, none));
     }
 
     private void search(String text) {

@@ -2,6 +2,7 @@ package com.panita.enriquecraft.core.ui;
 
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.gui.MenuItem;
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -319,5 +320,42 @@ class UiPagedMenuTest {
 
         assertEquals(Items.PAPER, itemAt(menu, 22));
         assertNull(UiTesting.itemAt(menu, FIRST_CONTENT));
+    }
+
+    /** The children of the controls row, the last band of the screen. */
+    private static List<UiElement> controls(UiMenu menu) {
+        UiElement.Column root = (UiElement.Column) UiTesting.root(menu);
+        return ((UiElement.Row) root.children().getLast()).children();
+    }
+
+    @Test
+    void theControlsCarryTheirRolesForTheClientCompanion() {
+        NumbersMenu menu = new NumbersMenu(ui, new NumbersMenu(ui, null, 1), 40);
+        UiTesting.drawAsChest(menu);
+
+        List<UiElement> controls = controls(menu);
+
+        assertEquals(ButtonRole.BACK, ((UiElement.Button) controls.get(0)).role());
+        assertEquals(ButtonRole.CLOSE, ((UiElement.Button) controls.get(4)).role());
+        assertEquals(ButtonRole.NEXT, ((UiElement.Button) controls.get(5)).role());
+        assertTrue(controls.get(3) instanceof UiElement.Spacer, "no previous button on the first page");
+    }
+
+    @Test
+    void theControlsSayWhichPageIsShowing() {
+        NumbersMenu menu = menu(40);
+        UiTesting.click(menu, NEXT);
+
+        List<UiElement> controls = controls(menu);
+
+        assertEquals(new UiElement.Page(2, 2), controls.get(6));
+        assertEquals(ButtonRole.PREVIOUS, ((UiElement.Button) controls.get(3)).role());
+    }
+
+    @Test
+    void thePageIndicatorTakesNoSlotInTheChest() {
+        NumbersMenu menu = menu(40);
+
+        assertEquals(filler, itemAt(menu, 51));
     }
 }

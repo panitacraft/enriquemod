@@ -132,6 +132,7 @@ final class ChestLayout {
             case UiElement.TextInput input -> MenuItem.button(stack(input), click -> edit(input, click));
             case UiElement.Label label -> MenuItem.display(factory.item(Items.PAPER).name(label.text()).build());
             case UiElement.Spacer ignored -> null;
+            case UiElement.Page ignored -> null;
             case UiElement.Row ignored -> throw containerInsideAnotherContainer();
             case UiElement.Column ignored -> throw containerInsideAnotherContainer();
             case UiElement.Grid ignored -> throw containerInsideAnotherContainer();

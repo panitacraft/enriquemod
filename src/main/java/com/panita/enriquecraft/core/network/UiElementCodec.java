@@ -29,6 +29,7 @@ public final class UiElementCodec {
     private static final byte BUTTON = 4;
     private static final byte SPACER = 5;
     private static final byte TEXT_INPUT = 6;
+    private static final byte PAGE = 7;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -74,6 +75,7 @@ public final class UiElementCodec {
             case UiElement.Button button -> {
                 buffer.writeByte(BUTTON);
                 buffer.writeVarInt(button.id());
+                buffer.writeEnum(button.role());
                 ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, button.icon());
                 ComponentSerialization.STREAM_CODEC.encode(buffer, button.label());
                 TOOLTIP.encode(buffer, button.tooltip());
@@ -84,6 +86,11 @@ public final class UiElementCodec {
                 ComponentSerialization.STREAM_CODEC.encode(buffer, input.hint());
                 buffer.writeUtf(input.value(), UiElement.TextInput.MAX_LENGTH);
                 buffer.writeVarInt(input.maxLength());
+            }
+            case UiElement.Page page -> {
+                buffer.writeByte(PAGE);
+                buffer.writeVarInt(page.page());
+                buffer.writeVarInt(page.pages());
             }
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
@@ -118,13 +125,25 @@ public final class UiElementCodec {
             case LABEL -> new UiElement.Label(ComponentSerialization.STREAM_CODEC.decode(buffer));
             case BUTTON -> new UiElement.Button(
                     buffer.readVarInt(),
+                    buffer.readEnum(ButtonRole.class),
                     ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer),
                     ComponentSerialization.STREAM_CODEC.decode(buffer),
                     TOOLTIP.decode(buffer));
             case TEXT_INPUT -> readTextInput(buffer);
+            case PAGE -> readPage(buffer);
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
         };
+    }
+
+    private static UiElement readPage(RegistryFriendlyByteBuf buffer) {
+        int page = buffer.readVarInt();
+        int pages = buffer.readVarInt();
+        try {
+            return new UiElement.Page(page, pages);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
     }
 
     private static UiElement readTextInput(RegistryFriendlyByteBuf buffer) {

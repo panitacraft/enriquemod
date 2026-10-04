@@ -2,6 +2,7 @@ package com.panita.enriquecraft.core.ui;
 
 import com.panita.enriquecraft.core.gui.MenuItem;
 import com.panita.enriquecraft.core.gui.MenuTesting;
+import com.panita.enriquecraft.core.network.UiElement;
 
 /**
  * Lets tests show a {@link UiMenu} as a chest and look at its slots without a player. Lives in this
@@ -38,5 +39,10 @@ public final class UiTesting {
     public static void submit(UiMenu menu, String text) {
         UiInputHandler handler = menu.layout(0).inputs().values().iterator().next();
         handler.action().accept(new UiSubmit(null, text));
+    }
+
+    /** The tree the menu currently describes. */
+    public static UiElement root(UiMenu menu) {
+        return menu.layout(0).root();
     }
 }

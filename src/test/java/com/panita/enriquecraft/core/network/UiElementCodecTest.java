@@ -43,7 +43,7 @@ final class UiElementCodecTest {
 
     @Test
     void aTreeSurvivesARoundTrip() {
-        UiElement.Button button = new UiElement.Button(3, new ItemStack(Items.COMPASS), Component.literal("Base"),
+        UiElement.Button button = new UiElement.Button(3, ButtonRole.NONE, new ItemStack(Items.COMPASS), Component.literal("Base"),
                 List.of(Component.literal("uno"), Component.literal("dos")));
         UiElement tree = new UiElement.Column(List.of(
                 new UiElement.Grid(7, 4, List.of(button, new UiElement.Spacer(), new UiElement.Label(Component.literal("x")))),
@@ -66,7 +66,7 @@ final class UiElementCodecTest {
 
     @Test
     void aButtonWithoutAnIconKeepsItEmpty() {
-        UiElement button = new UiElement.Button(0, ItemStack.EMPTY, Component.literal("Cerrar"), List.of());
+        UiElement button = new UiElement.Button(0, ButtonRole.NONE, ItemStack.EMPTY, Component.literal("Cerrar"), List.of());
         RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
 
         UiElementCodec.STREAM_CODEC.encode(buffer, button);
@@ -164,6 +164,43 @@ final class UiElementCodecTest {
         ComponentSerialization.STREAM_CODEC.encode(buffer, Component.empty());
         buffer.writeUtf("abc");
         buffer.writeVarInt(1);
+
+        assertThrows(DecoderException.class, () -> decode(buffer));
+    }
+
+    @Test
+    void aButtonKeepsItsRoleAcrossTheWire() {
+        for (ButtonRole role : ButtonRole.values()) {
+            UiElement button = new UiElement.Button(1, role, ItemStack.EMPTY, Component.literal("x"), List.of());
+            RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+            UiElementCodec.STREAM_CODEC.encode(buffer, button);
+
+            assertEquals(role, assertInstanceOf(UiElement.Button.class, decode(buffer)).role());
+        }
+    }
+
+    @Test
+    void aPageSurvivesARoundTrip() {
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(buffer, new UiElement.Page(2, 5));
+
+        assertEquals(new UiElement.Page(2, 5), decode(buffer));
+    }
+
+    @Test
+    void aPageThatDoesNotExistIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new UiElement.Page(0, 1));
+        assertThrows(IllegalArgumentException.class, () -> new UiElement.Page(3, 2));
+    }
+
+    @Test
+    void aPageThatDoesNotExistIsRejectedWhenDecoding() {
+        RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+        buffer.writeByte(7);
+        buffer.writeVarInt(4);
+        buffer.writeVarInt(2);
 
         assertThrows(DecoderException.class, () -> decode(buffer));
     }

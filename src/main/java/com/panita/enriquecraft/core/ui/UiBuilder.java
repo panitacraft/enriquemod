@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core.ui;
 
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -33,9 +34,18 @@ public final class UiBuilder {
      * @param action  runs on the server when the button is pressed
      */
     public UiElement.Button button(ItemStack icon, Component label, List<Component> tooltip, Consumer<UiClick> action) {
+        return button(ButtonRole.NONE, icon, label, tooltip, action);
+    }
+
+    /**
+     * A button with a standard purpose, such as closing the screen or turning a page. The icon, label
+     * and tooltip are what a chest shows; the client companion draws the button its own way.
+     */
+    public UiElement.Button button(ButtonRole role, ItemStack icon, Component label, List<Component> tooltip,
+                                   Consumer<UiClick> action) {
         int id = nextId++;
         handlers.put(id, action);
-        return new UiElement.Button(id, icon, label, tooltip);
+        return new UiElement.Button(id, role, icon, label, tooltip);
     }
 
     /**

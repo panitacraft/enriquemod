@@ -26,7 +26,7 @@ final class UiPayloadsTest {
     @Test
     void openCarriesTheSessionTheTitleAndTheTree() {
         UiElement tree = new UiElement.Row(List.of(
-                new UiElement.Button(5, new ItemStack(Items.COMPASS), Component.literal("Base"), List.of())));
+                new UiElement.Button(5, ButtonRole.NONE, new ItemStack(Items.COMPASS), Component.literal("Base"), List.of())));
 
         OpenUiS2C decoded = roundTrip(OpenUiS2C.STREAM_CODEC, new OpenUiS2C(12, Component.literal("Título"), tree));
 
