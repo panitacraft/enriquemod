@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.client;
 
+import com.panita.enriquecraft.client.ui.ServerUiNetworking;
 import com.panita.enriquecraft.core.network.ClientFeature;
 import com.panita.enriquecraft.core.network.HelloC2S;
 import net.fabricmc.api.ClientModInitializer;
@@ -16,10 +17,11 @@ import java.util.Set;
 public final class EnriquecraftClient implements ClientModInitializer {
 
     /** The enhancements this client implements; grows as each one is added. */
-    private static final Set<ClientFeature> SUPPORTED = EnumSet.noneOf(ClientFeature.class);
+    private static final Set<ClientFeature> SUPPORTED = EnumSet.of(ClientFeature.CUSTOM_UI);
 
     @Override
     public void onInitializeClient() {
+        ServerUiNetworking.register();
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> announce());
     }
 
