@@ -143,11 +143,12 @@ com.panita.enriquecraft
 │  │  ├─ listener/          ModListener
 │  │  ├─ inject/            ServiceRegistry (constructor injection)
 │  │  └─ scan/              ClassScanner
-│  ├─ gui/                  Menu, PaginatedMenu, MenuFactory, ItemBuilder, ... (the menu toolkit)
+│  ├─ gui/                  Menu, MenuFactory, ItemBuilder, ... (the chest toolkit behind UiChestMenu)
+│  ├─ ui/                   UiMenu, UiPagedMenu, UiBuilder, UiService, UiSessions, ChatPrompts, ChestLayout (screens shown as the client screen or a chest)
 │  ├─ item/                 CustomItemTag, ItemGiving
 │  ├─ config/               CoreConfig (the core module's config section)
 │  ├─ message/              Messenger, Message, Messages (core's Spanish text), HelpView, PlayerOnly, channels
-│  ├─ network/              shared protocol: NetworkProtocol, HelloC2S, ClientFeature, ClientCapabilities
+│  ├─ network/              shared protocol: NetworkProtocol, HelloC2S, ClientFeature, ClientCapabilities, UiElement, the UI payloads
 │  ├─ service/              business logic (HelpService, ServerInfoService, ...)
 │  ├─ commands/             auto-discovered commands (see below)
 │  └─ listeners/            auto-discovered listeners
@@ -175,7 +176,7 @@ Every module follows the same layout:
 | `network` | Shared protocol: payload types, codecs, protocol version, server-side capability detection. No client classes. |
 | `mixin` | Mixin classes (server-safe only). Thin, delegating. |
 
-The client companion lives in `src/client`, in the package `com.panita.enriquecraft.client`, with its own entrypoint (`EnriquecraftClient`), payload handlers, rendering, HUD, screens, and client mixins (`client.mixin`). It only adds enhancements.
+The client companion lives in `src/client`, in the package `com.panita.enriquecraft.client`, with its own entrypoint (`EnriquecraftClient`), payload handlers, rendering, HUD, screens (`client.ui` shows the screens the server describes), and client mixins (`client.mixin`). It only adds enhancements.
 
 Rules:
 - The build uses split source sets. `src/main` holds server code and the shared protocol. `src/client` holds the client companion and client resources.
@@ -223,11 +224,14 @@ Rules:
 - Custom items carry `custom_item = enriquecraft:<name>` in their custom data. Test for one with `CustomItemTag.is(stack, name)`; do not read the data by hand.
 
 ### Menus
-- A screen is a `Menu` (or a `PaginatedMenu<T>` for lists) in `core.gui`, built with `MenuFactory`. Create a new menu object for every player and every opening; it holds the state of that viewing, such as the page. `draw()` describes the screen and is called again on `refresh()`, so read data in `draw`/`entries`, not in the constructor.
-- Menus are display only: `MenuScreen` never lets a click move, drag, swap, drop or clone an item, so never work around it and never put a real inventory behind a menu.
-- Buttons run only on ordinary clicks. Check `click.isLeft()` in the action, and require `click.isShift()` for anything destructive, such as deleting a record.
-- Show stored items through `factory.item(stack)`, which copies, so lore added for display never reaches the stored item.
-- Menus that use the whole screen finish with `fillRest()`; framed lists use `frame()`, which `PaginatedMenu` does itself.
+- A screen is a `UiMenu` (or a `UiPagedMenu<T>` for lists) in `core.ui`. It describes the screen once, in `describe(UiBuilder)`, as a tree of `UiElement`s: column, row, grid, label, button, text input and spacer. `UiService` shows it in the form the player's client allows: the client companion's own screen for players who announced `ClientFeature.CUSTOM_UI`, and a vanilla chest laid out by `ChestLayout` for everyone else. Never branch on the client yourself and never write a screen twice.
+- Create a new menu object for every player and every opening; it holds the state of that viewing, such as the page or a search. `describe` is called again on `refresh()`, so read data there, not in the constructor. The shape of the tree (how many chest rows it needs) must not change while the menu is open.
+- Buttons and fields get their ids from `UiBuilder`; the client only reports an id, never a command. Actions receive a `UiClick` or a `UiSubmit`. Check `click.isLeft()` in a button action, and require `click.isShift()` for anything destructive, such as deleting a record. A text field's action must not assume how the value arrived (players without the companion type it in chat) and must treat an empty value as "cleared".
+- `UiSessions` checks every action a client reports before anything runs: the session, the element and its kind, the mouse button, the value's length and characters, and the pace. Never trust or re-implement that in a menu, and never add a way around it.
+- Chest decoration is `chestStyle()`: `PLAIN`, `FRAMED` (lists, with the last band on the bottom edge) or `FILLED` (every slot without an element is filler). Choose the style that keeps the chest looking as it should.
+- Close a menu with `ui().close(player)`, never `player.closeContainer()`: a custom screen has no container behind it.
+- Show a stored item with a button whose icon is `stack.copy()` and whose label is empty: it keeps its own name and lore, and extra tooltip lines are added after them. Never put the stored stack itself in a screen.
+- `Menu` in `core.gui` is the chest toolkit behind `UiChestMenu`; do not subclass it for new screens. It is display only: `MenuScreen` never lets a click move, drag, swap, drop or clone an item, so never work around it and never put a real inventory behind a menu.
 - Commands that need a player use `PlayerOnly.executes(...)`.
 - Each module keeps its Spanish texts in its own `<Name>Messages` class; text shared by every module lives in `core.message.Messages`.
 
