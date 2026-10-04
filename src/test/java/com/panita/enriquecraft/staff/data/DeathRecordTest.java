@@ -59,6 +59,25 @@ class DeathRecordTest {
     }
 
     @Test
+    void aDeathIsNotRestoredUntilItIsMarked() {
+        assertFalse(sample().isRestored());
+        assertTrue(sample().markRestored(Instant.parse("2026-10-01T00:00:00Z")).isRestored());
+    }
+
+    @Test
+    void theRestoredMomentSurvivesTheFileAndIsOmittedWhenThereIsNone() {
+        var ops = MinecraftTestSupport.ops();
+        Instant moment = Instant.parse("2026-10-01T10:30:00Z");
+
+        Tag restored = DeathRecord.CODEC.encodeStart(ops, sample().markRestored(moment)).getOrThrow();
+        Tag untouched = DeathRecord.CODEC.encodeStart(ops, sample()).getOrThrow();
+
+        assertEquals(java.util.Optional.of(moment), DeathRecord.CODEC.parse(ops, restored).getOrThrow().restoredAt());
+        assertFalse(((CompoundTag) untouched).contains("restoredAt"));
+        assertEquals(java.util.Optional.empty(), DeathRecord.CODEC.parse(ops, untouched).getOrThrow().restoredAt());
+    }
+
+    @Test
     void roundTripKeepsEverySlotExactlyIncludingGapsAndNumberTypes() {
         var ops = MinecraftTestSupport.ops();
         Tag tag = DeathRecord.CODEC.encodeStart(ops, sample()).getOrThrow();

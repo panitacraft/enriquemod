@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -31,9 +32,17 @@ import java.util.UUID;
  * @param cause      the death message
  * @param xpLevel    their experience level
  * @param items      the {@link #SLOT_COUNT} inventory slots in inventory order, empty stacks included
+ * @param restoredAt when the items were given back to the player, if they were
  */
 public record DeathRecord(UUID id, UUID player, String playerName, Instant diedAt, ResourceKey<Level> dimension,
-                          double x, double y, double z, String cause, int xpLevel, List<ItemStack> items) {
+                          double x, double y, double z, String cause, int xpLevel, List<ItemStack> items,
+                          Optional<Instant> restoredAt) {
+
+    /** A death whose items have not been given back. */
+    public DeathRecord(UUID id, UUID player, String playerName, Instant diedAt, ResourceKey<Level> dimension,
+                       double x, double y, double z, String cause, int xpLevel, List<ItemStack> items) {
+        this(id, player, playerName, diedAt, dimension, x, y, z, cause, xpLevel, items, Optional.empty());
+    }
 
     /** Slots 0 to 35 are the main inventory and hotbar, 36 to 39 the armor (feet to head), 40 the offhand. */
     public static final int SLOT_COUNT = 41;
@@ -53,7 +62,8 @@ public record DeathRecord(UUID id, UUID player, String playerName, Instant diedA
             Codec.DOUBLE.fieldOf("z").forGetter(DeathRecord::z),
             Codec.STRING.fieldOf("cause").forGetter(DeathRecord::cause),
             Codec.INT.fieldOf("xpLevel").forGetter(DeathRecord::xpLevel),
-            SLOTS.fieldOf("items").forGetter(DeathRecord::items)
+            SLOTS.fieldOf("items").forGetter(DeathRecord::items),
+            TimeCodecs.INSTANT.optionalFieldOf("restoredAt").forGetter(DeathRecord::restoredAt)
     ).apply(instance, DeathRecord::new));
 
     private static DataResult<List<ItemStack>> toAllSlots(List<SlotStack> occupied) {
@@ -86,6 +96,15 @@ public record DeathRecord(UUID id, UUID player, String playerName, Instant diedA
         return new DeathRecord(UUID.randomUUID(), player.getUUID(), player.getName().getString(), diedAt,
                 player.level().dimension(), player.getX(), player.getY(), player.getZ(),
                 source.getLocalizedDeathMessage(player).getString(), player.experienceLevel, items);
+    }
+
+    /** The same death marked as given back at that moment. */
+    public DeathRecord markRestored(Instant moment) {
+        return new DeathRecord(id, player, playerName, diedAt, dimension, x, y, z, cause, xpLevel, items, Optional.of(moment));
+    }
+
+    public boolean isRestored() {
+        return restoredAt.isPresent();
     }
 
     /** The stacks that are not empty, in inventory order. */

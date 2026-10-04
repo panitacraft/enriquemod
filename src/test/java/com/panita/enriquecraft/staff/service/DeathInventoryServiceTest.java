@@ -136,6 +136,18 @@ class DeathInventoryServiceTest {
     }
 
     @Test
+    void aRecordIsFoundByItsIdAmongThePlayersOwn() throws IOException {
+        DeathInventoryService service = service(20);
+        DeathRecord wanted = record(ANA, 1);
+        service.add(wanted);
+        service.add(record(ANA, 2));
+
+        assertEquals(wanted.id(), service.find(ANA, wanted.id()).orElseThrow().id());
+        assertTrue(service.find(BEA, wanted.id()).isEmpty());
+        assertTrue(service.find(ANA, java.util.UUID.randomUUID()).isEmpty());
+    }
+
+    @Test
     void deletingAnUnknownRecordReportsIt() throws IOException {
         DeathInventoryService service = service(20);
         service.add(record(ANA, 1));

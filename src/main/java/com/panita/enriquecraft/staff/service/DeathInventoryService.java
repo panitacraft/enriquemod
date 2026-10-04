@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -85,9 +86,11 @@ public final class DeathInventoryService {
      * from (armor is worn again) when that slot is free, which is the case after a respawn; a stack
      * whose slot is taken is given like a picked-up item instead, so nothing is lost or overwritten.
      *
+     * The death is then marked as restored, so staff can tell at a glance, but it stays available to inspect.
+     *
      * @return how many stacks were given
      */
-    public int restore(ServerPlayer target, DeathRecord record) {
+    public int restore(ServerPlayer target, DeathRecord record, Instant now) {
         int given = 0;
         for (int slot = 0; slot < record.items().size(); slot++) {
             ItemStack stack = record.items().get(slot);
@@ -101,7 +104,18 @@ public final class DeathInventoryService {
             }
             given++;
         }
+        replace(record.player(), record.markRestored(now));
         return given;
+    }
+
+    /** One record of a player, by id. */
+    public Optional<DeathRecord> find(UUID player, UUID recordId) {
+        return records(player).stream().filter(record -> record.id().equals(recordId)).findFirst();
+    }
+
+    private void replace(UUID player, DeathRecord changed) {
+        SnbtStore<List<DeathRecord>> store = open(player);
+        store.set(store.get().stream().map(record -> record.id().equals(changed.id()) ? changed : record).toList());
     }
 
     /** Keeps the first {@code max} of a newest-first list. */

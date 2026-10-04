@@ -1,14 +1,14 @@
 package com.panita.enriquecraft.staff.gui;
 
 import com.panita.enriquecraft.core.message.Message;
-import com.panita.enriquecraft.core.message.Timestamps;
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.data.DeathRecord;
-import com.panita.enriquecraft.staff.data.Dimensions;
-import com.panita.enriquecraft.staff.message.CoordinateView;
+import com.panita.enriquecraft.staff.message.DeathInfo;
 import com.panita.enriquecraft.staff.message.DeathInventoryView;
 import com.panita.enriquecraft.staff.message.StaffMessages;
 import com.panita.enriquecraft.staff.service.DeathInventoryService;
@@ -16,11 +16,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * The deaths of one player, newest first. Left click opens the inventory the player had.
+ * The deaths of one player, newest first. Each shows the player's head while recent, then ages into a
+ * skull and a bone, and carries a check once its items were returned. Left click opens the inventory.
  */
 public final class DeathListMenu extends UiPagedMenu<DeathRecord> {
 
@@ -28,14 +31,21 @@ public final class DeathListMenu extends UiPagedMenu<DeathRecord> {
     private final DeathInventoryView view;
     private final UUID player;
     private final String playerName;
+    private final Clock clock;
 
     public DeathListMenu(UiService ui, DeathInventoryService service, DeathInventoryView view, UUID player,
                          String playerName) {
+        this(ui, service, view, player, playerName, Clock.systemDefaultZone());
+    }
+
+    DeathListMenu(UiService ui, DeathInventoryService service, DeathInventoryView view, UUID player,
+                  String playerName, Clock clock) {
         super(ui, null);
         this.service = service;
         this.view = view;
         this.player = player;
         this.playerName = playerName;
+        this.clock = clock;
     }
 
     @Override
@@ -55,22 +65,14 @@ public final class DeathListMenu extends UiPagedMenu<DeathRecord> {
 
     @Override
     protected UiElement render(UiBuilder builder, DeathRecord record) {
-        Component name = factory().text(
-                Message.plain(StaffMessages.Deaths.ENTRY_NAME).with("date", Timestamps.dateTime(record.diedAt())));
-        List<Component> details = List.of(
-                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_CAUSE).with("cause", record.cause())),
-                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_DIMENSION)
-                        .with("dimension", Dimensions.displayName(record.dimension()))),
-                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_POSITION)
-                        .with("x", CoordinateView.number(record.x()))
-                        .with("y", CoordinateView.number(record.y()))
-                        .with("z", CoordinateView.number(record.z()))),
-                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_ITEMS).with("count", record.nonEmptyItems().size())),
-                factory().text(Message.plain(StaffMessages.Deaths.ENTRY_XP).with("level", record.xpLevel())),
-                factory().text(StaffMessages.Deaths.ENTRY_CLICK_HINT));
-        return builder.button(new ItemStack(Items.SKELETON_SKULL), name, details, click -> {
+        List<Component> tooltip = new ArrayList<>(DeathInfo.summary(record, factory()));
+        tooltip.add(factory().text(Message.plain("")));
+        tooltip.add(ClickHints.left(factory(), "inspeccionar"));
+        String badge = record.isRestored() ? "✔" : "";
+        return builder.button(ButtonRole.NONE, DeathIcons.of(record, clock.instant()), DeathInfo.name(record, factory()), tooltip,
+                badge, click -> {
             if (click.isLeft()) {
-                new DeathInventoryMenu(ui(), service, view, record, this).open(click.player());
+                new DeathInventoryMenu(ui(), service, view, record, this, clock).open(click.player());
             }
         });
     }

@@ -128,16 +128,15 @@ public final class StaffMessages {
         public static final String SINGLE_PLAYER = "Indica un único jugador.";
 
         public static final String LIST_TITLE = "Muertes de {player}";
-        public static final String ENTRY_NAME = "<red>Muerte del {date}";
+        public static final String ENTRY_NAME = "<red>☠ Muerte del {date}";
         public static final String ENTRY_CAUSE = "<gray>Causa: <white>{cause}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
         public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
         public static final String ENTRY_ITEMS = "<gray>Objetos: <white>{count}";
         public static final String ENTRY_XP = "<gray>Nivel de experiencia: <white>{level}";
-        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para inspeccionar";
+        public static final String ENTRY_RESTORED = "<green>✔ Inventario devuelto el {date}";
 
         public static final String INSPECT_TITLE = "Inventario de {player}";
-        public static final String ITEM_HINT = "<green>Clic izquierdo para obtener una copia";
         public static final String BACK = "<yellow>Volver a la lista";
         public static final String TELEPORT_NAME = "<aqua>Ir al lugar de la muerte";
         public static final String TELEPORT_LORE = "<gray>Te teletransporta a las coordenadas exactas.";
@@ -148,7 +147,10 @@ public final class StaffMessages {
         public static final String RESTORE_WARNING = "<red>El jugador debe estar conectado.";
         public static final String DELETE_NAME = "<dark_red>Eliminar registro";
         public static final String DELETE_LORE = "<gray>Borra este inventario de muerte para siempre.";
-        public static final String DELETE_WARNING = "<red>Mayús + clic izquierdo para confirmar.";
+        public static final String DELETE_TITLE = "Eliminar muerte";
+        public static final String DELETE_HEADLINE = "<red>¿Eliminar la <gold>muerte del {date}</gold>?";
+        public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
+        public static final String RESTORE_AGAIN = "<gold>Ya se devolvió: hacerlo otra vez duplica los objetos.";
         public static final String INFO_NAME = "<white>Datos de la muerte";
 
         public static final String CHEST_NAME = "<gold>Inventario de {player}";
@@ -162,7 +164,6 @@ public final class StaffMessages {
         public static final String RESTORED_TO_PLAYER = "Un miembro del equipo te ha devuelto tus objetos perdidos.";
         public static final String TARGET_OFFLINE = "<bold>{player}</bold> debe estar conectado para recibir sus objetos.";
         public static final String DELETED = "Registro de muerte eliminado.";
-        public static final String DELETE_HINT = "Para eliminar este registro, mantén Mayús y haz clic izquierdo.";
 
         private Deaths() {
         }
