@@ -15,6 +15,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -212,5 +214,110 @@ class UiPagedMenuTest {
 
         assertEquals(filler, itemAt(alone, BACK));
         assertEquals(Items.OAK_DOOR, itemAt(nested, BACK));
+    }
+
+    /** A menu of words with a search box. */
+    private static final class WordsMenu extends UiPagedMenu<String> {
+        private final List<String> words;
+
+        WordsMenu(UiService ui, List<String> words) {
+            super(ui, null);
+            this.words = words;
+        }
+
+        @Override
+        protected Component title() {
+            return Component.literal("Words");
+        }
+
+        @Override
+        protected List<String> entries() {
+            return words;
+        }
+
+        @Override
+        protected Optional<Function<String, String>> searchText() {
+            return Optional.of(Function.identity());
+        }
+
+        @Override
+        protected UiElement render(UiBuilder builder, String entry) {
+            return builder.button(new ItemStack(Items.STONE), Component.literal(entry), List.of(), click -> { });
+        }
+    }
+
+    private WordsMenu words(String... words) {
+        WordsMenu menu = new WordsMenu(ui, List.of(words));
+        UiTesting.drawAsChest(menu);
+        return menu;
+    }
+
+    private static final int SEARCH = 46;
+
+    @Test
+    void aMenuWithoutSearchTextHasNoSearchBox() {
+        assertEquals(filler, itemAt(menu(3), SEARCH));
+    }
+
+    @Test
+    void aSearchableMenuHasTheSearchBoxInTheControlRow() {
+        WordsMenu menu = words("alfa");
+
+        assertEquals(Items.NAME_TAG, itemAt(menu, SEARCH));
+        assertEquals("Buscar", nameAt(menu, SEARCH));
+    }
+
+    @Test
+    void searchingKeepsOnlyTheMatchingEntriesInTheirOrderIgnoringCase() {
+        WordsMenu menu = words("alfa", "beta", "Alamo", "gamma");
+
+        UiTesting.submit(menu, "AL");
+
+        assertEquals("alfa", nameAt(menu, FIRST_CONTENT));
+        assertEquals("Alamo", nameAt(menu, FIRST_CONTENT + 1));
+        assertNull(UiTesting.itemAt(menu, FIRST_CONTENT + 2));
+    }
+
+    @Test
+    void theSearchBoxShowsWhatWasSearched() {
+        WordsMenu menu = words("alfa", "beta");
+
+        UiTesting.submit(menu, "  be ");
+
+        assertEquals("Actual: be",
+                UiTesting.itemAt(menu, SEARCH).stack().get(DataComponents.LORE).lines().getFirst().getString());
+    }
+
+    @Test
+    void clearingTheSearchShowsEverythingAgain() {
+        WordsMenu menu = words("alfa", "beta");
+        UiTesting.submit(menu, "alf");
+
+        UiTesting.submit(menu, "");
+
+        assertEquals("alfa", nameAt(menu, FIRST_CONTENT));
+        assertEquals("beta", nameAt(menu, FIRST_CONTENT + 1));
+    }
+
+    @Test
+    void searchingGoesBackToTheFirstPage() {
+        String[] many = IntStream.range(0, 40).mapToObj(number -> "w" + number).toArray(String[]::new);
+        WordsMenu menu = words(many);
+        UiTesting.click(menu, NEXT);
+
+        UiTesting.submit(menu, "w3");
+
+        assertEquals("w3", nameAt(menu, FIRST_CONTENT));
+        assertEquals("w30", nameAt(menu, FIRST_CONTENT + 1));
+    }
+
+    @Test
+    void aSearchWithoutMatchesShowsTheEmptyMarker() {
+        WordsMenu menu = words("alfa");
+
+        UiTesting.submit(menu, "zzz");
+
+        assertEquals(Items.PAPER, itemAt(menu, 22));
+        assertNull(UiTesting.itemAt(menu, FIRST_CONTENT));
     }
 }

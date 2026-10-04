@@ -33,4 +33,10 @@ public final class UiTesting {
     public static int rows(UiMenu menu) {
         return new UiChestMenu(menu).rows();
     }
+
+    /** Types a value into the only text field of the menu, as a player confirming it would. */
+    public static void submit(UiMenu menu, String text) {
+        UiInputHandler handler = menu.layout(0).inputs().values().iterator().next();
+        handler.action().accept(new UiSubmit(null, text));
+    }
 }
