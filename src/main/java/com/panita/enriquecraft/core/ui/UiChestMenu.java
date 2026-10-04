@@ -34,10 +34,14 @@ final class UiChestMenu extends Menu {
         if (plan.rows() != rows) {
             throw new IllegalStateException("A screen changed from " + rows + " to " + plan.rows() + " rows while open");
         }
-        if (owner.framed()) {
+        ChestStyle style = owner.chestStyle();
+        if (style == ChestStyle.FRAMED) {
             frame();
         }
         plan.items().forEach(this::set);
+        if (style == ChestStyle.FILLED) {
+            fillRest();
+        }
     }
 
     @Override
@@ -46,7 +50,7 @@ final class UiChestMenu extends Menu {
     }
 
     private ChestLayout.Plan describe() {
-        return ChestLayout.plan(owner.layout(0), owner.framed(), owner.factory(),
+        return ChestLayout.plan(owner.layout(0), owner.chestStyle(), owner.factory(),
                 (player, field, answer) -> owner.ui().prompt(player, owner, field, answer));
     }
 }

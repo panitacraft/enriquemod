@@ -24,8 +24,8 @@ import java.util.function.Consumer;
  * <p>
  * The root's children are laid out as bands from the top. A row fills one chest row from the left,
  * a grid takes as many rows as it declares, and any other element sits centered in a row of its own.
- * A framed screen keeps its outer edge for decoration: every band but the last goes inside the
- * frame, and the last band takes the bottom edge, where controls belong.
+ * A {@link ChestStyle#FRAMED} screen keeps its outer edge for decoration: every band but the last
+ * goes inside the frame, and the last band takes the bottom edge, where controls belong.
  * <p>
  * A chest cannot hold a text field, so a field becomes an item: a left click asks for the value in
  * chat, and a right click clears it.
@@ -56,8 +56,8 @@ final class ChestLayout {
         this.prompter = prompter;
     }
 
-    static Plan plan(UiLayout layout, boolean framed, MenuFactory factory, InputPrompter prompter) {
-        return new ChestLayout(layout, factory, prompter).arrange(framed);
+    static Plan plan(UiLayout layout, ChestStyle style, MenuFactory factory, InputPrompter prompter) {
+        return new ChestLayout(layout, factory, prompter).arrange(style == ChestStyle.FRAMED);
     }
 
     private Plan arrange(boolean framed) {

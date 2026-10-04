@@ -45,7 +45,9 @@ public sealed interface UiElement {
     }
 
     /**
-     * Something the player can press. The icon may be empty, in which case the client draws no item.
+     * Something the player can press. The icon may be empty, in which case no item is drawn. A button
+     * with an icon but no label stands for the item itself, and shows its name and tooltip, followed by
+     * the extra tooltip lines.
      *
      * @param id identifies the button within one description; unique, assigned by the server
      */

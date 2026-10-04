@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -24,12 +25,12 @@ class ChestLayoutTest {
 
     /** A menu whose screen is whatever the test builds. */
     private static final class ScreenMenu extends UiMenu {
-        private final boolean framed;
+        private final ChestStyle style;
         private final Function<UiBuilder, UiElement> screen;
 
-        ScreenMenu(UiService ui, boolean framed, Function<UiBuilder, UiElement> screen) {
+        ScreenMenu(UiService ui, ChestStyle style, Function<UiBuilder, UiElement> screen) {
             super(ui, null);
-            this.framed = framed;
+            this.style = style;
             this.screen = screen;
         }
 
@@ -44,8 +45,8 @@ class ChestLayoutTest {
         }
 
         @Override
-        protected boolean framed() {
-            return framed;
+        protected ChestStyle chestStyle() {
+            return style;
         }
     }
 
@@ -59,18 +60,18 @@ class ChestLayoutTest {
         ui = MinecraftTestSupport.uiService(directory);
     }
 
-    private ScreenMenu screen(boolean framed, Function<UiBuilder, UiElement> screen) {
-        return new ScreenMenu(ui, framed, screen);
+    private ScreenMenu screen(ChestStyle style, Function<UiBuilder, UiElement> screen) {
+        return new ScreenMenu(ui, style, screen);
     }
 
-    private static UiElement.Button button(UiBuilder builder, String name, java.util.List<String> pressed) {
+    private static UiElement.Button button(UiBuilder builder, String name, List<String> pressed) {
         return builder.button(new ItemStack(Items.STONE), Component.literal(name), List.of(), click -> pressed.add(name));
     }
 
     @Test
     void aRowFillsOneChestRowFromTheLeft() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(false, b -> new UiElement.Row(List.of(button(b, "a", pressed), button(b, "b", pressed))));
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Row(List.of(button(b, "a", pressed), button(b, "b", pressed))));
 
         UiTesting.drawAsChest(menu);
 
@@ -82,8 +83,8 @@ class ChestLayoutTest {
 
     @Test
     void aSpacerLeavesItsCellEmpty() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(false, b -> new UiElement.Row(
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Row(
                 List.of(new UiElement.Spacer(), button(b, "a", pressed))));
 
         UiTesting.drawAsChest(menu);
@@ -94,8 +95,8 @@ class ChestLayoutTest {
 
     @Test
     void aSingleElementSitsInTheMiddleOfItsRow() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(false, b -> button(b, "a", pressed));
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> button(b, "a", pressed));
 
         UiTesting.drawAsChest(menu);
 
@@ -104,8 +105,8 @@ class ChestLayoutTest {
 
     @Test
     void aGridTakesItsDeclaredRowsAndWrapsAtItsColumns() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(false, b -> new UiElement.Grid(3, 2, List.of(
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Grid(3, 2, List.of(
                 button(b, "a", pressed), button(b, "b", pressed), button(b, "c", pressed), button(b, "d", pressed))));
 
         UiTesting.drawAsChest(menu);
@@ -118,8 +119,8 @@ class ChestLayoutTest {
 
     @Test
     void bandsOfAColumnStackFromTheTop() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(false, b -> new UiElement.Column(List.of(
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Column(List.of(
                 new UiElement.Row(List.of(button(b, "top", pressed))),
                 new UiElement.Row(List.of(button(b, "bottom", pressed))))));
 
@@ -132,8 +133,8 @@ class ChestLayoutTest {
 
     @Test
     void aFramedScreenKeepsItsEdgeAndPutsTheLastBandOnTheBottomEdge() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(true, b -> new UiElement.Column(List.of(
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.FRAMED, b -> new UiElement.Column(List.of(
                 new UiElement.Row(List.of(button(b, "inside", pressed))),
                 new UiElement.Row(List.of(new UiElement.Spacer(), button(b, "control", pressed))))));
 
@@ -149,7 +150,7 @@ class ChestLayoutTest {
 
     @Test
     void aLabelIsShownAsANamedItem() {
-        ScreenMenu menu = screen(false, b -> new UiElement.Label(Component.literal("Hola")));
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Label(Component.literal("Hola")));
 
         UiTesting.drawAsChest(menu);
 
@@ -158,7 +159,7 @@ class ChestLayoutTest {
 
     @Test
     void aButtonWithoutAnIconIsShownAsPaper() {
-        ScreenMenu menu = screen(false, b -> b.button(ItemStack.EMPTY, Component.literal("x"), List.of(), click -> { }));
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> b.button(ItemStack.EMPTY, Component.literal("x"), List.of(), click -> { }));
 
         UiTesting.drawAsChest(menu);
 
@@ -167,7 +168,7 @@ class ChestLayoutTest {
 
     @Test
     void theTooltipBecomesTheLore() {
-        ScreenMenu menu = screen(false, b -> b.button(new ItemStack(Items.STONE), Component.literal("x"),
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> b.button(new ItemStack(Items.STONE), Component.literal("x"),
                 List.of(Component.literal("uno"), Component.literal("dos")), click -> { }));
 
         UiTesting.drawAsChest(menu);
@@ -179,14 +180,14 @@ class ChestLayoutTest {
 
     @Test
     void aRowWiderThanTheChestIsRejected() {
-        ScreenMenu menu = screen(false, b -> new UiElement.Row(Collections.nCopies(10, new UiElement.Spacer())));
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Row(Collections.nCopies(10, new UiElement.Spacer())));
 
         assertThrows(IllegalStateException.class, () -> UiTesting.drawAsChest(menu));
     }
 
     @Test
     void aFramedRowWiderThanTheInteriorIsRejected() {
-        ScreenMenu menu = screen(true, b -> new UiElement.Column(List.of(
+        ScreenMenu menu = screen(ChestStyle.FRAMED, b -> new UiElement.Column(List.of(
                 new UiElement.Row(Collections.nCopies(8, new UiElement.Spacer())),
                 new UiElement.Row(List.of()))));
 
@@ -195,34 +196,57 @@ class ChestLayoutTest {
 
     @Test
     void moreThanSixRowsIsRejected() {
-        ScreenMenu menu = screen(false, b -> new UiElement.Grid(1, 7, List.of()));
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Grid(1, 7, List.of()));
 
         assertThrows(IllegalStateException.class, () -> UiTesting.drawAsChest(menu));
     }
 
     @Test
     void anEmptyScreenIsRejected() {
-        ScreenMenu menu = screen(false, b -> new UiElement.Column(List.of()));
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Column(List.of()));
 
         assertThrows(IllegalStateException.class, () -> UiTesting.drawAsChest(menu));
     }
 
     @Test
     void aContainerInsideARowIsRejected() {
-        ScreenMenu menu = screen(false, b -> new UiElement.Row(List.of(new UiElement.Row(List.of()))));
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Row(List.of(new UiElement.Row(List.of()))));
 
         assertThrows(IllegalStateException.class, () -> UiTesting.drawAsChest(menu));
     }
 
     @Test
     void pressingAButtonRunsItsAction() {
-        List<String> pressed = new java.util.ArrayList<>();
-        ScreenMenu menu = screen(false, b -> new UiElement.Row(List.of(button(b, "a", pressed), button(b, "b", pressed))));
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Row(List.of(button(b, "a", pressed), button(b, "b", pressed))));
         UiTesting.drawAsChest(menu);
 
         UiTesting.click(menu, 1);
         UiTesting.click(menu, 0);
 
         assertEquals(List.of("b", "a"), pressed);
+    }
+
+    @Test
+    void aFilledScreenFillsEverySlotWithoutAnElement() {
+        List<String> pressed = new ArrayList<>();
+        ScreenMenu menu = screen(ChestStyle.FILLED, b -> new UiElement.Row(
+                List.of(button(b, "a", pressed), new UiElement.Spacer())));
+
+        UiTesting.drawAsChest(menu);
+
+        assertEquals(Items.STONE, UiTesting.itemAt(menu, 0).stack().getItem());
+        for (int slot = 1; slot < 9; slot++) {
+            assertEquals(Items.STAINED_GLASS_PANE.black(), UiTesting.itemAt(menu, slot).stack().getItem(), "slot " + slot);
+        }
+    }
+
+    @Test
+    void aPlainScreenLeavesItsEmptySlotsEmpty() {
+        ScreenMenu menu = screen(ChestStyle.PLAIN, b -> new UiElement.Row(List.of(new UiElement.Spacer())));
+
+        UiTesting.drawAsChest(menu);
+
+        assertNull(UiTesting.itemAt(menu, 0));
     }
 }

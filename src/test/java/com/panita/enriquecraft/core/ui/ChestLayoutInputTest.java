@@ -71,7 +71,7 @@ class ChestLayoutInputTest {
     }
 
     private MenuItem fieldItem(FieldMenu menu, RecordingPrompter prompter) {
-        ChestLayout.Plan plan = ChestLayout.plan(menu.layout(0), false, ui.factory(), prompter);
+        ChestLayout.Plan plan = ChestLayout.plan(menu.layout(0), ChestStyle.PLAIN, ui.factory(), prompter);
         return plan.items().get(4);
     }
 

@@ -40,8 +40,8 @@ public abstract class UiPagedMenu<T> extends UiMenu {
     protected abstract UiElement render(UiBuilder builder, T entry);
 
     @Override
-    protected final boolean framed() {
-        return true;
+    protected final ChestStyle chestStyle() {
+        return ChestStyle.FRAMED;
     }
 
     @Override

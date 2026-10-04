@@ -36,9 +36,9 @@ public abstract class UiMenu {
     /** The screen as it is right now. */
     protected abstract UiElement describe(UiBuilder builder);
 
-    /** Whether a chest keeps its outer edge for decoration; see {@link ChestLayout}. */
-    protected boolean framed() {
-        return false;
+    /** How a chest decorates the screen; see {@link ChestLayout}. */
+    protected ChestStyle chestStyle() {
+        return ChestStyle.PLAIN;
     }
 
     /** Called when the player closes the screen or another one replaces it. */
