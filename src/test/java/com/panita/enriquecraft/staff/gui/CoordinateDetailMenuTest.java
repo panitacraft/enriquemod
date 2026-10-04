@@ -182,9 +182,12 @@ class CoordinateDetailMenuTest {
 
         UiElement.Detail detail = assertInstanceOf(UiElement.Detail.class, root.children().getFirst());
         assertTrue(detail.iconId() != UiElement.Detail.NOT_PRESSABLE);
-        assertInstanceOf(UiElement.TextInput.class, root.children().get(1));
+        assertEquals(2, root.children().size(), "the name is edited in the title, with no field of its own");
+        assertTrue(detail.editableTitle().isPresent());
+        assertEquals("base", detail.editableTitle().orElseThrow().value());
         UiElement.Row controls = assertInstanceOf(UiElement.Row.class, root.children().getLast());
         assertEquals(ButtonRole.BACK, assertInstanceOf(UiElement.Button.class, controls.children().getFirst()).role());
+        assertEquals(ButtonRole.DANGER, assertInstanceOf(UiElement.Button.class, controls.children().get(4)).role());
     }
 
     @Test

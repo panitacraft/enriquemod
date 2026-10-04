@@ -206,13 +206,13 @@ class DeathMenusTest {
     }
 
     @Test
-    void theIconAgesFromTheHeadToASkullToABone() {
+    void theIconAgesFromTheHeadToASkullToAWitherSkull() {
         DeathRecord record = record(0, fullSample());
 
         assertEquals(Items.PLAYER_HEAD, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(23))).getItem());
         assertEquals(Items.SKELETON_SKULL, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(24))).getItem());
         assertEquals(Items.SKELETON_SKULL, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(71))).getItem());
-        assertEquals(Items.BONE_BLOCK, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(72))).getItem());
+        assertEquals(Items.WITHER_SKELETON_SKULL, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(72))).getItem());
     }
 
     @Test
@@ -244,8 +244,9 @@ class DeathMenusTest {
 
         UiElement.Detail detail = assertInstanceOf(UiElement.Detail.class, root.children().get(0));
         assertEquals(Items.PLAYER_HEAD, detail.icon().getItem());
-        assertEquals("☠ Muerte del " + Timestamps.dateTime(WHEN), detail.title().getString());
+        assertEquals("", detail.title().getString(), "no title: the date leads the lines");
         assertEquals(List.of(
+                "Fecha: " + Timestamps.dateTime(WHEN),
                 "Causa: Ana was slain by <red>Zombie",
                 "Dimensión: Nether",
                 "Posición: 10, 64, -21",
@@ -306,7 +307,8 @@ class DeathMenusTest {
 
         List<String> lore = lore(UiTesting.itemAt(menu, 49).stack());
 
-        assertEquals("Causa: Ana was slain by <red>Zombie", lore.get(0));
-        assertEquals("Objetos: 7", lore.get(3));
+        assertEquals("Fecha: " + Timestamps.dateTime(WHEN), lore.get(0));
+        assertEquals("Causa: Ana was slain by <red>Zombie", lore.get(1));
+        assertEquals("Objetos: 7", lore.get(4));
     }
 }

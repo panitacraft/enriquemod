@@ -8,6 +8,7 @@ import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ChestStyle;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.ConfirmMenu;
+import com.panita.enriquecraft.core.ui.CopyText;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
@@ -59,8 +60,19 @@ public final class CoordinateDetailMenu extends UiMenu {
         return ChestStyle.FILLED;
     }
 
+    /** The client companion edits the name where it is shown: its title. */
     @Override
     protected UiElement describe(UiBuilder builder) {
+        return describe(builder, true);
+    }
+
+    /** A chest cannot edit a title, so the name gets a field of its own below the item. */
+    @Override
+    protected UiElement describeChest(UiBuilder builder) {
+        return describe(builder, false);
+    }
+
+    private UiElement describe(UiBuilder builder, boolean titleIsEditable) {
         Optional<SavedCoordinate> found = service.find(name);
         UiElement back = builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR),
                 factory().text(Messages.Gui.BACK), List.of(), click -> previous().open(click.player()));
@@ -72,14 +84,14 @@ public final class CoordinateDetailMenu extends UiMenu {
         }
 
         SavedCoordinate coordinate = found.get();
-        UiElement detail = builder.detail(new ItemStack(coordinate.icon()),
+        UiElement.Detail detail = builder.detail(new ItemStack(coordinate.icon()),
                 factory().text(Message.plain(StaffMessages.Coordinates.DETAIL_NAME).with("name", coordinate.displayName())),
                 lines(coordinate), List.of(ClickHints.left(factory(), "cambiar icono")), click -> {
                     if (click.isLeft()) {
                         new CoordinateIconMenu(ui(), service, coordinate.name(), this).open(click.player());
                     }
                 });
-        UiElement displayName = builder.input(factory().text(StaffMessages.Coordinates.DETAIL_NAME_HINT),
+        UiElement.TextInput displayName = builder.input(factory().text(StaffMessages.Coordinates.DETAIL_NAME_HINT),
                 coordinate.displayName(), SavedCoordinate.MAX_DISPLAY_NAME, submit -> {
                     service.updateDisplayName(coordinate.name(), submit.text());
                     refresh();
@@ -92,7 +104,7 @@ public final class CoordinateDetailMenu extends UiMenu {
                         view.teleport(click.player(), coordinate);
                     }
                 });
-        UiElement delete = builder.button(new ItemStack(Items.LAVA_BUCKET),
+        UiElement delete = builder.button(ButtonRole.DANGER, new ItemStack(Items.LAVA_BUCKET),
                 factory().text(StaffMessages.Coordinates.DETAIL_DELETE),
                 List.of(factory().text(StaffMessages.Coordinates.DETAIL_DELETE_LORE)), click -> {
                     if (click.isLeft()) {
@@ -100,10 +112,11 @@ public final class CoordinateDetailMenu extends UiMenu {
                     }
                 });
         UiElement none = new UiElement.Spacer();
-        return new UiElement.Column(List.of(
-                detail,
-                displayName,
-                new UiElement.Row(List.of(back, none, none, teleport, delete, none, none, none, none))));
+        UiElement controls = new UiElement.Row(List.of(back, none, none, teleport, delete, none, none, none, none));
+        if (titleIsEditable) {
+            return new UiElement.Column(List.of(detail.withEditableTitle(displayName), controls));
+        }
+        return new UiElement.Column(List.of(detail, displayName, controls));
     }
 
     private ConfirmMenu confirmDelete(SavedCoordinate coordinate) {
@@ -119,7 +132,8 @@ public final class CoordinateDetailMenu extends UiMenu {
 
     private List<Component> lines(SavedCoordinate coordinate) {
         return List.of(
-                factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_ID).with("id", coordinate.name())),
+                CopyText.of(factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_ID).with("id", coordinate.name())),
+                        coordinate.name()),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)
                         .with("dimension", Dimensions.coloredName(coordinate.dimension()))),
                 factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_POSITION)

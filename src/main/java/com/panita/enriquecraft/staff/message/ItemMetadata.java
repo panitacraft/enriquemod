@@ -69,22 +69,22 @@ public final class ItemMetadata {
         modelData(stack.get(DataComponents.CUSTOM_MODEL_DATA));
         Object model = customized(stack, DataComponents.ITEM_MODEL);
         if (model != null) {
-            value(StaffMessages.Items.META_ITEM_MODEL, String.valueOf(model));
+            detail(StaffMessages.Items.META_ITEM_MODEL, String.valueOf(model));
         }
         DyedItemColor dye = customized(stack, DataComponents.DYED_COLOR);
         if (dye != null) {
-            value(StaffMessages.Items.META_DYE, String.format(Locale.ROOT, "#%06X", dye.rgb() & 0xFFFFFF));
+            detail(StaffMessages.Items.META_DYE, String.format(Locale.ROOT, "#%06X", dye.rgb() & 0xFFFFFF));
         }
         if (stack.has(DataComponents.UNBREAKABLE)) {
-            value(StaffMessages.Items.META_UNBREAKABLE, StaffMessages.Items.META_YES);
+            detail(StaffMessages.Items.META_UNBREAKABLE, StaffMessages.Items.META_YES);
         }
         Integer repairCost = stack.get(DataComponents.REPAIR_COST);
         if (repairCost != null && repairCost > 0) {
-            value(StaffMessages.Items.META_REPAIR_COST, String.valueOf(repairCost));
+            detail(StaffMessages.Items.META_REPAIR_COST, String.valueOf(repairCost));
         }
         Object rarity = customized(stack, DataComponents.RARITY);
         if (rarity != null) {
-            value(StaffMessages.Items.META_RARITY, String.valueOf(rarity).toLowerCase(Locale.ROOT));
+            detail(StaffMessages.Items.META_RARITY, String.valueOf(rarity).toLowerCase(Locale.ROOT));
         }
         tooltip(stack.get(DataComponents.TOOLTIP_DISPLAY));
         otherComponents(stack);
@@ -102,7 +102,8 @@ public final class ItemMetadata {
         section(label);
         enchantments.entrySet().forEach(entry -> {
             Holder<Enchantment> enchantment = entry.getKey();
-            item(Enchantment.getFullname(enchantment, entry.getIntValue()));
+            // Plain text: the game's own enchantment name carries a color of its own that would hide ours.
+            line(StaffMessages.Items.META_ENCHANTMENT, Enchantment.getFullname(enchantment, entry.getIntValue()).getString());
         });
     }
 
@@ -113,8 +114,8 @@ public final class ItemMetadata {
         section(StaffMessages.Items.META_ATTRIBUTES);
         for (ItemAttributeModifiers.Entry entry : modifiers.modifiers()) {
             AttributeModifier modifier = entry.modifier();
-            item(Component.literal(attributeName(entry.attribute()) + " " + amount(modifier) + " ("
-                    + entry.slot().getSerializedName() + ")"));
+            line(StaffMessages.Items.META_ATTRIBUTE, attributeName(entry.attribute()) + " " + amount(modifier) + " ("
+                    + entry.slot().getSerializedName() + ")");
         }
     }
 
@@ -148,7 +149,7 @@ public final class ItemMetadata {
         if (!data.colors().isEmpty()) {
             parts.add("colors " + data.colors());
         }
-        value(StaffMessages.Items.META_MODEL_DATA, parts.isEmpty() ? "-" : String.join(", ", parts));
+        detail(StaffMessages.Items.META_MODEL_DATA, parts.isEmpty() ? "-" : String.join(", ", parts));
     }
 
     private void tooltip(TooltipDisplay display) {
@@ -156,10 +157,10 @@ public final class ItemMetadata {
             return;
         }
         if (display.hideTooltip()) {
-            value(StaffMessages.Items.META_TOOLTIP_HIDDEN, StaffMessages.Items.META_YES);
+            detail(StaffMessages.Items.META_TOOLTIP_HIDDEN, StaffMessages.Items.META_YES);
         }
         if (!display.hiddenComponents().isEmpty()) {
-            value(StaffMessages.Items.META_HIDDEN_COMPONENTS, display.hiddenComponents().stream()
+            detail(StaffMessages.Items.META_HIDDEN_COMPONENTS, display.hiddenComponents().stream()
                     .map(ItemMetadata::name).collect(Collectors.joining(", ")));
         }
     }
@@ -172,7 +173,7 @@ public final class ItemMetadata {
             }
         }
         if (!others.isEmpty()) {
-            value(StaffMessages.Items.META_OTHER, String.join(", ", others));
+            detail(StaffMessages.Items.META_OTHER, String.join(", ", others));
         }
     }
 
@@ -185,11 +186,16 @@ public final class ItemMetadata {
         lines.add(factory.text(Message.plain(StaffMessages.Items.META_LINE).with("label", label).with("value", value)));
     }
 
+    private void detail(String label, String value) {
+        lines.add(factory.text(Message.plain(StaffMessages.Items.META_LINE_DETAIL).with("label", label).with("value", value)));
+    }
+
     private void section(String label) {
         lines.add(factory.text(Message.plain(StaffMessages.Items.META_SECTION).with("label", label)));
     }
 
-    private void item(Component value) {
-        lines.add(factory.text(Message.plain(StaffMessages.Items.META_VALUE).with("value", value)));
+    /** A child of a section, in the color the template gives its kind. */
+    private void line(String template, String value) {
+        lines.add(factory.text(Message.plain(template).with("value", value)));
     }
 }

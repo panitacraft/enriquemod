@@ -4,6 +4,7 @@ import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.item.ItemGiving;
 import com.panita.enriquecraft.staff.config.StaffConfig;
+import com.panita.enriquecraft.staff.data.DeathPlayer;
 import com.panita.enriquecraft.staff.data.DeathRecord;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -11,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,6 +24,7 @@ import java.util.UUID;
 public final class DeathInventoryService {
 
     private static final String DIRECTORY = "death_inventories/";
+    private static final String EXTENSION = ".snbt";
 
     private final WorldData worldData;
     private final StaffConfig config;
@@ -29,6 +32,29 @@ public final class DeathInventoryService {
     public DeathInventoryService(WorldData worldData, StaffConfig config) {
         this.worldData = worldData;
         this.config = config;
+    }
+
+    /** Every player with at least one kept death, the one who died most recently first. */
+    public List<DeathPlayer> playersWithDeaths() {
+        List<DeathPlayer> players = new ArrayList<>();
+        for (String file : worldData.fileNames(DIRECTORY)) {
+            if (!file.endsWith(EXTENSION)) {
+                continue;
+            }
+            UUID id;
+            try {
+                id = UUID.fromString(file.substring(0, file.length() - EXTENSION.length()));
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
+            List<DeathRecord> records = records(id);
+            if (!records.isEmpty()) {
+                DeathRecord newest = records.getFirst();
+                players.add(new DeathPlayer(id, newest.playerName(), newest.diedAt(), records.size()));
+            }
+        }
+        players.sort(Comparator.comparing(DeathPlayer::lastDeath).reversed());
+        return List.copyOf(players);
     }
 
     /** A player's death inventories, newest first. */
@@ -124,6 +150,6 @@ public final class DeathInventoryService {
     }
 
     private SnbtStore<List<DeathRecord>> open(UUID player) {
-        return worldData.open(DIRECTORY + player + ".snbt", DeathRecord.CODEC.listOf(), List.of());
+        return worldData.open(DIRECTORY + player + EXTENSION, DeathRecord.CODEC.listOf(), List.of());
     }
 }

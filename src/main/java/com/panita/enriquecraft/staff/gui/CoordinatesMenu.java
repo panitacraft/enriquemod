@@ -4,6 +4,7 @@ import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
+import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.data.Dimensions;
@@ -32,11 +33,20 @@ public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
     private final Clock clock;
 
     public CoordinatesMenu(UiService ui, CoordinateService service, CoordinateView view) {
-        this(ui, service, view, Clock.systemDefaultZone());
+        this(ui, service, view, null, Clock.systemDefaultZone());
+    }
+
+    /** A list that goes back to the menu it was opened from. */
+    public CoordinatesMenu(UiService ui, CoordinateService service, CoordinateView view, UiMenu previous) {
+        this(ui, service, view, previous, Clock.systemDefaultZone());
     }
 
     CoordinatesMenu(UiService ui, CoordinateService service, CoordinateView view, Clock clock) {
-        super(ui, null);
+        this(ui, service, view, null, clock);
+    }
+
+    private CoordinatesMenu(UiService ui, CoordinateService service, CoordinateView view, UiMenu previous, Clock clock) {
+        super(ui, previous);
         this.service = service;
         this.view = view;
         this.clock = clock;

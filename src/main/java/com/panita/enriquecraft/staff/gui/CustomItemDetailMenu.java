@@ -8,6 +8,7 @@ import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ChestStyle;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.ConfirmMenu;
+import com.panita.enriquecraft.core.ui.CopyText;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
@@ -73,7 +74,7 @@ public final class CustomItemDetailMenu extends UiMenu {
         List<UiElement> metadata = ItemMetadata.lines(item.stack(), factory()).stream()
                 .<UiElement>map(UiElement.Label::new).toList();
         return new UiElement.Column(List.of(
-                new UiElement.Detail(display(item), item.stack().getHoverName(), ownLines(item)),
+                itemDetail(builder, item, ownLines(item)),
                 new UiElement.Divider(),
                 new UiElement.Scroll(new UiElement.Column(metadata), SCROLL_HEIGHT),
                 controls(builder, item)));
@@ -91,7 +92,7 @@ public final class CustomItemDetailMenu extends UiMenu {
         lines.add(Component.empty());
         lines.addAll(ItemMetadata.lines(item.stack(), factory()));
         return new UiElement.Column(List.of(
-                new UiElement.Detail(display(item), item.stack().getHoverName(), lines),
+                itemDetail(builder, item, lines),
                 controls(builder, item)));
     }
 
@@ -106,20 +107,25 @@ public final class CustomItemDetailMenu extends UiMenu {
     private UiElement controls(UiBuilder builder, SavedItem item) {
         UiElement back = builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(Messages.Gui.BACK),
                 List.of(), click -> previous().open(click.player()));
-        UiElement get = builder.button(display(item), factory().text(StaffMessages.Items.DETAIL_GET),
-                List.of(factory().text(StaffMessages.Items.DETAIL_GET_LORE)), click -> {
-                    if (click.isLeft()) {
-                        view.give(click.player(), item, click.isShift());
-                    }
-                });
-        UiElement delete = builder.button(new ItemStack(Items.LAVA_BUCKET), factory().text(StaffMessages.Items.DETAIL_DELETE),
+        UiElement delete = builder.button(ButtonRole.DANGER, new ItemStack(Items.LAVA_BUCKET),
+                factory().text(StaffMessages.Items.DETAIL_DELETE),
                 List.of(factory().text(StaffMessages.Items.DETAIL_DELETE_LORE)), click -> {
                     if (click.isLeft()) {
                         confirmDelete(item).open(click.player());
                     }
                 });
         UiElement none = new UiElement.Spacer();
-        return new UiElement.Row(List.of(back, none, none, get, delete, none, none, none, none));
+        return new UiElement.Row(List.of(back, none, none, none, delete, none, none, none, none));
+    }
+
+    /** The item large; pressing it gives a copy (a full stack with shift), as it does in the list. */
+    private UiElement itemDetail(UiBuilder builder, SavedItem item, List<Component> lines) {
+        return builder.detail(display(item), item.stack().getHoverName(), lines,
+                List.of(ClickHints.left(factory(), "obtener copia")), click -> {
+                    if (click.isLeft()) {
+                        view.give(click.player(), item, click.isShift());
+                    }
+                });
     }
 
     private ConfirmMenu confirmDelete(SavedItem item) {
@@ -141,7 +147,8 @@ public final class CustomItemDetailMenu extends UiMenu {
     /** What the mod itself knows: the id, who saved the item and when. */
     private List<Component> ownLines(SavedItem item) {
         return List.of(
-                factory().text(Message.plain(StaffMessages.Items.ENTRY_ID).with("id", "enriquecraft:" + item.name())),
+                CopyText.of(factory().text(Message.plain(StaffMessages.Items.ENTRY_ID).with("id", "enriquecraft:" + item.name())),
+                        "enriquecraft:" + item.name()),
                 factory().text(Message.plain(StaffMessages.Items.ENTRY_SAVED_BY)
                         .with("player", PlayerHeads.inline(item.savedBy(), Component.literal(item.savedByName())))),
                 factory().text(Message.plain(StaffMessages.Items.ENTRY_DATE)

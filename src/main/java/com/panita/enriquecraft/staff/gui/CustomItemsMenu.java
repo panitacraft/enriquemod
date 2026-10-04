@@ -4,6 +4,7 @@ import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
+import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.data.SavedItem;
@@ -29,7 +30,12 @@ public final class CustomItemsMenu extends UiPagedMenu<SavedItem> {
     private final CustomItemView view;
 
     public CustomItemsMenu(UiService ui, CustomItemService service, CustomItemView view) {
-        super(ui, null);
+        this(ui, service, view, null);
+    }
+
+    /** A list that goes back to the menu it was opened from. */
+    public CustomItemsMenu(UiService ui, CustomItemService service, CustomItemView view, UiMenu previous) {
+        super(ui, previous);
         this.service = service;
         this.view = view;
     }

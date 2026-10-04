@@ -5,6 +5,7 @@ import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
+import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.data.DeathRecord;
@@ -35,12 +36,23 @@ public final class DeathListMenu extends UiPagedMenu<DeathRecord> {
 
     public DeathListMenu(UiService ui, DeathInventoryService service, DeathInventoryView view, UUID player,
                          String playerName) {
-        this(ui, service, view, player, playerName, Clock.systemDefaultZone());
+        this(ui, service, view, player, playerName, null, Clock.systemDefaultZone());
+    }
+
+    /** A list that goes back to the menu it was opened from. */
+    DeathListMenu(UiService ui, DeathInventoryService service, DeathInventoryView view, UUID player,
+                  String playerName, UiMenu previous) {
+        this(ui, service, view, player, playerName, previous, Clock.systemDefaultZone());
     }
 
     DeathListMenu(UiService ui, DeathInventoryService service, DeathInventoryView view, UUID player,
                   String playerName, Clock clock) {
-        super(ui, null);
+        this(ui, service, view, player, playerName, null, clock);
+    }
+
+    private DeathListMenu(UiService ui, DeathInventoryService service, DeathInventoryView view, UUID player,
+                          String playerName, UiMenu previous, Clock clock) {
+        super(ui, previous);
         this.service = service;
         this.view = view;
         this.player = player;

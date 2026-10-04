@@ -10,7 +10,17 @@ public final class StaffMessages {
     }
 
     public static final class Staff {
-        public static final String DESCRIPTION = "Herramientas para el equipo de administración";
+        public static final String DESCRIPTION = "Herramientas para el equipo de administración; sin argumentos abre el menú";
+
+        public static final String MENU_TITLE = "Menú del Staff";
+        public static final String COORDINATES_NAME = "<gold>Coordenadas";
+        public static final String COORDINATES_LORE = "<gray>Lugares guardados del servidor";
+        public static final String ITEMS_NAME = "<light_purple>Objetos";
+        public static final String ITEMS_LORE = "<gray>Objetos personalizados guardados";
+        public static final String DEATHS_NAME = "<red>Muertes";
+        public static final String DEATHS_LORE = "<gray>Inventarios de muerte de los jugadores";
+        public static final String OPEN = "abrir";
+        public static final String NO_ACCESS = "<gray>No tienes acceso a ninguna herramienta";
 
         private Staff() {
         }
@@ -90,8 +100,6 @@ public final class StaffMessages {
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
 
         public static final String DETAIL_TITLE = "Detalles del objeto";
-        public static final String DETAIL_GET = "<green>Obtener copia";
-        public static final String DETAIL_GET_LORE = "<gray>Te da una copia de este objeto";
         public static final String DETAIL_DELETE = "<red>Eliminar";
         public static final String DETAIL_DELETE_LORE = "<gray>Elimina este objeto guardado";
 
@@ -99,9 +107,12 @@ public final class StaffMessages {
         public static final String DELETE_HEADLINE = "<red>¿Eliminar <gold>{name}</gold>?";
         public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
 
+        // Count and durability read plainly; every other fact has its own color so the values stand out from their labels.
         public static final String META_LINE = "<gray>{label}: <white>{value}";
+        public static final String META_LINE_DETAIL = "<gray>{label}: <color #A0D2F0>{value}";
         public static final String META_SECTION = "<gray>{label}:";
-        public static final String META_VALUE = "<white>  {value}";
+        public static final String META_ENCHANTMENT = "  <color #C9A7F2>{value}";
+        public static final String META_ATTRIBUTE = "  <color #F5E1A4>{value}";
         public static final String META_NONE = "<gray>Sin datos adicionales";
         public static final String META_COUNT = "Cantidad";
         public static final String META_DURABILITY = "Durabilidad";
@@ -133,8 +144,14 @@ public final class StaffMessages {
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
         public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
         public static final String ENTRY_ITEMS = "<gray>Objetos: <white>{count}";
+        public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
         public static final String ENTRY_XP = "<gray>Nivel de experiencia: <white>{level}";
         public static final String ENTRY_RESTORED = "<green>✔ Inventario devuelto el {date}";
+
+        public static final String PLAYERS_TITLE = "Muertes";
+        public static final String PLAYER_DEATHS = "<gray>Muertes guardadas: <white>{count}";
+        public static final String PLAYER_LAST = "<gray>Última: <white>{date}";
+        public static final String PLAYER_NAME = "<gold>{player}";
 
         public static final String INSPECT_TITLE = "Inventario de {player}";
         public static final String BACK = "<yellow>Volver a la lista";

@@ -34,9 +34,10 @@ public final class DeathInfo {
         return lines;
     }
 
-    /** The summary plus how much the player carried; the experience level only when there was some. */
+    /** When it happened first, then the summary and how much the player carried; the experience level only when there was some. */
     public static List<Component> full(DeathRecord record, MenuFactory factory) {
         List<Component> lines = new ArrayList<>(summary(record, factory));
+        lines.add(0, factory.text(Message.plain(StaffMessages.Deaths.ENTRY_DATE).with("date", Timestamps.dateTime(record.diedAt()))));
         // Keep the restored line last, after the details it qualifies.
         Component restored = record.isRestored() ? lines.removeLast() : null;
         lines.add(factory.text(Message.plain(StaffMessages.Deaths.ENTRY_ITEMS).with("count", record.nonEmptyItems().size())));

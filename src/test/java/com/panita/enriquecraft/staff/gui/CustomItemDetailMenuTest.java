@@ -107,15 +107,32 @@ class CustomItemDetailMenuTest {
     }
 
     @Test
-    void theControlsAreBackGetAndDelete() {
+    void theControlsAreBackAndDeleteAndTheItemItselfGivesACopy() {
         save("espada", new ItemStack(Items.DIAMOND_SWORD));
 
         CustomItemDetailMenu menu = detail("espada");
 
         assertEquals(Items.OAK_DOOR, stack(menu, 9).getItem());
-        assertEquals(Items.DIAMOND_SWORD, stack(menu, 12).getItem(), "getting a copy shows the item itself");
-        assertEquals("Obtener copia", stack(menu, 12).get(DataComponents.CUSTOM_NAME).getString());
         assertEquals(Items.LAVA_BUCKET, stack(menu, 13).getItem());
+        assertEquals(Items.STAINED_GLASS_PANE.black(), stack(menu, 12).getItem(), "there is no separate button to get a copy");
+        assertEquals("◀ Clic Izq. para obtener copia", lore(stack(menu, 4)).getLast());
+    }
+
+    @Test
+    void theClientCompanionCanPressTheItemAndCopyTheId() {
+        save("espada", new ItemStack(Items.DIAMOND_SWORD));
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(detail("espada")));
+
+        UiElement.Detail detail = assertInstanceOf(UiElement.Detail.class, root.children().getFirst());
+        UiElement.Row controls = assertInstanceOf(UiElement.Row.class, root.children().getLast());
+
+        assertTrue(detail.iconId() != UiElement.Detail.NOT_PRESSABLE);
+        Component id = detail.lines().getFirst();
+        assertEquals("ID: enriquecraft:espada", id.getString());
+        assertEquals(java.util.Optional.of("enriquecraft:espada"), id.visit((style, text) ->
+                style.getClickEvent() instanceof net.minecraft.network.chat.ClickEvent.CopyToClipboard copy
+                        ? java.util.Optional.of(copy.value()) : java.util.Optional.empty(), net.minecraft.network.chat.Style.EMPTY));
+        assertEquals(ButtonRole.DANGER, assertInstanceOf(UiElement.Button.class, controls.children().get(4)).role());
     }
 
     @Test
