@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.client.ui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -139,13 +140,14 @@ final class UiButtonWidget extends AbstractButton {
 
     @Override
     public void onPress(InputWithModifiers input) {
-        int mouse = input instanceof MouseButtonEvent event ? event.button() : 0;
-        press.press(mouse, input.hasShiftDown());
+        // The protocol numbers the buttons 0 and 1; Minecraft numbers them its own way.
+        boolean right = input instanceof MouseButtonEvent event && event.button() == InputConstants.MOUSE_BUTTON_RIGHT;
+        press.press(right ? 1 : 0, input.hasShiftDown());
     }
 
     @Override
     protected boolean isValidClickButton(MouseButtonInfo button) {
-        return button.button() == 0 || button.button() == 1;
+        return button.button() == InputConstants.MOUSE_BUTTON_LEFT || button.button() == InputConstants.MOUSE_BUTTON_RIGHT;
     }
 
     @Override
