@@ -24,17 +24,6 @@ public final class MenuFrame {
         return slots;
     }
 
-    /** The slots inside the frame, in ascending order; empty when the screen has fewer than three rows. */
-    public static List<Integer> interiorSlots(int rows) {
-        List<Integer> slots = new ArrayList<>();
-        for (int slot = 0; slot < rows * COLUMNS; slot++) {
-            if (!isBorder(slot, rows)) {
-                slots.add(slot);
-            }
-        }
-        return slots;
-    }
-
     private static boolean isBorder(int slot, int rows) {
         int row = slot / COLUMNS;
         int column = slot % COLUMNS;

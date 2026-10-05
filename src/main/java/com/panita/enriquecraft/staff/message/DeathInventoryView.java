@@ -64,8 +64,4 @@ public final class DeathInventoryView {
     public void deleted(ServerPlayer staff) {
         messenger.send(staff, Message.success(StaffMessages.Deaths.DELETED).prefixed());
     }
-
-    public void deleteHint(ServerPlayer staff) {
-        messenger.send(staff, Message.warning(StaffMessages.Deaths.DELETE_HINT).prefixed());
-    }
 }

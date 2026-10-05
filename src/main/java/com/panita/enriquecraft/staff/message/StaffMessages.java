@@ -10,7 +10,17 @@ public final class StaffMessages {
     }
 
     public static final class Staff {
-        public static final String DESCRIPTION = "Herramientas para el equipo de administración";
+        public static final String DESCRIPTION = "Herramientas para el equipo de administración; sin argumentos abre el menú";
+
+        public static final String MENU_TITLE = "Menú del Staff";
+        public static final String COORDINATES_NAME = "<gold>Coordenadas";
+        public static final String COORDINATES_LORE = "<gray>Lugares guardados del servidor";
+        public static final String ITEMS_NAME = "<light_purple>Objetos";
+        public static final String ITEMS_LORE = "<gray>Objetos personalizados guardados";
+        public static final String DEATHS_NAME = "<red>Muertes";
+        public static final String DEATHS_LORE = "<gray>Inventarios de muerte de los jugadores";
+        public static final String OPEN = "abrir";
+        public static final String NO_ACCESS = "<gray>No tienes acceso a ninguna herramienta";
 
         private Staff() {
         }
@@ -31,12 +41,46 @@ public final class StaffMessages {
         public static final String DIMENSION_UNAVAILABLE = "La dimensión de <bold>{name}</bold> ({dimension}) no está disponible.";
 
         public static final String MENU_TITLE = "Coordenadas guardadas";
-        public static final String ENTRY_NAME = "<gold>{name}";
+        public static final String ENTRY_NAME = "<gold>→ {name}";
+        public static final String ENTRY_ID = "<gray>ID: <white>{id}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
-        public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
+        public static final String ENTRY_POSITION = "<gray>Posición: <white>{position}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardada por: <white>{player}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
-        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para teletransportarte";
+
+        public static final String DETAIL_TITLE = "Detalles de la coordenada";
+        public static final String DETAIL_NAME = "<gold>{name}";
+        public static final String DETAIL_NAME_HINT = "<yellow>Nombre visible";
+        public static final String DETAIL_TELEPORT = "<green>Ir a esta coordenada";
+        public static final String DETAIL_TELEPORT_LORE = "<gray>Te teletransporta hasta aquí";
+        public static final String DETAIL_DELETE = "<red>Eliminar";
+        public static final String DETAIL_DELETE_LORE = "<gray>Elimina esta coordenada";
+
+        public static final String DELETE_TITLE = "Eliminar coordenada";
+        public static final String DELETE_HEADLINE = "<red>¿Eliminar <gold>{name}</gold>?";
+        public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
+
+        public static final String ICON_MENU_TITLE = "Elegir icono";
+        public static final String ICON_CURRENT = "<yellow>Icono actual";
+        public static final String ICON_HEAD_NAME = "<gold>Cabeza de jugador";
+        public static final String ICON_HEAD_LORE = "<gray>Usa la cabeza de un jugador como icono";
+        public static final String ICON_HEAD_OWNER = "<gray>Actual: <white>{player}";
+        public static final String ICON_MAPS_NAME = "<gold>Mapas de estructuras";
+        public static final String ICON_MAPS_LORE = "<gray>Un mapa distinto para cada estructura";
+        public static final String HEAD_TITLE = "Cabeza de jugador";
+        public static final String HEAD_HINT = "<yellow>Nombre del jugador";
+        public static final String HEAD_LABEL = "<gray>Nombre de Jugador";
+        public static final String HEAD_PLACEHOLDER = "Escribir nombre";
+        public static final String HEAD_HELP = "<gray>Escribe el nombre del jugador cuya cabeza será el icono.";
+        public static final String HEAD_INVALID = "<red>Nombre no válido: de 3 a 16 letras, números o _.";
+        public static final String HEAD_UNKNOWN = "<red>No se encontró a ningún jugador con ese nombre.";
+        public static final String MAPS_TITLE = "Mapas de estructuras";
+
+        public static final String FILTER_DIMENSION = "<gray>Dimensión: <white>{dimension}";
+        public static final String FILTER_TODAY = "<gray>Fecha: <white>hoy";
+        public static final String FILTER_WEEK = "<gray>Fecha: <white>últimos 7 días";
+        public static final String FILTER_MONTH = "<gray>Fecha: <white>últimos 30 días";
+        public static final String FILTER_USER = "<gray>Usuario: <white>{player}";
 
         private Coordinates() {
         }
@@ -64,9 +108,42 @@ public final class StaffMessages {
 
         public static final String MENU_TITLE = "Objetos personalizados";
         public static final String ENTRY_ID = "<gray>ID: <white>{id}";
+        public static final String ENTRY_ID_LINE = "<dark_gray>{id}";
         public static final String ENTRY_SAVED_BY = "<gray>Guardado por: <white>{player}";
         public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
-        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para obtener una copia";
+
+        public static final String DETAIL_TITLE = "Detalles del objeto";
+        public static final String DETAIL_DELETE = "<red>Eliminar";
+        public static final String DETAIL_DELETE_LORE = "<gray>Elimina este objeto guardado";
+        public static final String DETAIL_SHOW = "<gray>▾ Mostrar detalles";
+        public static final String DETAIL_HIDE = "<gray>▴ Ocultar detalles";
+
+        public static final String DELETE_TITLE = "Eliminar objeto";
+        public static final String DELETE_HEADLINE = "<red>¿Eliminar <gold>{name}</gold>?";
+        public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
+
+        // Count and durability read plainly; every other fact has its own color so the values stand out from their labels.
+        public static final String META_LINE = "<gray>{label}: <white>{value}";
+        public static final String META_LINE_DETAIL = "<gray>{label}: <color #A0D2F0>{value}";
+        public static final String META_SECTION = "<gray>{label}:";
+        public static final String META_ENCHANTMENT = "  <color #C9A7F2>{value}";
+        public static final String META_ATTRIBUTE = "  <color #F5E1A4>{value}";
+        public static final String META_NONE = "<gray>Sin datos adicionales";
+        public static final String META_COUNT = "Cantidad";
+        public static final String META_DURABILITY = "Durabilidad";
+        public static final String META_ENCHANTMENTS = "Encantamientos";
+        public static final String META_STORED_ENCHANTMENTS = "Encantamientos guardados";
+        public static final String META_ATTRIBUTES = "Atributos";
+        public static final String META_MODEL_DATA = "Datos de modelo";
+        public static final String META_ITEM_MODEL = "Modelo";
+        public static final String META_DYE = "Color";
+        public static final String META_UNBREAKABLE = "Irrompible";
+        public static final String META_YES = "Sí";
+        public static final String META_REPAIR_COST = "Coste de reparación";
+        public static final String META_RARITY = "Rareza";
+        public static final String META_TOOLTIP_HIDDEN = "Tooltip oculto";
+        public static final String META_HIDDEN_COMPONENTS = "Datos ocultos en el tooltip";
+        public static final String META_OTHER = "Otros datos";
 
         private Items() {
         }
@@ -77,16 +154,21 @@ public final class StaffMessages {
         public static final String SINGLE_PLAYER = "Indica un único jugador.";
 
         public static final String LIST_TITLE = "Muertes de {player}";
-        public static final String ENTRY_NAME = "<red>Muerte del {date}";
+        public static final String ENTRY_NAME = "<red>☠ Muerte del {date}";
         public static final String ENTRY_CAUSE = "<gray>Causa: <white>{cause}";
         public static final String ENTRY_DIMENSION = "<gray>Dimensión: <white>{dimension}";
-        public static final String ENTRY_POSITION = "<gray>Posición: <white>{x}, {y}, {z}";
+        public static final String ENTRY_POSITION = "<gray>Posición: <white>{position}";
         public static final String ENTRY_ITEMS = "<gray>Objetos: <white>{count}";
+        public static final String ENTRY_DATE = "<gray>Fecha: <white>{date}";
         public static final String ENTRY_XP = "<gray>Nivel de experiencia: <white>{level}";
-        public static final String ENTRY_CLICK_HINT = "<green>Clic izquierdo para inspeccionar";
+        public static final String ENTRY_RESTORED = "<green>✔ Inventario devuelto el {date}";
+
+        public static final String PLAYERS_TITLE = "Muertes";
+        public static final String PLAYER_DEATHS = "<gray>Muertes guardadas: <white>{count}";
+        public static final String PLAYER_LAST = "<gray>Última: <white>{date}";
+        public static final String PLAYER_NAME = "<gold>{player}";
 
         public static final String INSPECT_TITLE = "Inventario de {player}";
-        public static final String ITEM_HINT = "<green>Clic izquierdo para obtener una copia";
         public static final String BACK = "<yellow>Volver a la lista";
         public static final String TELEPORT_NAME = "<aqua>Ir al lugar de la muerte";
         public static final String TELEPORT_LORE = "<gray>Te teletransporta a las coordenadas exactas.";
@@ -97,7 +179,10 @@ public final class StaffMessages {
         public static final String RESTORE_WARNING = "<red>El jugador debe estar conectado.";
         public static final String DELETE_NAME = "<dark_red>Eliminar registro";
         public static final String DELETE_LORE = "<gray>Borra este inventario de muerte para siempre.";
-        public static final String DELETE_WARNING = "<red>Mayús + clic izquierdo para confirmar.";
+        public static final String DELETE_TITLE = "Eliminar muerte";
+        public static final String DELETE_HEADLINE = "<red>¿Eliminar la <gold>muerte del {date}</gold>?";
+        public static final String DELETE_WARNING = "<gray>Esta acción no se puede deshacer.";
+        public static final String RESTORE_AGAIN = "<gold>Ya se devolvió: hacerlo otra vez duplica los objetos.";
         public static final String INFO_NAME = "<white>Datos de la muerte";
 
         public static final String CHEST_NAME = "<gold>Inventario de {player}";
@@ -111,7 +196,6 @@ public final class StaffMessages {
         public static final String RESTORED_TO_PLAYER = "Un miembro del equipo te ha devuelto tus objetos perdidos.";
         public static final String TARGET_OFFLINE = "<bold>{player}</bold> debe estar conectado para recibir sus objetos.";
         public static final String DELETED = "Registro de muerte eliminado.";
-        public static final String DELETE_HINT = "Para eliminar este registro, mantén Mayús y haz clic izquierdo.";
 
         private Deaths() {
         }

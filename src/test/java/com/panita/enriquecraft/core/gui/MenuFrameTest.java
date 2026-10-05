@@ -2,7 +2,6 @@ package com.panita.enriquecraft.core.gui;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,9 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MenuFrameTest {
 
     @Test
-    void sixRowScreenHasATwentySixSlotBorderAndTwentyEightInside() {
+    void sixRowScreenHasATwentySixSlotBorder() {
         assertEquals(26, MenuFrame.borderSlots(6).size());
-        assertEquals(28, MenuFrame.interiorSlots(6).size());
     }
 
     @Test
@@ -25,31 +23,16 @@ class MenuFrameTest {
     }
 
     @Test
-    void interiorStartsAtTheSecondRowSecondColumn() {
-        List<Integer> interior = MenuFrame.interiorSlots(6);
+    void borderLeavesTheInteriorFree() {
+        List<Integer> border = MenuFrame.borderSlots(6);
 
-        assertEquals(10, interior.get(0));
-        assertEquals(16, interior.get(6));
-        assertEquals(19, interior.get(7));
-        assertEquals(43, interior.get(27));
+        assertTrue(List.of(10, 16, 19, 43).stream().noneMatch(border::contains));
     }
 
     @Test
-    void borderAndInteriorPartitionTheScreen() {
-        for (int rows = 1; rows <= 6; rows++) {
-            List<Integer> all = new ArrayList<>(MenuFrame.borderSlots(rows));
-            all.addAll(MenuFrame.interiorSlots(rows));
-            all.sort(Integer::compare);
-
-            assertEquals(rows * 9, all.size(), "rows " + rows);
-            assertEquals(new ArrayList<>(all).stream().distinct().count(), all.size(), "no slot twice, rows " + rows);
-        }
-    }
-
-    @Test
-    void screensWithFewerThanThreeRowsHaveNoInterior() {
-        assertTrue(MenuFrame.interiorSlots(1).isEmpty());
-        assertTrue(MenuFrame.interiorSlots(2).isEmpty());
-        assertEquals(7, MenuFrame.interiorSlots(3).size());
+    void screensWithFewerThanThreeRowsAreAllBorder() {
+        assertEquals(9, MenuFrame.borderSlots(1).size());
+        assertEquals(18, MenuFrame.borderSlots(2).size());
+        assertEquals(20, MenuFrame.borderSlots(3).size());
     }
 }

@@ -5,8 +5,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
-import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.PlayerOnly;
+import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.commands.staff.StaffCommand;
 import com.panita.enriquecraft.staff.gui.CustomItemsMenu;
 import com.panita.enriquecraft.staff.message.CustomItemView;
@@ -25,14 +25,14 @@ import net.minecraft.server.permissions.PermissionLevel;
 public final class ItemSubcommand implements ModCommand {
 
     private final PlayerOnly playerOnly;
-    private final MenuFactory menuFactory;
+    private final UiService ui;
     private final CustomItemService service;
     private final CustomItemView view;
 
-    public ItemSubcommand(PlayerOnly playerOnly, MenuFactory menuFactory, CustomItemService service,
+    public ItemSubcommand(PlayerOnly playerOnly, UiService ui, CustomItemService service,
                           CustomItemView view) {
         this.playerOnly = playerOnly;
-        this.menuFactory = menuFactory;
+        this.ui = ui;
         this.service = service;
         this.view = view;
     }
@@ -43,7 +43,7 @@ public final class ItemSubcommand implements ModCommand {
     }
 
     private int openMenu(CommandContext<CommandSourceStack> context, ServerPlayer player) {
-        new CustomItemsMenu(menuFactory, service, view).open(player);
+        new CustomItemsMenu(ui, service, view).open(player);
         return Command.SINGLE_SUCCESS;
     }
 }

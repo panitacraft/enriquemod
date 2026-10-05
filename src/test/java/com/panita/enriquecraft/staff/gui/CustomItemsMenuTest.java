@@ -2,8 +2,8 @@ package com.panita.enriquecraft.staff.gui;
 
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.data.WorldData;
-import com.panita.enriquecraft.core.gui.MenuFactory;
-import com.panita.enriquecraft.core.gui.MenuTesting;
+import com.panita.enriquecraft.core.ui.UiService;
+import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.core.message.Timestamps;
 import com.panita.enriquecraft.staff.message.CustomItemView;
 import com.panita.enriquecraft.staff.service.CustomItemService;
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class CustomItemsMenuTest {
 
@@ -35,16 +36,16 @@ class CustomItemsMenuTest {
 
     @BeforeEach
     void createMenu() {
-        MenuFactory factory = MinecraftTestSupport.menuFactory(directory.resolve("config"));
+        UiService ui = MinecraftTestSupport.uiService(directory.resolve("config"));
         WorldData worldData = new WorldData();
         worldData.attach(directory.resolve("world"), MinecraftTestSupport.ops());
         service = new CustomItemService(worldData);
         CustomItemView view = new CustomItemView(MinecraftTestSupport.messenger(directory.resolve("config")));
-        menu = new CustomItemsMenu(factory, service, view);
+        menu = new CustomItemsMenu(ui, service, view);
     }
 
     private ItemStack shown(int slot) {
-        return MenuTesting.itemAt(menu, slot).stack();
+        return UiTesting.itemAt(menu, slot).stack();
     }
 
     private void save(String name, ItemStack held) {
@@ -56,36 +57,62 @@ class CustomItemsMenuTest {
         save("zeta", new ItemStack(Items.STICK));
         save("alfa", new ItemStack(Items.DIAMOND_SWORD));
 
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         assertEquals(Items.DIAMOND_SWORD, shown(10).getItem());
         assertEquals(Items.STICK, shown(11).getItem());
     }
 
     @Test
-    void theItemKeepsItsOwnLoreAndGetsTheDetailsAfterIt() {
+    void theItemKeepsItsOwnLoreThenGetsTheIdAndWhatEachClickDoes() {
         ItemStack held = new ItemStack(Items.DIAMOND_SWORD);
         held.set(DataComponents.LORE, new ItemLore(List.of(Component.literal("Lore propio"))));
         save("espada", held);
 
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         List<String> lore = shown(10).get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
         assertEquals(List.of(
                 "Lore propio",
                 "",
-                "ID: enriquecraft:espada",
-                "Guardado por: <red>Ana",
-                "Fecha: " + Timestamps.format(NOW),
-                "Clic izquierdo para obtener una copia"), lore);
+                "enriquecraft:espada",
+                "",
+                "◀ Clic Izq. para obtener copia",
+                "▶ Clic Der. para info"), lore);
     }
+
+    @Test
+    void theSearchBoxMatchesTheIdAndTheDisplayName() {
+        ItemStack named = new ItemStack(Items.DIAMOND_SWORD);
+        named.set(DataComponents.CUSTOM_NAME, Component.literal("Filo de fuego"));
+        save("espada", named);
+        save("palo", new ItemStack(Items.STICK));
+        UiTesting.drawAsChest(menu);
+
+        UiTesting.submit(menu, "fuego");
+        assertEquals(Items.DIAMOND_SWORD, shown(10).getItem());
+        assertNull(UiTesting.itemAt(menu, 11));
+
+        UiTesting.submit(menu, "palo");
+        assertEquals(Items.STICK, shown(10).getItem());
+    }
+
+    @Test
+    void thereIsNoFilterDropdown() {
+        save("espada", new ItemStack(Items.DIAMOND_SWORD));
+
+        UiTesting.drawAsChest(menu);
+
+        assertEquals(Items.STAINED_GLASS_PANE.black(), shown(47).getItem());
+    }
+
 
     @Test
     void showingTheItemNeverChangesTheSavedOne() {
         ItemStack held = new ItemStack(Items.DIAMOND_SWORD);
         save("espada", held);
 
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         assertEquals(List.of(), service.find("espada").orElseThrow().stack()
                 .getOrDefault(DataComponents.LORE, ItemLore.EMPTY).lines(), "the menu lore must be on a copy");
@@ -94,7 +121,7 @@ class CustomItemsMenuTest {
 
     @Test
     void noItemsShowsTheEmptyMarker() {
-        MenuTesting.draw(menu);
+        UiTesting.drawAsChest(menu);
 
         assertEquals(Items.PAPER, shown(22).getItem());
     }

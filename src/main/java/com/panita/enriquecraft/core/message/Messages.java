@@ -25,6 +25,21 @@ public final class Messages {
         public static final String BACK = "<yellow>Volver";
         public static final String PAGE_INDICATOR = "<gray>Página <white>{page}</white> de <white>{pages}</white>";
         public static final String EMPTY = "<gray>No hay nada que mostrar";
+        public static final String SEARCH = "<yellow>Buscar";
+        public static final String CONFIRM = "<green>Confirmar";
+        public static final String CANCEL = "<yellow>Cancelar";
+        public static final String FILTER = "<yellow>Filtrar";
+        public static final String FILTER_NONE = "<gray>Sin filtro";
+        public static final String ARRANGE = "<yellow>Reordenar";
+        public static final String ARRANGE_ON = "<green>Activado";
+        public static final String ARRANGE_OFF = "<gray>Desactivado";
+        public static final String ARRANGE_LORE = "<gray>Levanta una entrada con un clic y colócala en el lugar de otra.";
+        public static final String CLICK_LEFT = "<color #A8E6CF>◀ Clic Izq. para {action}";
+        public static final String CLICK_RIGHT = "<color #A0D2F0>▶ Clic Der. para {action}";
+        public static final String INPUT_CURRENT = "<gray>Actual: <white>{value}</white>";
+        public static final String INPUT_EDIT = "<yellow>Clic izquierdo para escribir en el chat";
+        public static final String INPUT_CLEAR = "<yellow>Clic derecho para borrar";
+        public static final String PROMPT = "<gray>Escribe en el chat el nuevo valor de <white>{field}</white> o escribe <white>cancelar</white> para volver.";
 
         private Gui() {
         }

@@ -3,8 +3,11 @@ package com.panita.enriquecraft.staff.gui;
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.framework.data.WorldData;
-import com.panita.enriquecraft.core.gui.MenuFactory;
-import com.panita.enriquecraft.core.gui.MenuTesting;
+import com.panita.enriquecraft.core.network.UiElement;
+import com.panita.enriquecraft.core.ui.CopyTextTesting;
+import com.panita.enriquecraft.core.ui.Tints;
+import com.panita.enriquecraft.core.ui.UiService;
+import com.panita.enriquecraft.core.ui.UiTesting;
 import com.panita.enriquecraft.core.message.Timestamps;
 import com.panita.enriquecraft.staff.config.StaffConfig;
 import com.panita.enriquecraft.staff.data.DeathRecord;
@@ -22,12 +25,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class DeathMenusTest {
@@ -38,13 +45,13 @@ class DeathMenusTest {
     @TempDir
     Path directory;
 
-    private MenuFactory factory;
+    private UiService ui;
     private DeathInventoryService service;
     private DeathInventoryView view;
 
     @BeforeEach
     void create() {
-        factory = MinecraftTestSupport.menuFactory(directory.resolve("config"));
+        ui = MinecraftTestSupport.uiService(directory.resolve("config"));
         WorldData worldData = new WorldData();
         worldData.attach(directory.resolve("world"), MinecraftTestSupport.ops());
         StaffConfig config = new ConfigManager(directory.resolve("config")).bind("staff", StaffConfig.class);
@@ -79,13 +86,13 @@ class DeathMenusTest {
     }
 
     private DeathInventoryMenu inspector(DeathRecord record) {
-        DeathInventoryMenu menu = new DeathInventoryMenu(factory, service, view, record, null);
-        MenuTesting.draw(menu);
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record, null);
+        UiTesting.drawAsChest(menu);
         return menu;
     }
 
     private static Item itemAt(DeathInventoryMenu menu, int slot) {
-        return MenuTesting.itemAt(menu, slot).stack().getItem();
+        return UiTesting.itemAt(menu, slot).stack().getItem();
     }
 
     @Test
@@ -99,17 +106,17 @@ class DeathMenusTest {
         assertEquals(Items.IRON_LEGGINGS, itemAt(menu, 38));
         assertEquals(Items.IRON_BOOTS, itemAt(menu, 39));
         assertEquals(Items.SHIELD, itemAt(menu, 41));
-        assertEquals(5, MenuTesting.itemAt(menu, 0).stack().getCount());
+        assertEquals(5, UiTesting.itemAt(menu, 0).stack().getCount());
     }
 
     @Test
     void inspectorItemsKeepTheirOwnLoreAndGetTheHintAfterIt() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
-        List<String> lore = MenuTesting.itemAt(menu, 27).stack().get(DataComponents.LORE).lines().stream()
+        List<String> lore = UiTesting.itemAt(menu, 27).stack().get(DataComponents.LORE).lines().stream()
                 .map(Component::getString).toList();
 
-        assertEquals(List.of("Lore propio", "", "Clic izquierdo para obtener una copia"), lore);
+        assertEquals(List.of("Lore propio", "", "◀ Clic Izq. para obtener copia"), lore);
     }
 
     @Test
@@ -135,68 +142,198 @@ class DeathMenusTest {
     }
 
     @Test
-    void everyOtherSlotOfTheInspectorIsFiller() {
+    void aSlotThatHeldNothingStaysEmptyAndTheGapsAmongTheControlsAreFiller() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
+        for (int slot : List.of(1, 26, 28, 35, 40, 42, 44)) {
+            assertNull(UiTesting.itemAt(menu, slot), "slot " + slot + " held nothing, so it shows nothing");
+        }
         Item filler = Items.STAINED_GLASS_PANE.black();
-        for (int slot : List.of(1, 26, 28, 35, 40, 42, 44, 47, 51, 53)) {
+        for (int slot : List.of(47, 51, 53)) {
             assertEquals(filler, itemAt(menu, slot), "slot " + slot);
         }
-    }
-
-    @Test
-    void theDeleteButtonAsksForShift() {
-        DeathInventoryMenu menu = inspector(record(0, fullSample()));
-
-        List<String> lore = MenuTesting.itemAt(menu, 52).stack().get(DataComponents.LORE).lines().stream()
-                .map(Component::getString).toList();
-
-        assertEquals("Mayús + clic izquierdo para confirmar.", lore.get(lore.size() - 1));
     }
 
     @Test
     void theRestoreButtonWarnsThatThePlayerMustBeOnline() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
-        List<String> lore = MenuTesting.itemAt(menu, 50).stack().get(DataComponents.LORE).lines().stream()
+        List<String> lore = UiTesting.itemAt(menu, 50).stack().get(DataComponents.LORE).lines().stream()
                 .map(Component::getString).toList();
 
         assertEquals("El jugador debe estar conectado.", lore.get(lore.size() - 1));
     }
 
     @Test
-    void theListShowsTheNewestDeathFirstWithItsDetails() {
+    void aPlayerWithoutDeathsGetsTheEmptyMarker() {
+        DeathListMenu list = new DeathListMenu(ui, service, view, ANA, "Ana");
+
+        UiTesting.drawAsChest(list);
+
+        assertEquals(Items.PAPER, UiTesting.itemAt(list, 22).stack().getItem());
+        assertNull(UiTesting.itemAt(list, 10));
+    }
+
+    private static Clock at(Duration after) {
+        return Clock.fixed(WHEN.plus(after), ZoneOffset.UTC);
+    }
+
+    private DeathListMenu drawnList(Clock clock) {
+        DeathListMenu list = new DeathListMenu(ui, service, view, ANA, "Ana", clock);
+        UiTesting.drawAsChest(list);
+        return list;
+    }
+
+    private static List<String> lore(ItemStack stack) {
+        return stack.get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
+    }
+
+    @Test
+    void theListShowsTheNewestDeathFirstWithAReadableTooltip() {
         DeathRecord older = record(0, fullSample());
         DeathRecord newer = record(30, List.of(new ItemStack(Items.APPLE, 2)));
         service.add(older);
         service.add(newer);
-        DeathListMenu list = new DeathListMenu(factory, service, view, ANA, "Ana");
 
-        MenuTesting.draw(list);
+        DeathListMenu list = drawnList(at(Duration.ofHours(1)));
 
-        ItemStack first = MenuTesting.itemAt(list, 10).stack();
-        assertEquals(Items.SKELETON_SKULL, first.getItem());
-        assertEquals("Muerte del " + Timestamps.format(newer.diedAt()), first.get(DataComponents.CUSTOM_NAME).getString());
-        List<String> lore = first.get(DataComponents.LORE).lines().stream().map(Component::getString).toList();
+        ItemStack first = UiTesting.itemAt(list, 10).stack();
+        assertEquals(Items.PLAYER_HEAD, first.getItem());
+        assertEquals("☠ Muerte del " + Timestamps.dateTime(newer.diedAt()), first.get(DataComponents.CUSTOM_NAME).getString());
         assertEquals(List.of(
                 "Causa: Ana was slain by <red>Zombie",
                 "Dimensión: Nether",
-                "Posición: 10.50, 64.00, -20.25",
-                "Objetos: 1",
-                "Nivel de experiencia: 17",
-                "Clic izquierdo para inspeccionar"), lore);
-        assertEquals("Muerte del " + Timestamps.format(older.diedAt()),
-                MenuTesting.itemAt(list, 11).stack().get(DataComponents.CUSTOM_NAME).getString());
-        assertEquals("Objetos: 7", MenuTesting.itemAt(list, 11).stack().get(DataComponents.LORE).lines().get(3).getString());
+                "Posición: 10, 64, -21",
+                "",
+                "◀ Clic Izq. para inspeccionar"), lore(first));
+        assertEquals("☠ Muerte del " + Timestamps.dateTime(older.diedAt()),
+                UiTesting.itemAt(list, 11).stack().get(DataComponents.CUSTOM_NAME).getString());
     }
 
     @Test
-    void aPlayerWithoutDeathsGetsTheEmptyMarker() {
-        DeathListMenu list = new DeathListMenu(factory, service, view, ANA, "Ana");
+    void theIconAgesFromTheHeadToASkullToAWitherSkull() {
+        DeathRecord record = record(0, fullSample());
 
-        MenuTesting.draw(list);
+        assertEquals(Items.PLAYER_HEAD, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(23))).getItem());
+        assertEquals(Items.SKELETON_SKULL, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(24))).getItem());
+        assertEquals(Items.SKELETON_SKULL, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(71))).getItem());
+        assertEquals(Items.WITHER_SKELETON_SKULL, DeathIcons.of(record, record.diedAt().plus(Duration.ofHours(72))).getItem());
+    }
 
-        assertEquals(Items.PAPER, MenuTesting.itemAt(list, 22).stack().getItem());
-        assertNull(MenuTesting.itemAt(list, 10));
+    @Test
+    void aRestoredDeathCarriesACheckButCanStillBeInspected() {
+        DeathRecord restored = record(0, fullSample()).markRestored(WHEN.plusSeconds(7200));
+        service.add(restored);
+
+        DeathListMenu list = drawnList(at(Duration.ofHours(3)));
+
+        ItemStack shown = UiTesting.itemAt(list, 10).stack();
+        assertEquals("✔ ☠ Muerte del " + Timestamps.dateTime(restored.diedAt()), shown.get(DataComponents.CUSTOM_NAME).getString());
+        assertEquals("✔ Inventario devuelto el " + Timestamps.dateTime(WHEN.plusSeconds(7200)), lore(shown).get(3));
+    }
+
+    @Test
+    void aDeathThatWasNotRestoredHasNoCheck() {
+        service.add(record(0, fullSample()));
+
+        DeathListMenu list = drawnList(at(Duration.ofHours(1)));
+
+        assertEquals(false, UiTesting.itemAt(list, 10).stack().get(DataComponents.CUSTOM_NAME).getString().startsWith("✔"));
+    }
+
+    @Test
+    void theClientCompanionSeesTheHeadAndTheDataThenADividerThenTheItemsThenTheActions() {
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record(0, fullSample()), null, at(Duration.ofHours(1)));
+
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+
+        UiElement.Detail detail = assertInstanceOf(UiElement.Detail.class, root.children().get(0));
+        assertEquals(Items.PLAYER_HEAD, detail.icon().getItem());
+        assertEquals("", detail.title().getString(), "no title: the date leads the lines");
+        assertEquals(List.of(
+                "Fecha: " + Timestamps.dateTime(WHEN),
+                "Causa: Ana was slain by <red>Zombie",
+                "Dimensión: Nether",
+                "Posición: 10, 64, -21",
+                "Objetos: 7",
+                "Nivel de experiencia: 17"), detail.lines().stream().map(Component::getString).toList());
+        assertInstanceOf(UiElement.Divider.class, root.children().get(1));
+        UiElement.Scroll scroll = assertInstanceOf(UiElement.Scroll.class, root.children().get(2));
+        UiElement.Grid grid = assertInstanceOf(UiElement.Grid.class, scroll.content());
+        assertEquals(9, grid.columns());
+        assertEquals(1, grid.rows());
+        assertEquals(7, grid.children().size());
+        UiElement.Row actions = assertInstanceOf(UiElement.Row.class, root.children().get(3));
+        assertEquals(false, actions.children().stream().anyMatch(child ->
+                child instanceof UiElement.Button button && button.icon().is(Items.PAPER)), "the data is on the screen already");
+    }
+
+    @Test
+    void theDeathsDimensionAndPositionCopyWhenClicked() {
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record(0, fullSample()), null, at(Duration.ofHours(1)));
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        List<Component> lines = assertInstanceOf(UiElement.Detail.class, root.children().get(0)).lines();
+
+        assertEquals(List.of("Nether -> minecraft:the_nether"), CopyTextTesting.clickable(lines.get(2)));
+        assertEquals(List.of("10, 64, -21 -> 10 64 -21"), CopyTextTesting.clickable(lines.get(3)));
+    }
+
+    @Test
+    void goingThereIsPurpleAndStoringInChestsIsBrown() {
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record(0, fullSample()), null, at(Duration.ofHours(1)));
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        UiElement.Row actions = assertInstanceOf(UiElement.Row.class, root.children().get(3));
+
+        assertEquals(Tints.PURPLE, assertInstanceOf(UiElement.Button.class, actions.children().get(1)).tint());
+        assertEquals(Tints.BROWN, assertInstanceOf(UiElement.Button.class, actions.children().get(3)).tint());
+    }
+
+    @Test
+    void manyItemsGetExtraRowsInsteadOfPages() {
+        List<ItemStack> all = new ArrayList<>();
+        for (int slot = 0; slot < DeathRecord.SLOT_COUNT; slot++) {
+            all.add(new ItemStack(Items.APPLE));
+        }
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, record(0, all), null, at(Duration.ofHours(1)));
+
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        UiElement.Grid grid = assertInstanceOf(UiElement.Grid.class,
+                assertInstanceOf(UiElement.Scroll.class, root.children().get(2)).content());
+
+        assertEquals(5, grid.rows());
+        assertEquals(41, grid.children().size());
+    }
+
+    @Test
+    void theExperienceLevelIsLeftOutWhenThereWasNone() {
+        DeathRecord none = new DeathRecord(UUID.randomUUID(), ANA, "Ana", WHEN, Level.OVERWORLD, 1, 2, 3, "x", 0, fullSample());
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, none, null, at(Duration.ofHours(1)));
+
+        UiElement.Detail detail = assertInstanceOf(UiElement.Detail.class,
+                assertInstanceOf(UiElement.Column.class, UiTesting.root(menu)).children().get(0));
+
+        assertEquals(false, detail.lines().stream().anyMatch(line -> line.getString().startsWith("Nivel")));
+    }
+
+    @Test
+    void aRestoredInventoryWarnsAgainstReturningItTwice() {
+        DeathRecord restored = record(0, fullSample()).markRestored(WHEN.plusSeconds(60));
+        DeathInventoryMenu menu = new DeathInventoryMenu(ui, service, view, restored, null, at(Duration.ofHours(1)));
+        UiTesting.drawAsChest(menu);
+
+        List<String> lore = lore(UiTesting.itemAt(menu, 50).stack());
+
+        assertEquals("Ya se devolvió: hacerlo otra vez duplica los objetos.", lore.get(lore.size() - 1));
+    }
+
+    @Test
+    void theChestShowsTheDataOnThePaper() {
+        DeathInventoryMenu menu = inspector(record(0, fullSample()));
+
+        List<String> lore = lore(UiTesting.itemAt(menu, 49).stack());
+
+        assertEquals("Fecha: " + Timestamps.dateTime(WHEN), lore.get(0));
+        assertEquals("Causa: Ana was slain by <red>Zombie", lore.get(1));
+        assertEquals("Objetos: 7", lore.get(4));
     }
 }

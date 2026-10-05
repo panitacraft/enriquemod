@@ -4,6 +4,7 @@ import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.staff.config.StaffConfig;
+import com.panita.enriquecraft.staff.data.DeathPlayer;
 import com.panita.enriquecraft.staff.data.DeathRecord;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -133,6 +134,38 @@ class DeathInventoryServiceTest {
         assertTrue(service.delete(ANA, remove.id()));
 
         assertEquals(List.of(keep.id()), service.records(ANA).stream().map(DeathRecord::id).toList());
+    }
+
+    @Test
+    void aRecordIsFoundByItsIdAmongThePlayersOwn() throws IOException {
+        DeathInventoryService service = service(20);
+        DeathRecord wanted = record(ANA, 1);
+        service.add(wanted);
+        service.add(record(ANA, 2));
+
+        assertEquals(wanted.id(), service.find(ANA, wanted.id()).orElseThrow().id());
+        assertTrue(service.find(BEA, wanted.id()).isEmpty());
+        assertTrue(service.find(ANA, java.util.UUID.randomUUID()).isEmpty());
+    }
+
+    @Test
+    void playersWithDeathsAreListedMostRecentFirstWithTheirCount() throws IOException {
+        DeathInventoryService service = service(20);
+        service.add(record(ANA, 1));
+        service.add(record(ANA, 5));
+        service.add(record(BEA, 9));
+
+        List<DeathPlayer> players = service.playersWithDeaths();
+
+        assertEquals(List.of(BEA, ANA), players.stream().map(DeathPlayer::id).toList());
+        assertEquals(2, players.get(1).deaths());
+        assertEquals(record(ANA, 5).diedAt(), players.get(1).lastDeath());
+        assertEquals("Jugador", players.get(0).name());
+    }
+
+    @Test
+    void noDeathsMeansNoPlayers() throws IOException {
+        assertEquals(List.of(), service(20).playersWithDeaths());
     }
 
     @Test

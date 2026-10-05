@@ -53,12 +53,15 @@ public final class CustomItemView {
                 .with("item", item.stack().getHoverName())
                 .with("count", item.stack().getCount()));
         messenger.send(source, Message.plain(StaffMessages.Items.INFO_SAVED_BY).with("player", item.savedByName()));
-        messenger.send(source, Message.plain(StaffMessages.Items.INFO_DATE).with("date", Timestamps.format(item.savedAt())));
+        messenger.send(source, Message.plain(StaffMessages.Items.INFO_DATE).with("date", Timestamps.dateTime(item.savedAt())));
     }
 
-    /** Gives the staff member an exact copy; whatever does not fit in the inventory drops at their feet. */
-    public void give(ServerPlayer player, SavedItem item) {
-        ItemGiving.give(player, item.stack());
+    /**
+     * Gives the staff member an exact copy, or a full stack of it; whatever does not fit in the inventory
+     * drops at their feet.
+     */
+    public void give(ServerPlayer player, SavedItem item, boolean fullStack) {
+        ItemGiving.give(player, fullStack ? item.stack().copyWithCount(item.stack().getMaxStackSize()) : item.stack());
         messenger.send(player, Message.success(StaffMessages.Items.GIVEN).prefixed().with("name", item.name()));
     }
 }

@@ -8,10 +8,13 @@
   "contact": {},
   "license": "All-Rights-Reserved",
   "icon": "assets/enriquecraft/icon.png",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "main": [
       "com.panita.enriquecraft.Enriquecraft"
+    ],
+    "client": [
+      "com.panita.enriquecraft.client.EnriquecraftClient"
     ]
   },
   "mixins": [

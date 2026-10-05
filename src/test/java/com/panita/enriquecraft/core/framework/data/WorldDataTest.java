@@ -80,4 +80,22 @@ class WorldDataTest {
 
         assertThrows(IllegalStateException.class, () -> data.open("players/one.snbt", STRINGS, List.of()));
     }
+
+    @Test
+    void theFilesOfAFolderAreListedByNameAndAMissingFolderIsEmpty() throws java.io.IOException {
+        WorldData data = new WorldData();
+        data.attach(root, NbtOps.INSTANCE);
+        Files.createDirectories(root.resolve("players"));
+        Files.writeString(root.resolve("players/b.snbt"), "[]");
+        Files.writeString(root.resolve("players/a.snbt"), "[]");
+        Files.createDirectories(root.resolve("players/nested"));
+
+        assertEquals(List.of("a.snbt", "b.snbt"), data.fileNames("players"));
+        assertEquals(List.of(), data.fileNames("absent"));
+    }
+
+    @Test
+    void withoutAWorldThereAreNoFiles() {
+        assertEquals(List.of(), new WorldData().fileNames("players"));
+    }
 }

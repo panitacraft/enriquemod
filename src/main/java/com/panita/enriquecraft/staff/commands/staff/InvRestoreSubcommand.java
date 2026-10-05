@@ -6,8 +6,8 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
-import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.PlayerOnly;
+import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.staff.gui.DeathListMenu;
 import com.panita.enriquecraft.staff.message.DeathInventoryView;
 import com.panita.enriquecraft.staff.message.StaffMessages;
@@ -32,14 +32,14 @@ public final class InvRestoreSubcommand implements ModCommand {
     private static final String PLAYER_ARGUMENT = "player";
 
     private final PlayerOnly playerOnly;
-    private final MenuFactory menuFactory;
+    private final UiService ui;
     private final DeathInventoryService service;
     private final DeathInventoryView view;
 
-    public InvRestoreSubcommand(PlayerOnly playerOnly, MenuFactory menuFactory, DeathInventoryService service,
+    public InvRestoreSubcommand(PlayerOnly playerOnly, UiService ui, DeathInventoryService service,
                                 DeathInventoryView view) {
         this.playerOnly = playerOnly;
-        this.menuFactory = menuFactory;
+        this.ui = ui;
         this.service = service;
         this.view = view;
     }
@@ -57,7 +57,7 @@ public final class InvRestoreSubcommand implements ModCommand {
             return 0;
         }
         NameAndId target = profiles.iterator().next();
-        new DeathListMenu(menuFactory, service, view, target.id(), target.name()).open(staff);
+        new DeathListMenu(ui, service, view, target.id(), target.name()).open(staff);
         return Command.SINGLE_SUCCESS;
     }
 }
