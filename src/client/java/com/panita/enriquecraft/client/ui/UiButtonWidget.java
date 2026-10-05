@@ -50,6 +50,7 @@ final class UiButtonWidget extends AbstractButton {
     private static final int MIN_LABELED_WIDTH = 70;
     private static final int LABELED_HEIGHT = 22;
     private static final int BADGE_COLOR = 0xFF7FE3A0;
+    private static final long SLIDE_MILLIS = 240;
     private static final int LABEL_COLOR = 0xFFFFFFFF;
 
     private enum Look {
@@ -72,6 +73,9 @@ final class UiButtonWidget extends AbstractButton {
     private final Press press;
     private List<Component> tooltipLines = List.of();
     private int bigIcon = BIG_ICON;
+    private int slideX;
+    private int slideY;
+    private long slideStartedAt = Long.MIN_VALUE / 2;
     private int elementId = -1;
     private boolean draggable;
 
@@ -120,12 +124,12 @@ final class UiButtonWidget extends AbstractButton {
     }
 
     /** A colored pill with the button's label and no item, for answering a question. */
-    static UiButtonWidget labeled(Font font, UiElement.Button button, UiTheme.Tone tone, UiActions actions) {
+    static UiButtonWidget labeled(Font font, UiElement.Button button, UiTheme.Tone tone, Press press) {
         // Plain text: the server colors labels for a chest, and a colored label would not read on a colored button.
         Component label = Component.literal(button.label().getString());
         int width = Math.max(MIN_LABELED_WIDTH, font.width(label) + 4 * PADDING);
         UiButtonWidget widget = new UiButtonWidget(font, Look.LABELED, tone, width, LABELED_HEIGHT, label, ItemStack.EMPTY,
-                null, "", false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
+                null, "", false, press);
         widget.describe(button, false);
         return widget;
     }
@@ -238,8 +242,37 @@ final class UiButtonWidget extends AbstractButton {
         }
     }
 
+    /**
+     * Starts the button off the offset given from where it is, and eases it into place. Used when a list is
+     * rearranged, so each button glides to its new spot instead of jumping.
+     */
+    void slideFrom(int offsetX, int offsetY) {
+        slideX = offsetX;
+        slideY = offsetY;
+        slideStartedAt = System.currentTimeMillis();
+    }
+
+    /** How much of the slide is left, from 1 at the start to 0 when the button is in place; easing out. */
+    private float slideRemaining() {
+        float time = Math.min(1.0F, (System.currentTimeMillis() - slideStartedAt) / (float) SLIDE_MILLIS);
+        float left = 1.0F - time;
+        return left * left * left;
+    }
+
     @Override
     protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        float remaining = slideRemaining();
+        if (remaining <= 0.0F) {
+            drawLook(graphics);
+            return;
+        }
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(slideX * remaining, slideY * remaining);
+        drawLook(graphics);
+        graphics.pose().popMatrix();
+    }
+
+    private void drawLook(GuiGraphicsExtractor graphics) {
         boolean hovered = active && isHoveredOrFocused();
         switch (look) {
             case CELL -> {

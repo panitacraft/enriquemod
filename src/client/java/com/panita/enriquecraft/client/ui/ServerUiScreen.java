@@ -21,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -71,6 +72,10 @@ final class ServerUiScreen extends Screen implements UiActions {
     private static final long REFRESH_MILLIS = 120;
     private static final float OPEN_SCALE_FROM = 0.94F;
     private static final double DRAG_THRESHOLD = 4.0;
+    private static final long PENDING_MOVE_MILLIS = 2000;
+    /** How quickly the dragged item catches up with the mouse: the time it takes to cover most of the gap. */
+    private static final float GHOST_FOLLOW_MILLIS = 55.0F;
+    private static final float GHOST_SCALE = 1.25F;
 
     private final int sessionId;
     private final ItemStack icon;
@@ -95,6 +100,24 @@ final class ServerUiScreen extends Screen implements UiActions {
     private double dragStartX;
     private double dragStartY;
     private boolean dragging;
+    // Where the dragged item is drawn: it trails the mouse a little, so it moves smoothly.
+    private float ghostX;
+    private float ghostY;
+    private long ghostUpdatedAt;
+    // A drop that was sent and whose result is awaited, so the cells can glide to their new places when it arrives.
+    private @Nullable PendingMove pendingMove;
+
+    /**
+     * A reorder the player just made by dragging.
+     *
+     * @param from       the position the dragged button had among the draggable buttons
+     * @param to         the position it was dropped on
+     * @param positions  where each draggable button was, in order
+     * @param ghostX     where the dragged item was when it was dropped
+     * @param ghostY     where the dragged item was when it was dropped
+     */
+    private record PendingMove(int from, int to, List<int[]> positions, int ghostX, int ghostY, long at) {
+    }
 
     /**
      * @param previous the panel of the screen this one replaces, so it can grow from that shape, or null when
@@ -125,6 +148,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         this.fadeIn = false;
         this.root = root;
         rebuildWidgets();
+        glideToNewOrder();
     }
 
     @Override
@@ -157,12 +181,16 @@ final class ServerUiScreen extends Screen implements UiActions {
             layouts = layout(reduction, compact, Math.max(MIN_BODY_HEIGHT, naturalBodyHeight - overflow));
         }
         content.visitWidgets(this::addRenderableWidget);
+        // A form opens ready to type in.
+        if (layouts.bodyInput() != null) {
+            setInitialFocus(layouts.bodyInput());
+        }
         dropdowns = layouts.dropdowns();
         titleEdits = layouts.titleEdits();
     }
 
     private UiLayouts layout(int scrollReduction, boolean compact, int bodyLimit) {
-        UiLayouts layouts = new UiLayouts(font, this, scrollReduction, compact, bodyLimit > 0);
+        UiLayouts layouts = new UiLayouts(font, this, scrollReduction, compact, bodyLimit > 0, width - 2 * PADDING - SCREEN_MARGIN);
         assemble(layouts, compact, bodyLimit);
         return layouts;
     }
@@ -247,7 +275,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         UiElement.Button next = parts.next();
         pager.addChild(UiButtonWidget.glyph(font, "<", previous == null ? null : previous.label(), false, previous != null,
                 (mouse, shift) -> press(previous.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
-        pager.addChild(new UiLayouts(font, this, 0, false, false).text(Component.literal(parts.page().page() + " / " + parts.page().pages())),
+        pager.addChild(new UiLayouts(font, this, 0, false, false, Integer.MAX_VALUE).text(Component.literal(parts.page().page() + " / " + parts.page().pages())),
                 settings -> settings.alignVerticallyMiddle());
         pager.addChild(UiButtonWidget.glyph(font, ">", next == null ? null : next.label(), false, next != null,
                 (mouse, shift) -> press(next.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
@@ -328,6 +356,9 @@ final class ServerUiScreen extends Screen implements UiActions {
                 dragStartX = event.x();
                 dragStartY = event.y();
                 dragging = false;
+                ghostX = (float) event.x();
+                ghostY = (float) event.y();
+                ghostUpdatedAt = System.currentTimeMillis();
                 return true;
             }
         }
@@ -355,6 +386,7 @@ final class ServerUiScreen extends Screen implements UiActions {
             if (wasDragged) {
                 UiButtonWidget target = draggableAt(event.x(), event.y());
                 if (target != null && target != picked) {
+                    rememberMove(picked, target);
                     drop(picked.elementId(), target.elementId());
                 }
             } else {
@@ -363,6 +395,49 @@ final class ServerUiScreen extends Screen implements UiActions {
             return true;
         }
         return super.mouseReleased(event);
+    }
+
+    private List<UiButtonWidget> draggableWidgets() {
+        return children().stream().filter(child -> child instanceof UiButtonWidget button && button.draggable())
+                .map(child -> (UiButtonWidget) child).toList();
+    }
+
+    /** Notes where every draggable button is, and which one went where, before the server answers. */
+    private void rememberMove(UiButtonWidget picked, UiButtonWidget target) {
+        List<UiButtonWidget> cells = draggableWidgets();
+        pendingMove = new PendingMove(cells.indexOf(picked), cells.indexOf(target),
+                cells.stream().map(cell -> new int[]{cell.getX(), cell.getY()}).toList(),
+                Math.round(ghostX) - picked.getWidth() / 2, Math.round(ghostY) - picked.getHeight() / 2, System.currentTimeMillis());
+    }
+
+    /**
+     * When the server answers a drop with the list in its new order, each button glides from where it was to where
+     * it is now: the one that was dragged from where it was let go, the others from their old places. The new
+     * order is the old one with the dragged button moved to the target's place, which is what the server does.
+     */
+    private void glideToNewOrder() {
+        PendingMove move = pendingMove;
+        pendingMove = null;
+        if (move == null || System.currentTimeMillis() - move.at() > PENDING_MOVE_MILLIS) {
+            return;
+        }
+        List<UiButtonWidget> cells = draggableWidgets();
+        if (cells.size() != move.positions().size() || move.from() < 0 || move.to() < 0) {
+            return;
+        }
+        List<Integer> order = new ArrayList<>();
+        for (int index = 0; index < cells.size(); index++) {
+            order.add(index);
+        }
+        order.remove(Integer.valueOf(move.from()));
+        order.add(move.to(), move.from());
+        for (int index = 0; index < cells.size(); index++) {
+            UiButtonWidget cell = cells.get(index);
+            int was = order.get(index);
+            int startX = was == move.from() ? move.ghostX() : move.positions().get(was)[0];
+            int startY = was == move.from() ? move.ghostY() : move.positions().get(was)[1];
+            cell.slideFrom(startX - cell.getX(), startY - cell.getY());
+        }
     }
 
     /** Escape drops an edit in progress, or closes an open list, before it goes back. */
@@ -446,12 +521,30 @@ final class ServerUiScreen extends Screen implements UiActions {
             int y = target.getY();
             int right = x + target.getWidth();
             int bottom = y + target.getHeight();
+            // A faint wash inside the outline shows which spot the item would take.
+            graphics.fill(x, y, right, bottom, 0x33F2B134);
             graphics.fill(x, y, right, y + 1, UiTheme.ACCENT);
             graphics.fill(x, bottom - 1, right, bottom, UiTheme.ACCENT);
             graphics.fill(x, y, x + 1, bottom, UiTheme.ACCENT);
             graphics.fill(right - 1, y, right, bottom, UiTheme.ACCENT);
         }
-        graphics.item(picked.icon(), mouseX - 8, mouseY - 8);
+        followMouse(mouseX, mouseY);
+        // The item is lifted: a little larger, over a soft shadow, trailing the mouse.
+        graphics.fill(Math.round(ghostX) - 10, Math.round(ghostY) - 9, Math.round(ghostX) + 12, Math.round(ghostY) + 13, 0x55000000);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(ghostX, ghostY);
+        graphics.pose().scale(GHOST_SCALE, GHOST_SCALE);
+        graphics.item(picked.icon(), -8, -8);
+        graphics.pose().popMatrix();
+    }
+
+    /** Moves the dragged item toward the mouse by a share of the distance that depends on the time since last frame. */
+    private void followMouse(int mouseX, int mouseY) {
+        long now = System.currentTimeMillis();
+        float follow = 1.0F - (float) Math.exp(-(now - ghostUpdatedAt) / GHOST_FOLLOW_MILLIS);
+        ghostX += (mouseX - ghostX) * follow;
+        ghostY += (mouseY - ghostY) * follow;
+        ghostUpdatedAt = now;
     }
 
     /** The world keeps running behind a server screen, as it does behind a chest. */

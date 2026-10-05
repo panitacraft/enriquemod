@@ -16,7 +16,9 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Turns a screen description into vanilla layouts and widgets. The client sizes everything with its
@@ -46,6 +48,10 @@ final class UiLayouts {
     private final int scrollReduction;
     private final boolean compact;
     private final boolean flatScrolls;
+    private final int maxWidth;
+    private final Map<Integer, UiInputWidget> inputs = new HashMap<>();
+    private final List<UiInputWidget> inputOrder = new ArrayList<>();
+    private UiInputWidget bodyInput;
     private boolean hasScroll;
 
     /**
@@ -54,8 +60,10 @@ final class UiLayouts {
      * @param compact         whether to draw the large icons of detail views smaller, for a window that is
      *                        too small even with the scroll areas at their least
      * @param flatScrolls     whether scroll areas show all their content, because the whole body scrolls instead
+     * @param maxWidth        the widest a row of columns may be before its columns stack instead
      */
-    UiLayouts(Font font, UiActions actions, int scrollReduction, boolean compact, boolean flatScrolls) {
+    UiLayouts(Font font, UiActions actions, int scrollReduction, boolean compact, boolean flatScrolls, int maxWidth) {
+        this.maxWidth = maxWidth;
         this.compact = compact;
         this.flatScrolls = flatScrolls;
         this.font = font;
@@ -68,8 +76,19 @@ final class UiLayouts {
         return hasScroll;
     }
 
+    /** Builds the body of a screen. */
     LayoutElement build(UiElement element) {
-        return build(element, Place.COLUMN);
+        int before = inputOrder.size();
+        LayoutElement built = build(element, Place.COLUMN);
+        if (inputOrder.size() > before) {
+            bodyInput = inputOrder.get(before);
+        }
+        return built;
+    }
+
+    /** The first text field in the body, which the screen focuses so the player can start typing; null if none. */
+    UiInputWidget bodyInput() {
+        return bodyInput;
     }
 
     /** The editable titles built so far; the screen lets Escape drop an edit in progress. */
@@ -92,6 +111,48 @@ final class UiLayouts {
         return row(children, Place.FOOTER);
     }
 
+    /**
+     * A row in the body. When its children are too wide for the window together, they are stacked instead, one
+     * under the other, so nothing is cut off on a narrow screen.
+     */
+    private LayoutElement bodyRow(List<UiElement> children) {
+        LinearLayout row = row(children, Place.ROW);
+        row.arrangeElements();
+        long shown = children.stream().filter(child -> !(child instanceof UiElement.Spacer)).count();
+        if (row.getWidth() <= maxWidth || shown < 2) {
+            return row;
+        }
+        LinearLayout stacked = LinearLayout.vertical().spacing(GAP);
+        for (UiElement child : children) {
+            if (!(child instanceof UiElement.Spacer)) {
+                stacked.addChild(build(child, Place.COLUMN), settings -> settings.alignHorizontallyLeft());
+            }
+        }
+        stacked.arrangeElements();
+        return stacked;
+    }
+
+    /** A text field, remembered by id so a confirm button can send what it holds. */
+    private UiInputWidget input(UiElement.TextInput input) {
+        UiInputWidget widget = new UiInputWidget(font, input, actions);
+        inputs.put(input.id(), widget);
+        inputOrder.add(widget);
+        return widget;
+    }
+
+    /** What a footer button does when pressed: a form's confirm sends its field's value, any other button presses. */
+    private UiButtonWidget.Press pressOf(UiElement.Button button) {
+        if (button.submits() != UiElement.Button.NO_INPUT) {
+            return (mouse, shift) -> {
+                UiInputWidget field = inputs.get(button.submits());
+                if (field != null) {
+                    actions.submit(button.submits(), field.getValue());
+                }
+            };
+        }
+        return (mouse, shift) -> actions.press(button.id(), mouse, shift);
+    }
+
     private LinearLayout row(List<UiElement> children, Place place) {
         LinearLayout row = LinearLayout.horizontal().spacing(SPACING);
         boolean gap = false;
@@ -104,7 +165,15 @@ final class UiLayouts {
             if (gap && any) {
                 row.addChild(SpacerElement.width(GAP));
             }
-            row.addChild(build(child, place), settings -> settings.alignVerticallyMiddle());
+            // Columns side by side start at the top, so a shorter one does not float in the middle.
+            boolean tall = child instanceof UiElement.Column;
+            row.addChild(build(child, place), settings -> {
+                if (tall) {
+                    settings.alignVerticallyTop();
+                } else {
+                    settings.alignVerticallyMiddle();
+                }
+            });
             gap = false;
             any = true;
         }
@@ -113,8 +182,8 @@ final class UiLayouts {
 
     private LayoutElement build(UiElement element, Place place) {
         return switch (element) {
-            case UiElement.Column column -> column(column.children());
-            case UiElement.Row row -> row(row.children(), Place.ROW);
+            case UiElement.Column column -> column(column.children(), column.align());
+            case UiElement.Row row -> bodyRow(row.children());
             case UiElement.Grid grid -> grid(grid);
             case UiElement.Scroll scroll -> scroll(scroll);
             case UiElement.Label label -> text(label.text());
@@ -124,7 +193,7 @@ final class UiLayouts {
                     ? UiButtonWidget.card(font, detail.icon(), detail.title(), detail.iconTooltip(),
                             (mouse, shift) -> actions.press(detail.iconId(), mouse, shift))
                     : detail(detail);
-            case UiElement.TextInput input -> new UiInputWidget(font, input, actions);
+            case UiElement.TextInput input -> input(input);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Divider ignored -> new UiDividerWidget();
             case UiElement.Button button -> switch (place) {
@@ -148,12 +217,12 @@ final class UiLayouts {
             return UiButtonWidget.tool(font, button, UiTheme.Tone.of(button.tint()), actions);
         }
         return switch (button.role()) {
-            case CONFIRM -> UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, actions);
-            case CANCEL -> UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, actions);
+            case CONFIRM -> UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, pressOf(button));
+            case CANCEL -> UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, pressOf(button));
             case DANGER -> withItem ? UiButtonWidget.tool(font, button, UiTheme.Tone.DANGER, actions)
-                    : UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, actions);
+                    : UiButtonWidget.labeled(font, button, UiTheme.Tone.DANGER, pressOf(button));
             case SUCCESS -> withItem ? UiButtonWidget.tool(font, button, UiTheme.Tone.SUCCESS, actions)
-                    : UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, actions);
+                    : UiButtonWidget.labeled(font, button, UiTheme.Tone.SUCCESS, pressOf(button));
             default -> withItem ? UiButtonWidget.tool(font, button, UiTheme.Tone.ACTION, actions)
                     : UiButtonWidget.action(font, button, actions);
         };
@@ -234,7 +303,7 @@ final class UiLayouts {
         return frame;
     }
 
-    private LinearLayout column(List<UiElement> children) {
+    private LinearLayout column(List<UiElement> children, UiElement.Align align) {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
         List<UiDividerWidget> dividers = new ArrayList<>();
         for (UiElement child : children) {
@@ -242,7 +311,13 @@ final class UiLayouts {
             if (built instanceof UiDividerWidget divider) {
                 dividers.add(divider);
             }
-            column.addChild(built, settings -> settings.alignHorizontallyCenter());
+            column.addChild(built, settings -> {
+                if (align == UiElement.Align.START) {
+                    settings.alignHorizontallyLeft();
+                } else {
+                    settings.alignHorizontallyCenter();
+                }
+            });
         }
         // A divider spans the column, so it is as wide as the widest thing beside it.
         column.arrangeElements();
