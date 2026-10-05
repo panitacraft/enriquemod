@@ -119,6 +119,22 @@ public final class UiBuilder {
     }
 
     /**
+     * The button that confirms a form: pressing it sends the current value of the field, exactly as pressing Enter
+     * in the field does, so the field's own action does the work. The client companion draws it as a green
+     * labeled button. A chest has no such button, since its fields apply a value as soon as it is typed.
+     *
+     * @param label the button's name
+     * @param field the field whose value is sent
+     */
+    public UiElement.Button submitButton(Component label, UiElement.TextInput field) {
+        int id = nextId++;
+        // The press itself is never sent while the client companion submits the field instead.
+        handlers.put(id, click -> { });
+        return new UiElement.Button(id, ButtonRole.CONFIRM, ItemStack.EMPTY, label, List.of(), "",
+                UiElement.Button.NO_TINT, false, field.id());
+    }
+
+    /**
      * Lets the player drag a button onto another draggable one in the client companion. A chest cannot drag, so a
      * menu that offers this also offers a way to do the same with clicks there.
      *

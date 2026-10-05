@@ -72,6 +72,11 @@ public final class UiTesting {
         }
     }
 
+    /** Presses the button with the given id in the menu's current description, as a left click without a player. */
+    public static void press(UiMenu menu, int buttonId) {
+        menu.layout(0).handlers().get(buttonId).accept(new UiClick(null, 0, false));
+    }
+
     /** The tree the menu currently describes. */
     public static UiElement root(UiMenu menu) {
         return menu.layout(0).root();

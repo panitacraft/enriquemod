@@ -61,6 +61,7 @@ public final class UiElementCodec {
         switch (element) {
             case UiElement.Column column -> {
                 buffer.writeByte(COLUMN);
+                buffer.writeEnum(column.align());
                 writeChildren(buffer, column.children(), depth);
             }
             case UiElement.Row row -> {
@@ -87,6 +88,7 @@ public final class UiElementCodec {
                 buffer.writeUtf(button.badge(), UiElement.Button.MAX_BADGE_LENGTH * 4);
                 buffer.writeVarInt(button.tint());
                 buffer.writeBoolean(button.draggable());
+                buffer.writeVarInt(button.submits() + 1);
             }
             case UiElement.TextInput input -> {
                 buffer.writeByte(TEXT_INPUT);
@@ -138,7 +140,10 @@ public final class UiElementCodec {
         }
         byte type = buffer.readByte();
         return switch (type) {
-            case COLUMN -> new UiElement.Column(readChildren(buffer, depth));
+            case COLUMN -> {
+                UiElement.Align align = buffer.readEnum(UiElement.Align.class);
+                yield new UiElement.Column(readChildren(buffer, depth), align);
+            }
             case ROW -> new UiElement.Row(readChildren(buffer, depth));
             case GRID -> {
                 int columns = buffer.readVarInt();
@@ -172,8 +177,9 @@ public final class UiElementCodec {
         String badge = buffer.readUtf(UiElement.Button.MAX_BADGE_LENGTH * 4);
         int tint = buffer.readVarInt();
         boolean draggable = buffer.readBoolean();
+        int submits = buffer.readVarInt() - 1;
         try {
-            return new UiElement.Button(id, role, icon, label, tooltip, badge, tint, draggable);
+            return new UiElement.Button(id, role, icon, label, tooltip, badge, tint, draggable, submits);
         } catch (IllegalArgumentException e) {
             throw new DecoderException(e.getMessage());
         }

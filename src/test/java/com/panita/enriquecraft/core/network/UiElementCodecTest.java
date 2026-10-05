@@ -86,6 +86,7 @@ final class UiElementCodecTest {
     void aContainerClaimingTooManyChildrenIsRejected() {
         RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
         buffer.writeByte(0);
+        buffer.writeVarInt(0);
         buffer.writeVarInt(1_000_000);
 
         assertThrows(DecoderException.class, () -> decode(buffer));
@@ -109,6 +110,7 @@ final class UiElementCodecTest {
         RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
         for (int level = 0; level < 20; level++) {
             buffer.writeByte(0);
+            buffer.writeVarInt(0);
             buffer.writeVarInt(1);
         }
         buffer.writeByte(5);
@@ -289,5 +291,30 @@ final class UiElementCodecTest {
 
         assertEquals(true, assertInstanceOf(UiElement.Button.class, decode(draggable)).draggable());
         assertEquals(false, assertInstanceOf(UiElement.Button.class, decode(plain)).draggable());
+    }
+
+    @Test
+    void aColumnKeepsHowItLinesUpItsChildren() {
+        for (UiElement.Align align : UiElement.Align.values()) {
+            RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
+
+            UiElementCodec.STREAM_CODEC.encode(buffer, new UiElement.Column(List.of(new UiElement.Spacer()), align));
+
+            assertEquals(align, assertInstanceOf(UiElement.Column.class, decode(buffer)).align());
+        }
+    }
+
+    @Test
+    void aButtonThatSubmitsAFieldKeepsWhichOne() {
+        RegistryFriendlyByteBuf submitting = MinecraftTestSupport.buffer();
+        RegistryFriendlyByteBuf plain = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(submitting, new UiElement.Button(1, com.panita.enriquecraft.core.network.ButtonRole.CONFIRM,
+                new ItemStack(Items.CHEST), Component.literal("x"), List.of(), "", 0, false, 7));
+        UiElementCodec.STREAM_CODEC.encode(plain, new UiElement.Button(2, com.panita.enriquecraft.core.network.ButtonRole.NONE,
+                new ItemStack(Items.CHEST), Component.literal("x"), List.of()));
+
+        assertEquals(7, assertInstanceOf(UiElement.Button.class, decode(submitting)).submits());
+        assertEquals(UiElement.Button.NO_INPUT, assertInstanceOf(UiElement.Button.class, decode(plain)).submits());
     }
 }
