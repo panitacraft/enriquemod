@@ -30,17 +30,19 @@ import java.util.Optional;
 /**
  * One saved custom item in full: the item large with what the mod knows about it (name, id, who saved
  * it and when), then, below a separator, everything else the item carries, in an area that scrolls when
- * it is long. Getting a copy and deleting the item, after confirming, are the actions. As a chest the
+ * it is long and that an arrow hides. Getting a copy and deleting the item, after confirming, are the actions. As a chest the
  * item shows all of it as its tooltip. The item is read again on every redraw.
  */
 public final class CustomItemDetailMenu extends UiMenu {
 
     /** How tall the extended data may grow, in GUI pixels, before it scrolls. */
-    private static final int SCROLL_HEIGHT = 110;
+    private static final int SCROLL_HEIGHT = 130;
 
     private final CustomItemService service;
     private final CustomItemView view;
     private final String name;
+    /** Whether the extra data shows; the arrow flips it. */
+    private boolean expanded = true;
 
     public CustomItemDetailMenu(UiService ui, CustomItemService service, CustomItemView view, String name, UiMenu previous) {
         super(ui, previous);
@@ -71,16 +73,55 @@ public final class CustomItemDetailMenu extends UiMenu {
             return missing(builder);
         }
         SavedItem item = found.get();
-        List<UiElement> metadata = ItemMetadata.lines(item.stack(), factory()).stream()
-                .<UiElement>map(UiElement.Label::new).toList();
-        return new UiElement.Column(List.of(
+        List<UiElement> body = new ArrayList<>(List.of(
                 itemDetail(builder, item, ownLines(item)),
                 new UiElement.Divider(),
-                new UiElement.Scroll(new UiElement.Column(metadata), SCROLL_HEIGHT),
-                controls(builder, item)));
+                toggle(builder)));
+        if (expanded) {
+            body.add(new UiElement.Scroll(metadataBody(item), SCROLL_HEIGHT));
+        }
+        body.add(controls(builder, item));
+        return new UiElement.Column(body);
     }
 
-    /** A chest has no scrolling, so the item carries every line as its tooltip. */
+    /** The arrow that shows or hides the extra data. */
+    private UiElement toggle(UiBuilder builder) {
+        return builder.button(ButtonRole.NONE, ItemStack.EMPTY,
+                factory().text(expanded ? StaffMessages.Items.DETAIL_HIDE : StaffMessages.Items.DETAIL_SHOW), List.of(), click -> {
+                    if (click.isLeft()) {
+                        expanded = !expanded;
+                        refresh();
+                    }
+                });
+    }
+
+    /**
+     * The extra data in up to two columns, each group kept whole and under the one before it, with space between
+     * groups. A group goes to the shorter column, so the two stay about even.
+     */
+    private UiElement metadataBody(SavedItem item) {
+        List<List<UiElement>> columns = List.of(new ArrayList<>(), new ArrayList<>());
+        int[] heights = new int[2];
+        for (List<Component> group : ItemMetadata.groups(item.stack(), factory())) {
+            int target = heights[0] <= heights[1] ? 0 : 1;
+            List<UiElement> column = columns.get(target);
+            if (!column.isEmpty()) {
+                column.add(new UiElement.Spacer());
+                column.add(new UiElement.Spacer());
+            }
+            group.forEach(line -> column.add(new UiElement.Label(line)));
+            heights[target] += group.size() + 1;
+        }
+        if (columns.get(1).isEmpty()) {
+            return new UiElement.Column(columns.get(0), UiElement.Align.START);
+        }
+        return new UiElement.Row(List.of(
+                new UiElement.Column(columns.get(0), UiElement.Align.START),
+                new UiElement.Spacer(),
+                new UiElement.Column(columns.get(1), UiElement.Align.START)));
+    }
+
+    /** A chest has no scrolling or arrow, so the item carries every line as its tooltip. */
     @Override
     protected UiElement describeChest(UiBuilder builder) {
         Optional<SavedItem> found = service.find(name);

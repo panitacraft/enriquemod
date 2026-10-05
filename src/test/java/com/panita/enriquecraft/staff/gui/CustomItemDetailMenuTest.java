@@ -94,7 +94,7 @@ class CustomItemDetailMenuTest {
     }
 
     @Test
-    void theClientCompanionSeesTheDataThenADividerThenAScrollingArea() {
+    void theClientCompanionSeesTheDataADividerAnArrowAScrollingAreaAndTheControls() {
         save("espada", new ItemStack(Items.DIAMOND_SWORD));
         CustomItemDetailMenu menu = detail("espada");
 
@@ -102,9 +102,57 @@ class CustomItemDetailMenuTest {
 
         assertInstanceOf(UiElement.Detail.class, root.children().get(0));
         assertInstanceOf(UiElement.Divider.class, root.children().get(1));
-        assertInstanceOf(UiElement.Scroll.class, root.children().get(2));
+        UiElement.Button arrow = assertInstanceOf(UiElement.Button.class, root.children().get(2));
+        assertEquals("▴ Ocultar detalles", arrow.label().getString());
+        assertInstanceOf(UiElement.Scroll.class, root.children().get(3));
         UiElement.Row controls = assertInstanceOf(UiElement.Row.class, root.children().getLast());
         assertEquals(ButtonRole.BACK, assertInstanceOf(UiElement.Button.class, controls.children().getFirst()).role());
+    }
+
+    @Test
+    void theArrowHidesTheExtraDataAndShowsItAgain() {
+        save("espada", new ItemStack(Items.DIAMOND_SWORD));
+        CustomItemDetailMenu menu = detail("espada");
+        UiElement.Column before = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        UiTesting.press(menu, assertInstanceOf(UiElement.Button.class, before.children().get(2)).id());
+
+        UiElement.Column hidden = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+
+        assertEquals(4, hidden.children().size(), "the item, the divider, the arrow and the controls");
+        UiElement.Button arrow = assertInstanceOf(UiElement.Button.class, hidden.children().get(2));
+        assertEquals("▾ Mostrar detalles", arrow.label().getString());
+        UiTesting.press(menu, arrow.id());
+        assertEquals(5, assertInstanceOf(UiElement.Column.class, UiTesting.root(menu)).children().size());
+    }
+
+    @Test
+    void relatedDataIsGroupedAndSplitIntoTwoColumnsThatStartAtTheSameEdge() {
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        sword.setDamageValue(5);
+        save("espada", sword);
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(detail("espada")));
+        UiElement.Scroll scroll = assertInstanceOf(UiElement.Scroll.class, root.children().get(3));
+
+        UiElement.Row columns = assertInstanceOf(UiElement.Row.class, scroll.content());
+
+        UiElement.Column state = assertInstanceOf(UiElement.Column.class, columns.children().get(0));
+        UiElement.Column attributes = assertInstanceOf(UiElement.Column.class, columns.children().get(2));
+        assertEquals(UiElement.Align.START, state.align());
+        assertEquals(UiElement.Align.START, attributes.align());
+        assertTrue(assertInstanceOf(UiElement.Label.class, state.children().getFirst()).text().getString().contains("Durabilidad"));
+        assertTrue(assertInstanceOf(UiElement.Label.class, attributes.children().getFirst()).text().getString().contains("Atributos"));
+    }
+
+    @Test
+    void groupsOfLinesAreSeparatedByBlankLinesInAChest() {
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        sword.setDamageValue(5);
+        save("espada", sword);
+
+        List<String> lore = lore(stack(detail("espada"), 4));
+
+        int attributes = lore.indexOf(lore.stream().filter(line -> line.contains("Atributos")).findFirst().orElseThrow());
+        assertEquals("", lore.get(attributes - 1), "a blank line sets the group off");
     }
 
     @Test

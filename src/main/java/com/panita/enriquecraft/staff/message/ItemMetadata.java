@@ -43,32 +43,60 @@ public final class ItemMetadata {
             DataComponents.TOOLTIP_DISPLAY, DataComponents.RARITY);
 
     private final MenuFactory factory;
-    private final List<Component> lines = new ArrayList<>();
+    private final List<List<Component>> groups = new ArrayList<>();
+    private List<Component> group = new ArrayList<>();
 
     private ItemMetadata(MenuFactory factory) {
         this.factory = factory;
     }
 
-    /** The lines for an item; a single line saying so when there is nothing to show. */
-    public static List<Component> lines(ItemStack stack, MenuFactory factory) {
+    /**
+     * What the item carries, in groups that belong together: how much of it there is, its enchantments, its
+     * attributes, and the rest. A single group saying so when there is nothing to show.
+     */
+    public static List<List<Component>> groups(ItemStack stack, MenuFactory factory) {
         ItemMetadata metadata = new ItemMetadata(factory);
         metadata.describe(stack);
-        if (metadata.lines.isEmpty()) {
-            metadata.lines.add(factory.text(StaffMessages.Items.META_NONE));
+        metadata.groups.removeIf(List::isEmpty);
+        if (metadata.groups.isEmpty()) {
+            return List.of(List.of(factory.text(StaffMessages.Items.META_NONE)));
         }
-        return List.copyOf(metadata.lines);
+        return metadata.groups.stream().map(List::copyOf).toList();
+    }
+
+    /** The same lines in one list, with a blank line between groups. */
+    public static List<Component> lines(ItemStack stack, MenuFactory factory) {
+        List<Component> lines = new ArrayList<>();
+        for (List<Component> group : groups(stack, factory)) {
+            if (!lines.isEmpty()) {
+                lines.add(Component.empty());
+            }
+            lines.addAll(group);
+        }
+        return List.copyOf(lines);
+    }
+
+    /** Starts a new group; what follows is shown together. */
+    private void newGroup() {
+        group = new ArrayList<>();
+        groups.add(group);
     }
 
     private void describe(ItemStack stack) {
+        newGroup();
         if (stack.getCount() > 1 || stack.getMaxStackSize() > 1) {
             value(Items.BUNDLE, StaffMessages.Items.META_COUNT, stack.getCount() + " / " + stack.getMaxStackSize());
         }
         if (stack.getMaxDamage() > 0) {
             value(Items.DIAMOND_PICKAXE, StaffMessages.Items.META_DURABILITY, (stack.getMaxDamage() - stack.getDamageValue()) + " / " + stack.getMaxDamage());
         }
+        newGroup();
         enchantments(StaffMessages.Items.META_ENCHANTMENTS, stack.get(DataComponents.ENCHANTMENTS));
+        newGroup();
         enchantments(StaffMessages.Items.META_STORED_ENCHANTMENTS, stack.get(DataComponents.STORED_ENCHANTMENTS));
+        newGroup();
         attributes(stack.get(DataComponents.ATTRIBUTE_MODIFIERS));
+        newGroup();
         modelData(stack.get(DataComponents.CUSTOM_MODEL_DATA));
         Object model = customized(stack, DataComponents.ITEM_MODEL);
         if (model != null) {
@@ -187,15 +215,15 @@ public final class ItemMetadata {
 
     /** A plain fact, led by the picture of an item that stands for it. */
     private void value(Item icon, String label, String value) {
-        lines.add(withIcon(icon, factory.text(Message.plain(StaffMessages.Items.META_LINE).with("label", label).with("value", value))));
+        group.add(withIcon(icon, factory.text(Message.plain(StaffMessages.Items.META_LINE).with("label", label).with("value", value))));
     }
 
     private void detail(String label, String value) {
-        lines.add(factory.text(Message.plain(StaffMessages.Items.META_LINE_DETAIL).with("label", label).with("value", value)));
+        group.add(factory.text(Message.plain(StaffMessages.Items.META_LINE_DETAIL).with("label", label).with("value", value)));
     }
 
     private void section(Item icon, String label) {
-        lines.add(withIcon(icon, factory.text(Message.plain(StaffMessages.Items.META_SECTION).with("label", label))));
+        group.add(withIcon(icon, factory.text(Message.plain(StaffMessages.Items.META_SECTION).with("label", label))));
     }
 
     private static Component withIcon(Item icon, Component line) {
@@ -204,6 +232,6 @@ public final class ItemMetadata {
 
     /** A child of a section, in the color the template gives its kind. */
     private void line(String template, String value) {
-        lines.add(factory.text(Message.plain(template).with("value", value)));
+        group.add(factory.text(Message.plain(template).with("value", value)));
     }
 }

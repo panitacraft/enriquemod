@@ -69,6 +69,8 @@ public final class StaffMessages {
         public static final String ICON_MAPS_LORE = "<gray>Un mapa distinto para cada estructura";
         public static final String HEAD_TITLE = "Cabeza de jugador";
         public static final String HEAD_HINT = "<yellow>Nombre del jugador";
+        public static final String HEAD_LABEL = "<gray>Nombre de Jugador";
+        public static final String HEAD_PLACEHOLDER = "Escribir nombre";
         public static final String HEAD_HELP = "<gray>Escribe el nombre del jugador cuya cabeza será el icono.";
         public static final String HEAD_INVALID = "<red>Nombre no válido: de 3 a 16 letras, números o _.";
         public static final String HEAD_UNKNOWN = "<red>No se encontró a ningún jugador con ese nombre.";
@@ -113,6 +115,8 @@ public final class StaffMessages {
         public static final String DETAIL_TITLE = "Detalles del objeto";
         public static final String DETAIL_DELETE = "<red>Eliminar";
         public static final String DETAIL_DELETE_LORE = "<gray>Elimina este objeto guardado";
+        public static final String DETAIL_SHOW = "<gray>▾ Mostrar detalles";
+        public static final String DETAIL_HIDE = "<gray>▴ Ocultar detalles";
 
         public static final String DELETE_TITLE = "Eliminar objeto";
         public static final String DELETE_HEADLINE = "<red>¿Eliminar <gold>{name}</gold>?";

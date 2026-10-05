@@ -121,15 +121,42 @@ class CoordinateHeadAndMapMenuTest {
     }
 
     @Test
-    void theClientCompanionAsksForTheNameInTheFooterWithABackButton() {
+    void theClientCompanionShowsTheLabelWithTheFieldBelowAndCancelAndConfirmInTheFooter() {
         UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(headMenu()));
-        UiElement.Detail detail = assertInstanceOf(UiElement.Detail.class, root.children().getFirst());
+        UiElement.Column form = assertInstanceOf(UiElement.Column.class, root.children().getFirst());
         UiElement.Row controls = assertInstanceOf(UiElement.Row.class, root.children().getLast());
 
-        assertEquals("", detail.title().getString(), "the screen's own title already says what this is");
-        assertEquals(ButtonRole.BACK, assertInstanceOf(UiElement.Button.class, controls.children().get(0)).role());
-        UiElement.TextInput input = assertInstanceOf(UiElement.TextInput.class, controls.children().get(1));
+        assertEquals("Nombre de Jugador", assertInstanceOf(UiElement.Label.class, form.children().get(0)).text().getString());
+        UiElement.TextInput input = assertInstanceOf(UiElement.TextInput.class, form.children().get(1));
         assertEquals(SavedCoordinate.MAX_PLAYER_NAME, input.maxLength());
+        assertEquals(2, form.children().size(), "nothing else is in the way between the label and the field");
+
+        UiElement.Button cancel = assertInstanceOf(UiElement.Button.class, controls.children().get(0));
+        UiElement.Button confirm = assertInstanceOf(UiElement.Button.class, controls.children().get(5));
+        assertEquals(ButtonRole.CANCEL, cancel.role());
+        assertEquals(ButtonRole.CONFIRM, confirm.role());
+        assertEquals(input.id(), confirm.submits(), "confirming sends what the field holds");
+    }
+
+    @Test
+    void aProblemShowsBelowTheFieldForTheClientCompanion() {
+        CoordinateHeadMenu menu = headMenu();
+        UiTesting.submit(menu, "no");
+
+        UiElement.Column root = assertInstanceOf(UiElement.Column.class, UiTesting.root(menu));
+        UiElement.Column form = assertInstanceOf(UiElement.Column.class, root.children().getFirst());
+
+        assertEquals("Nombre no válido: de 3 a 16 letras, números o _.",
+                assertInstanceOf(UiElement.Label.class, form.children().get(2)).text().getString());
+    }
+
+    @Test
+    void aChestKeepsTheHeadWithItsExplanationAndTheFieldBesideTheBackDoor() {
+        CoordinateHeadMenu menu = headMenu();
+        UiTesting.drawAsChest(menu);
+
+        assertEquals(Items.PLAYER_HEAD, UiTesting.itemAt(menu, 4).stack().getItem());
+        assertEquals(Items.OAK_DOOR, UiTesting.itemAt(menu, 9).stack().getItem());
     }
 
     @Test
