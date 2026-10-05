@@ -5,6 +5,7 @@ import com.panita.enriquecraft.core.network.CloseUiS2C;
 import com.panita.enriquecraft.core.network.OpenUiS2C;
 import com.panita.enriquecraft.core.network.UiClickC2S;
 import com.panita.enriquecraft.core.network.UiClosedC2S;
+import com.panita.enriquecraft.core.network.UiDropC2S;
 import com.panita.enriquecraft.core.network.UiSelectC2S;
 import com.panita.enriquecraft.core.network.UiSubmitC2S;
 import com.panita.enriquecraft.core.network.UpdateUiS2C;
@@ -36,6 +37,7 @@ public final class UiNetworkListener implements ModListener {
         PayloadTypeRegistry.serverboundPlay().register(UiClickC2S.TYPE, UiClickC2S.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UiSubmitC2S.TYPE, UiSubmitC2S.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UiSelectC2S.TYPE, UiSelectC2S.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(UiDropC2S.TYPE, UiDropC2S.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UiClosedC2S.TYPE, UiClosedC2S.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(UiClickC2S.TYPE,
@@ -44,6 +46,8 @@ public final class UiNetworkListener implements ModListener {
                 (submit, context) -> sessions.submit(context.player(), submit));
         ServerPlayNetworking.registerGlobalReceiver(UiSelectC2S.TYPE,
                 (select, context) -> sessions.select(context.player(), select));
+        ServerPlayNetworking.registerGlobalReceiver(UiDropC2S.TYPE,
+                (drop, context) -> sessions.drop(context.player(), drop));
         ServerPlayNetworking.registerGlobalReceiver(UiClosedC2S.TYPE,
                 (closed, context) -> sessions.closedByClient(context.player().getUUID(), closed.sessionId()));
 

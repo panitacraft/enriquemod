@@ -276,4 +276,18 @@ final class UiElementCodecTest {
                 com.panita.enriquecraft.core.network.ButtonRole.NONE, new ItemStack(Items.CHEST), Component.literal("x"),
                 List.of(), "", 0x1000000));
     }
+
+    @Test
+    void theDraggableFlagSurvivesARoundTrip() {
+        RegistryFriendlyByteBuf draggable = MinecraftTestSupport.buffer();
+        RegistryFriendlyByteBuf plain = MinecraftTestSupport.buffer();
+
+        UiElementCodec.STREAM_CODEC.encode(draggable, new UiElement.Button(1, com.panita.enriquecraft.core.network.ButtonRole.NONE,
+                new ItemStack(Items.CHEST), Component.literal("x"), List.of()).asDraggable());
+        UiElementCodec.STREAM_CODEC.encode(plain, new UiElement.Button(2, com.panita.enriquecraft.core.network.ButtonRole.NONE,
+                new ItemStack(Items.CHEST), Component.literal("x"), List.of()));
+
+        assertEquals(true, assertInstanceOf(UiElement.Button.class, decode(draggable)).draggable());
+        assertEquals(false, assertInstanceOf(UiElement.Button.class, decode(plain)).draggable());
+    }
 }

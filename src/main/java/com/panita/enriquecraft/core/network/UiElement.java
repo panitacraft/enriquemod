@@ -55,9 +55,11 @@ public sealed interface UiElement {
      * @param badge a short mark drawn over the item, such as a check; empty for none
      * @param tint  an RGB color the client companion gives an action instead of the one its role implies, so a
      *              kind of action can have an identity of its own, or {@link #NO_TINT}
+     * @param draggable whether the client companion lets the player drag the button onto another draggable one,
+     *                  which it reports as a drop; a chest has no dragging and ignores the flag
      */
     record Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge,
-                  int tint) implements UiElement {
+                  int tint, boolean draggable) implements UiElement {
         public static final int MAX_BADGE_LENGTH = 4;
         public static final int NO_TINT = 0;
         public static final int MAX_TINT = 0xFFFFFF;
@@ -72,9 +74,20 @@ public sealed interface UiElement {
             }
         }
 
+        /** A button that is not draggable. */
+        public Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge,
+                      int tint) {
+            this(id, role, icon, label, tooltip, badge, tint, false);
+        }
+
         /** A button without a tint. */
         public Button(int id, ButtonRole role, ItemStack icon, Component label, List<Component> tooltip, String badge) {
             this(id, role, icon, label, tooltip, badge, NO_TINT);
+        }
+
+        /** The same button, which can be dragged. */
+        public Button asDraggable() {
+            return new Button(id, role, icon, label, tooltip, badge, tint, true);
         }
 
         /** A button without a badge. */

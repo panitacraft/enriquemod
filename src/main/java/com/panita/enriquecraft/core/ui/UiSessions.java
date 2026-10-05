@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.core.ui;
 
 import com.panita.enriquecraft.core.network.UiClickC2S;
+import com.panita.enriquecraft.core.network.UiDropC2S;
 import com.panita.enriquecraft.core.network.UiSelectC2S;
 import com.panita.enriquecraft.core.network.UiSubmitC2S;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -53,6 +55,8 @@ public final class UiSessions {
         private Map<Integer, Consumer<UiClick>> handlers;
         private Map<Integer, UiInputHandler> inputs;
         private Map<Integer, UiSelectHandler> selects;
+        private Set<Integer> draggables;
+        private Consumer<UiDrop> drops;
         private int nextElementId;
         private long lastAction;
         private boolean acted;
@@ -67,6 +71,8 @@ public final class UiSessions {
             handlers = layout.handlers();
             inputs = layout.inputs();
             selects = layout.selects();
+            draggables = layout.draggables();
+            drops = layout.drops();
             nextElementId = layout.nextId();
         }
     }
@@ -143,6 +149,11 @@ public final class UiSessions {
         select(player.getUUID(), player, select);
     }
 
+    /** Runs the action behind a drag reported by a client, if both buttons may be dragged. */
+    public void drop(ServerPlayer player, UiDropC2S drop) {
+        drop(player.getUUID(), player, drop);
+    }
+
     ActionResult click(UUID playerId, ServerPlayer player, UiClickC2S click) {
         Session session = sessions.get(playerId);
         Optional<ActionResult> rejection = admit(session, click.sessionId());
@@ -193,6 +204,23 @@ public final class UiSessions {
             return ActionResult.INVALID;
         }
         return run(playerId, () -> dropdown.action().accept(new UiSelect(player, select.option())));
+    }
+
+    ActionResult drop(UUID playerId, ServerPlayer player, UiDropC2S drop) {
+        Session session = sessions.get(playerId);
+        Optional<ActionResult> rejection = admit(session, drop.sessionId());
+        if (rejection.isPresent()) {
+            return rejection.get();
+        }
+        if (!session.draggables.contains(drop.draggedId()) || !session.draggables.contains(drop.targetId())) {
+            // Also what a drop looks like when it crossed the screen's update on the wire.
+            return ActionResult.UNKNOWN_ELEMENT;
+        }
+        if (drop.draggedId() == drop.targetId()) {
+            LOGGER.warn("{} dropped a button onto itself", playerId);
+            return ActionResult.INVALID;
+        }
+        return run(playerId, () -> session.drops.accept(new UiDrop(player, drop.draggedId(), drop.targetId())));
     }
 
     /** Checks that the action belongs to the player's current screen and is not coming too fast. */

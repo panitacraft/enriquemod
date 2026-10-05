@@ -6,8 +6,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -22,6 +24,8 @@ public final class UiBuilder {
     private final Map<Integer, Consumer<UiClick>> handlers = new HashMap<>();
     private final Map<Integer, UiInputHandler> inputs = new HashMap<>();
     private final Map<Integer, UiSelectHandler> selects = new HashMap<>();
+    private final Set<Integer> draggables = new HashSet<>();
+    private Consumer<UiDrop> drops = drop -> { };
     private int nextId;
 
     UiBuilder(int firstId) {
@@ -114,7 +118,23 @@ public final class UiBuilder {
         return new UiElement.TextInput(id, hint, value, maxLength);
     }
 
+    /**
+     * Lets the player drag a button onto another draggable one in the client companion. A chest cannot drag, so a
+     * menu that offers this also offers a way to do the same with clicks there.
+     *
+     * @return the button, marked as draggable; use this one in the screen
+     */
+    public UiElement.Button draggable(UiElement.Button button) {
+        draggables.add(button.id());
+        return button.asDraggable();
+    }
+
+    /** What to do when a draggable button is dropped onto another; one action serves the whole description. */
+    public void onDrop(Consumer<UiDrop> action) {
+        this.drops = action;
+    }
+
     UiLayout build(UiElement root) {
-        return new UiLayout(root, handlers, inputs, selects, nextId);
+        return new UiLayout(root, handlers, inputs, selects, draggables, drops, nextId);
     }
 }

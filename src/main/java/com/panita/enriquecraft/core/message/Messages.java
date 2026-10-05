@@ -30,6 +30,10 @@ public final class Messages {
         public static final String CANCEL = "<yellow>Cancelar";
         public static final String FILTER = "<yellow>Filtrar";
         public static final String FILTER_NONE = "<gray>Sin filtro";
+        public static final String ARRANGE = "<yellow>Reordenar";
+        public static final String ARRANGE_ON = "<green>Activado";
+        public static final String ARRANGE_OFF = "<gray>Desactivado";
+        public static final String ARRANGE_LORE = "<gray>Levanta una entrada con un clic y colócala en el lugar de otra.";
         public static final String CLICK_LEFT = "<color #A8E6CF>◀ Clic Izq. para {action}";
         public static final String CLICK_RIGHT = "<color #A0D2F0>▶ Clic Der. para {action}";
         public static final String INPUT_CURRENT = "<gray>Actual: <white>{value}</white>";

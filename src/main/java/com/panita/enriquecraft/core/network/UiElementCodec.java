@@ -86,6 +86,7 @@ public final class UiElementCodec {
                 TOOLTIP.encode(buffer, button.tooltip());
                 buffer.writeUtf(button.badge(), UiElement.Button.MAX_BADGE_LENGTH * 4);
                 buffer.writeVarInt(button.tint());
+                buffer.writeBoolean(button.draggable());
             }
             case UiElement.TextInput input -> {
                 buffer.writeByte(TEXT_INPUT);
@@ -170,8 +171,9 @@ public final class UiElementCodec {
         List<Component> tooltip = TOOLTIP.decode(buffer);
         String badge = buffer.readUtf(UiElement.Button.MAX_BADGE_LENGTH * 4);
         int tint = buffer.readVarInt();
+        boolean draggable = buffer.readBoolean();
         try {
-            return new UiElement.Button(id, role, icon, label, tooltip, badge, tint);
+            return new UiElement.Button(id, role, icon, label, tooltip, badge, tint, draggable);
         } catch (IllegalArgumentException e) {
             throw new DecoderException(e.getMessage());
         }

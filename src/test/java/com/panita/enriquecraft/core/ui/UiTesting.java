@@ -4,6 +4,9 @@ import com.panita.enriquecraft.core.gui.MenuItem;
 import com.panita.enriquecraft.core.gui.MenuTesting;
 import com.panita.enriquecraft.core.network.UiElement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Lets tests show a {@link UiMenu} as a chest and look at its slots without a player. Lives in this
  * package to reach what is package-private, so production code stays as narrow as it is.
@@ -45,6 +48,28 @@ public final class UiTesting {
     public static void select(UiMenu menu, int option) {
         UiSelectHandler handler = menu.layout(0).selects().values().iterator().next();
         handler.action().accept(new UiSelect(null, option));
+    }
+
+    /** Drags the draggable button at one position (counting only draggable ones, in screen order) onto another. */
+    public static void dragOnto(UiMenu menu, int draggedIndex, int targetIndex) {
+        UiLayout layout = menu.layout(0);
+        List<Integer> ids = new ArrayList<>();
+        collectDraggable(layout.root(), ids);
+        layout.drops().accept(new UiDrop(null, ids.get(draggedIndex), ids.get(targetIndex)));
+    }
+
+    private static void collectDraggable(UiElement element, List<Integer> ids) {
+        switch (element) {
+            case UiElement.Column column -> column.children().forEach(child -> collectDraggable(child, ids));
+            case UiElement.Row row -> row.children().forEach(child -> collectDraggable(child, ids));
+            case UiElement.Grid grid -> grid.children().forEach(child -> collectDraggable(child, ids));
+            case UiElement.Button button -> {
+                if (button.draggable()) {
+                    ids.add(button.id());
+                }
+            }
+            default -> { }
+        }
     }
 
     /** The tree the menu currently describes. */
