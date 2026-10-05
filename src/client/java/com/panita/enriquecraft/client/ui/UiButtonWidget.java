@@ -72,6 +72,8 @@ final class UiButtonWidget extends AbstractButton {
     private final Press press;
     private List<Component> tooltipLines = List.of();
     private int bigIcon = BIG_ICON;
+    private int elementId = -1;
+    private boolean draggable;
 
     private UiButtonWidget(Font font, Look look, UiTheme.Tone tone, int width, int height, Component message,
                            ItemStack icon, String glyph, String badge, boolean danger, Press press) {
@@ -91,6 +93,8 @@ final class UiButtonWidget extends AbstractButton {
         UiButtonWidget widget = new UiButtonWidget(font, Look.CELL, UiTheme.Tone.ACTION, CELL_SIZE, CELL_SIZE,
                 shownLabel(button), button.icon(), null, button.badge(), false,
                 (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        widget.elementId = button.id();
+        widget.draggable = button.draggable();
         widget.describe(button, true);
         return widget;
     }
@@ -169,6 +173,24 @@ final class UiButtonWidget extends AbstractButton {
         widget.bigIcon = size;
         widget.tooltipLines = List.copyOf(tooltip);
         return widget;
+    }
+
+    /** Whether the player can drag this button onto another draggable one. */
+    boolean draggable() {
+        return draggable;
+    }
+
+    int elementId() {
+        return elementId;
+    }
+
+    ItemStack icon() {
+        return icon;
+    }
+
+    /** Presses the button as a click would; a draggable one is pressed on release, once it is known not to be a drag. */
+    void firePress(int mouseButton, boolean shift) {
+        press.press(mouseButton, shift);
     }
 
     private void describe(UiElement.Button button, boolean compact) {

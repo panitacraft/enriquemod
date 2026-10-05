@@ -45,6 +45,7 @@ final class UiLayouts {
     private final List<UiTitleEditWidget> titleEdits = new ArrayList<>();
     private final int scrollReduction;
     private final boolean compact;
+    private final boolean flatScrolls;
     private boolean hasScroll;
 
     /**
@@ -52,9 +53,11 @@ final class UiLayouts {
      *                        screen fit the window
      * @param compact         whether to draw the large icons of detail views smaller, for a window that is
      *                        too small even with the scroll areas at their least
+     * @param flatScrolls     whether scroll areas show all their content, because the whole body scrolls instead
      */
-    UiLayouts(Font font, UiActions actions, int scrollReduction, boolean compact) {
+    UiLayouts(Font font, UiActions actions, int scrollReduction, boolean compact, boolean flatScrolls) {
         this.compact = compact;
+        this.flatScrolls = flatScrolls;
         this.font = font;
         this.actions = actions;
         this.scrollReduction = scrollReduction;
@@ -172,6 +175,9 @@ final class UiLayouts {
         LinearLayout content = LinearLayout.vertical();
         content.addChild(build(scroll.content(), Place.COLUMN));
         content.arrangeElements();
+        if (flatScrolls) {
+            return content;
+        }
         int windowShare = (int) (Minecraft.getInstance().getWindow().getGuiScaledHeight() * MAX_SCROLL_SHARE);
         // The layout is exactly as tall as the limit it is given, so the limit must not exceed the content.
         hasScroll = true;

@@ -22,4 +22,10 @@ interface UiActions {
      * @param option    the position of the option the player chose
      */
     void select(int elementId, int option);
+
+    /**
+     * @param draggedId the id of the button the player dragged
+     * @param targetId  the id of the button they dropped it on
+     */
+    void drop(int draggedId, int targetId);
 }

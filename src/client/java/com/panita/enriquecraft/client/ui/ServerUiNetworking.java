@@ -18,8 +18,12 @@ public final class ServerUiNetworking {
     }
 
     public static void register() {
-        ClientPlayNetworking.registerGlobalReceiver(OpenUiS2C.TYPE, (payload, context) ->
-                context.client().setScreenAndShow(new ServerUiScreen(payload.sessionId(), payload.title(), payload.icon(), payload.root())));
+        ClientPlayNetworking.registerGlobalReceiver(OpenUiS2C.TYPE, (payload, context) -> {
+            // A screen that replaces another grows from the other's shape instead of popping up.
+            ServerUiScreen.Bounds previous = context.client().gui.screen() instanceof ServerUiScreen old ? old.panelBounds() : null;
+            context.client().setScreenAndShow(
+                    new ServerUiScreen(payload.sessionId(), payload.title(), payload.icon(), payload.root(), previous));
+        });
         ClientPlayNetworking.registerGlobalReceiver(UpdateUiS2C.TYPE, (payload, context) ->
                 showing(context.client(), payload.sessionId()).ifPresent(screen -> screen.update(payload.root())));
         ClientPlayNetworking.registerGlobalReceiver(CloseUiS2C.TYPE, (payload, context) ->
