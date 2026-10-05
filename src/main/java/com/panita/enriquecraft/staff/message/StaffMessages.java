@@ -62,6 +62,17 @@ public final class StaffMessages {
 
         public static final String ICON_MENU_TITLE = "Elegir icono";
         public static final String ICON_CURRENT = "<yellow>Icono actual";
+        public static final String ICON_HEAD_NAME = "<gold>Cabeza de jugador";
+        public static final String ICON_HEAD_LORE = "<gray>Usa la cabeza de un jugador como icono";
+        public static final String ICON_HEAD_OWNER = "<gray>Actual: <white>{player}";
+        public static final String ICON_MAPS_NAME = "<gold>Mapas de estructuras";
+        public static final String ICON_MAPS_LORE = "<gray>Un mapa distinto para cada estructura";
+        public static final String HEAD_TITLE = "Cabeza de jugador";
+        public static final String HEAD_HINT = "<yellow>Nombre del jugador";
+        public static final String HEAD_HELP = "<gray>Escribe el nombre del jugador cuya cabeza será el icono.";
+        public static final String HEAD_INVALID = "<red>Nombre no válido: de 3 a 16 letras, números o _.";
+        public static final String HEAD_UNKNOWN = "<red>No se encontró a ningún jugador con ese nombre.";
+        public static final String MAPS_TITLE = "Mapas de estructuras";
 
         public static final String FILTER_DIMENSION = "<gray>Dimensión: <white>{dimension}";
         public static final String FILTER_TODAY = "<gray>Fecha: <white>hoy";

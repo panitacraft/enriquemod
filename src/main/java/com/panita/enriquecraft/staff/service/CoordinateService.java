@@ -2,12 +2,12 @@ package com.panita.enriquecraft.staff.service;
 
 import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
+import com.panita.enriquecraft.staff.data.PlayerRef;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -32,15 +32,14 @@ public final class CoordinateService {
         return NAME.matcher(name).matches();
     }
 
-    /** All coordinates, sorted by name. */
+    /** All coordinates in the order staff arranged them; a new one goes last. */
     public List<SavedCoordinate> all() {
-        return store.get().stream()
-                .sorted(Comparator.comparing(coordinate -> coordinate.name().toLowerCase()))
-                .toList();
+        return store.get();
     }
 
+    /** The names, alphabetically, for suggestions. */
     public List<String> names() {
-        return all().stream().map(SavedCoordinate::name).toList();
+        return all().stream().map(SavedCoordinate::name).sorted(String.CASE_INSENSITIVE_ORDER).toList();
     }
 
     public Optional<SavedCoordinate> find(String name) {
@@ -68,6 +67,42 @@ public final class CoordinateService {
         }
         List<SavedCoordinate> updated = new ArrayList<>(store.get());
         updated.set(updated.indexOf(existing.get()), existing.get().withIcon(icon));
+        store.set(List.copyOf(updated));
+        return true;
+    }
+
+    /**
+     * Shows a coordinate as the head of a player.
+     *
+     * @return whether there is a coordinate with that name
+     */
+    public boolean updateIconHead(String name, PlayerRef owner) {
+        Optional<SavedCoordinate> existing = find(name);
+        if (existing.isEmpty()) {
+            return false;
+        }
+        List<SavedCoordinate> updated = new ArrayList<>(store.get());
+        updated.set(updated.indexOf(existing.get()), existing.get().withHeadOf(owner));
+        store.set(List.copyOf(updated));
+        return true;
+    }
+
+    /**
+     * Moves a coordinate to the place of another, which shifts the ones in between by one. This order is what
+     * every menu shows, for all staff.
+     *
+     * @return whether both exist and differ
+     */
+    public boolean move(String name, String ontoName) {
+        Optional<SavedCoordinate> moved = find(name);
+        Optional<SavedCoordinate> onto = find(ontoName);
+        if (moved.isEmpty() || onto.isEmpty() || moved.get().equals(onto.get())) {
+            return false;
+        }
+        List<SavedCoordinate> updated = new ArrayList<>(store.get());
+        int target = updated.indexOf(onto.get());
+        updated.remove(moved.get());
+        updated.add(target, moved.get());
         store.set(List.copyOf(updated));
         return true;
     }

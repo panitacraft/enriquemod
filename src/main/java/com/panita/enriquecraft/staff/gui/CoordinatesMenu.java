@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.staff.gui;
 
 import com.panita.enriquecraft.core.message.Message;
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.UiBuilder;
@@ -82,14 +83,18 @@ public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
     protected UiElement render(UiBuilder builder, SavedCoordinate coordinate) {
         Component name = factory().text(
                 Message.plain(StaffMessages.Coordinates.ENTRY_NAME).with("name", coordinate.displayName()));
+        Component dimension = factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)
+                .with("dimension", Dimensions.coloredName(coordinate.dimension())));
+        if (arranging()) {
+            return arrangeable(builder, coordinate, name, dimension);
+        }
         // Only what tells coordinates apart at a glance; the rest is one right click away.
         List<Component> tooltip = List.of(
-                factory().text(Message.plain(StaffMessages.Coordinates.ENTRY_DIMENSION)
-                        .with("dimension", Dimensions.coloredName(coordinate.dimension()))),
+                dimension,
                 factory().text(Message.plain("")),
                 ClickHints.left(factory(), "ir"),
                 ClickHints.right(factory(), "info"));
-        return builder.button(new ItemStack(coordinate.icon()), name, tooltip, click -> {
+        return builder.button(coordinate.iconStack(), name, tooltip, click -> {
             if (click.isLeft()) {
                 ui().close(click.player());
                 view.teleport(click.player(), coordinate);
@@ -97,5 +102,26 @@ public final class CoordinatesMenu extends UiPagedMenu<SavedCoordinate> {
                 new CoordinateDetailMenu(ui(), service, view, coordinate.name(), this).open(click.player());
             }
         });
+    }
+
+    /** What a chest shows while arranging: a click lifts a coordinate, then places it in another's spot. */
+    private UiElement arrangeable(UiBuilder builder, SavedCoordinate coordinate, Component name, Component dimension) {
+        String action = isLifted(coordinate) ? "soltar" : hasLifted() ? "colocar aquí" : "levantar";
+        List<Component> tooltip = List.of(dimension, factory().text(Message.plain("")), ClickHints.left(factory(), action));
+        return builder.button(ButtonRole.NONE, coordinate.iconStack(), name, tooltip, isLifted(coordinate) ? "↕" : "", click -> {
+            if (click.isLeft()) {
+                arrange(coordinate);
+            }
+        });
+    }
+
+    @Override
+    protected boolean reorderable() {
+        return true;
+    }
+
+    @Override
+    protected void move(SavedCoordinate dragged, SavedCoordinate onto) {
+        service.move(dragged.name(), onto.name());
     }
 }

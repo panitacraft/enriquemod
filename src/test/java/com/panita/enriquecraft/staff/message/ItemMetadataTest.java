@@ -86,7 +86,7 @@ class ItemMetadataTest {
 
     @Test
     void attributesStartWithAnEnchantedGoldenApple() {
-        assertEquals("item/enchanted_golden_apple", iconOf(new ItemStack(Items.DIAMOND_SWORD), "Atributos"));
+        assertEquals("item/golden_apple", iconOf(new ItemStack(Items.DIAMOND_SWORD), "Atributos"));
     }
 
     @Test

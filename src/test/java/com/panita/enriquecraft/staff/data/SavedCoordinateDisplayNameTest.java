@@ -80,4 +80,28 @@ class SavedCoordinateDisplayNameTest {
         assertFalse(SavedCoordinate.isValidDisplayName("x".repeat(SavedCoordinate.MAX_DISPLAY_NAME + 1)));
         assertFalse(SavedCoordinate.isValidDisplayName("a\nb"));
     }
+
+    @Test
+    void aHeadIconWritesThePlayerAndAFileFromBeforeHeadsStillLoads() {
+        SavedCoordinate head = sample().withHeadOf(new PlayerRef("Notch", UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5")));
+
+        Tag tag = SavedCoordinate.CODEC.encodeStart(NbtOps.INSTANCE, head).getOrThrow();
+        Tag old = SavedCoordinate.CODEC.encodeStart(NbtOps.INSTANCE, sample()).getOrThrow();
+
+        assertEquals("Notch", ((CompoundTag) tag).getCompoundOrEmpty("iconPlayer").getStringOr("name", ""));
+        assertFalse(((CompoundTag) old).contains("iconPlayer"), "nothing is written when there is no head");
+        assertEquals(head, SavedCoordinate.CODEC.parse(NbtOps.INSTANCE, tag).getOrThrow());
+        assertTrue(SavedCoordinate.CODEC.parse(NbtOps.INSTANCE, old).getOrThrow().iconPlayer().isEmpty());
+    }
+
+    @Test
+    void playerNamesAreThreeToSixteenLettersDigitsOrUnderscores() {
+        assertTrue(SavedCoordinate.isValidPlayerName("Notch"));
+        assertTrue(SavedCoordinate.isValidPlayerName("a_b"));
+        assertTrue(SavedCoordinate.isValidPlayerName("x".repeat(16)));
+        assertFalse(SavedCoordinate.isValidPlayerName("ab"));
+        assertFalse(SavedCoordinate.isValidPlayerName("x".repeat(17)));
+        assertFalse(SavedCoordinate.isValidPlayerName("has space"));
+        assertFalse(SavedCoordinate.isValidPlayerName("ñandú"));
+    }
 }

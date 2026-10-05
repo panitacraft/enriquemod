@@ -3,6 +3,7 @@ package com.panita.enriquecraft.staff.service;
 import net.minecraft.nbt.NbtOps;
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.data.WorldData;
+import com.panita.enriquecraft.staff.data.PlayerRef;
 import com.panita.enriquecraft.staff.data.SavedCoordinate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -152,5 +153,68 @@ class CoordinateServiceTest {
         CoordinateService reloaded = new CoordinateService(worldData);
 
         assertEquals("Mi base", reloaded.find("base").orElseThrow().displayName());
+    }
+
+    private List<String> order() {
+        return service.all().stream().map(SavedCoordinate::name).toList();
+    }
+
+    @Test
+    void coordinatesKeepTheOrderTheyWereSavedIn() {
+        service.add(coordinate("zeta"));
+        service.add(coordinate("alfa"));
+        service.add(coordinate("mid"));
+
+        assertEquals(List.of("zeta", "alfa", "mid"), order());
+        assertEquals(List.of("alfa", "mid", "zeta"), service.names(), "suggestions stay alphabetical");
+    }
+
+    @Test
+    void aCoordinateMovedOntoAnotherTakesItsPlaceInBothDirections() {
+        service.add(coordinate("a"));
+        service.add(coordinate("b"));
+        service.add(coordinate("c"));
+        service.add(coordinate("d"));
+
+        assertTrue(service.move("a", "c"));
+        assertEquals(List.of("b", "c", "a", "d"), order());
+
+        assertTrue(service.move("d", "b"));
+        assertEquals(List.of("d", "b", "c", "a"), order());
+    }
+
+    @Test
+    void movingNeedsTwoDifferentExistingCoordinates() {
+        service.add(coordinate("a"));
+        service.add(coordinate("b"));
+
+        assertFalse(service.move("a", "a"));
+        assertFalse(service.move("a", "missing"));
+        assertFalse(service.move("missing", "a"));
+        assertEquals(List.of("a", "b"), order());
+    }
+
+    @Test
+    void theArrangementIsKeptForEveryoneAfterARestart() {
+        service.add(coordinate("a"));
+        service.add(coordinate("b"));
+        service.move("b", "a");
+
+        CoordinateService reloaded = new CoordinateService(worldData);
+
+        assertEquals(List.of("b", "a"), reloaded.all().stream().map(SavedCoordinate::name).toList());
+    }
+
+    @Test
+    void aPlayersHeadCanBeTheIconAndIsKeptAfterARestart() {
+        service.add(coordinate("base"));
+
+        PlayerRef notch = new PlayerRef("Notch", UUID.randomUUID());
+
+        assertTrue(service.updateIconHead("base", notch));
+
+        SavedCoordinate reloaded = new CoordinateService(worldData).find("base").orElseThrow();
+        assertEquals(notch, reloaded.iconPlayer().orElseThrow());
+        assertEquals(Items.PLAYER_HEAD, reloaded.icon());
     }
 }

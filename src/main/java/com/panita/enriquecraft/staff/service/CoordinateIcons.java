@@ -48,6 +48,16 @@ public final class CoordinateIcons {
         return icons;
     }
 
+    /** The maps that lead to each kind of structure, one icon per structure. */
+    public static List<Item> structureMaps() {
+        return List.of(
+                Items.PLAINS_VILLAGE_MAP, Items.DESERT_VILLAGE_MAP, Items.SAVANNA_VILLAGE_MAP, Items.SNOWY_VILLAGE_MAP,
+                Items.TAIGA_VILLAGE_MAP, Items.JUNGLE_PYRAMID_MAP, Items.DESERT_PYRAMID_MAP, Items.SWAMP_HUT_MAP,
+                Items.WOODLAND_MANSION_MAP, Items.OCEAN_MONUMENT_MAP, Items.WARM_OCEAN_RUINS_MAP, Items.BURIED_TREASURE_MAP,
+                Items.BURIED_MINESHAFT_MAP, Items.BURIED_ANCIENT_CITY_MAP, Items.BURIED_TRIAL_CHAMBERS_MAP,
+                Items.ABANDONED_CAMP_MAP);
+    }
+
     public static Item random(Random random) {
         List<Item> all = all();
         return all.get(random.nextInt(all.size()));

@@ -84,7 +84,7 @@ public final class CoordinateDetailMenu extends UiMenu {
         }
 
         SavedCoordinate coordinate = found.get();
-        UiElement.Detail detail = builder.detail(new ItemStack(coordinate.icon()),
+        UiElement.Detail detail = builder.detail(coordinate.iconStack(),
                 factory().text(Message.plain(StaffMessages.Coordinates.DETAIL_NAME).with("name", coordinate.displayName())),
                 lines(coordinate), List.of(ClickHints.left(factory(), "cambiar icono")), click -> {
                     if (click.isLeft()) {
@@ -121,7 +121,7 @@ public final class CoordinateDetailMenu extends UiMenu {
 
     private ConfirmMenu confirmDelete(SavedCoordinate coordinate) {
         return new ConfirmMenu(ui(), this, factory().text(StaffMessages.Coordinates.DELETE_TITLE),
-                new ItemStack(coordinate.icon()),
+                coordinate.iconStack(),
                 factory().text(Message.plain(StaffMessages.Coordinates.DELETE_HEADLINE).with("name", coordinate.displayName())),
                 List.of(factory().text(StaffMessages.Coordinates.DELETE_WARNING)),
                 player -> {
