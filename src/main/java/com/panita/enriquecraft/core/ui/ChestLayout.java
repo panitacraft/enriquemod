@@ -15,8 +15,10 @@ import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -36,7 +38,10 @@ final class ChestLayout {
     private static final int FRAME = 1;
 
     /** The chest a description turns into. */
-    record Plan(int rows, Map<Integer, MenuItem> items) {
+    /**
+     * @param gridSlots every chest slot that is a cell of a grid, whether or not it holds an element
+     */
+    record Plan(int rows, Map<Integer, MenuItem> items, Set<Integer> gridSlots) {
     }
 
     /** Asks a player for a value, in a way that works without a text field. */
@@ -49,6 +54,7 @@ final class ChestLayout {
     private final MenuFactory factory;
     private final InputPrompter prompter;
     private final Map<Integer, MenuItem> items = new HashMap<>();
+    private final Set<Integer> gridSlots = new HashSet<>();
 
     private ChestLayout(UiLayout layout, MenuFactory factory, InputPrompter prompter) {
         this.layout = layout;
@@ -80,7 +86,7 @@ final class ChestLayout {
         if (row > MAX_ROWS) {
             throw new IllegalStateException("A chest has at most " + MAX_ROWS + " rows, but the screen needs " + row);
         }
-        return new Plan(row, items);
+        return new Plan(row, items, gridSlots);
     }
 
     /** Nested columns only group; their children are bands of the screen. */
@@ -106,6 +112,9 @@ final class ChestLayout {
             }
             case UiElement.Grid grid -> {
                 requireFits(grid.columns(), width);
+                for (int cell = 0; cell < grid.columns() * grid.rows(); cell++) {
+                    gridSlots.add(slot(row + cell / grid.columns(), offset + cell % grid.columns()));
+                }
                 for (int index = 0; index < grid.children().size(); index++) {
                     put(slot(row + index / grid.columns(), offset + index % grid.columns()), grid.children().get(index));
                 }

@@ -16,5 +16,11 @@ public enum ChestStyle {
     FRAMED,
 
     /** Every slot without an element is filler. */
-    FILLED
+    FILLED,
+
+    /**
+     * Every slot without an element is filler, except the cells of a grid, which stay empty: a cell of a grid
+     * stands for a slot of something, such as an inventory, and an empty one says that slot held nothing.
+     */
+    SLOTS
 }

@@ -7,6 +7,8 @@ import net.minecraft.world.SimpleMenuProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Set;
+
 /**
  * A chest-style screen shown to one player. It is purely server-side: vanilla clients see an
  * ordinary chest whose items cannot be moved.
@@ -93,9 +95,14 @@ public abstract class Menu {
 
     /** Fills every slot that is still empty with the decorative filler. Call it last in {@link #draw()}. */
     protected final void fillRest() {
+        fillRest(Set.of());
+    }
+
+    /** Like {@link #fillRest()}, but the given slots stay empty. */
+    protected final void fillRest(Set<Integer> keepEmpty) {
         MenuItem filler = MenuItem.display(factory.filler());
         for (int slot = 0; slot < rows() * MenuFrame.COLUMNS; slot++) {
-            if (slots.get(slot) == null) {
+            if (slots.get(slot) == null && !keepEmpty.contains(slot)) {
                 set(slot, filler);
             }
         }

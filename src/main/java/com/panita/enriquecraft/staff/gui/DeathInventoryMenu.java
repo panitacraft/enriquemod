@@ -79,7 +79,7 @@ public final class DeathInventoryMenu extends UiMenu {
     /** Every slot of the chest shows something, so the inventory reads as one block. */
     @Override
     protected ChestStyle chestStyle() {
-        return ChestStyle.FILLED;
+        return ChestStyle.SLOTS;
     }
 
     @Override

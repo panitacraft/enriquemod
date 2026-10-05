@@ -142,11 +142,14 @@ class DeathMenusTest {
     }
 
     @Test
-    void everyOtherSlotOfTheInspectorIsFiller() {
+    void aSlotThatHeldNothingStaysEmptyAndTheGapsAmongTheControlsAreFiller() {
         DeathInventoryMenu menu = inspector(record(0, fullSample()));
 
+        for (int slot : List.of(1, 26, 28, 35, 40, 42, 44)) {
+            assertNull(UiTesting.itemAt(menu, slot), "slot " + slot + " held nothing, so it shows nothing");
+        }
         Item filler = Items.STAINED_GLASS_PANE.black();
-        for (int slot : List.of(1, 26, 28, 35, 40, 42, 44, 47, 51, 53)) {
+        for (int slot : List.of(47, 51, 53)) {
             assertEquals(filler, itemAt(menu, slot), "slot " + slot);
         }
     }

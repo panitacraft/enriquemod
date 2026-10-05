@@ -41,6 +41,8 @@ final class UiChestMenu extends Menu {
         plan.items().forEach(this::set);
         if (style == ChestStyle.FILLED) {
             fillRest();
+        } else if (style == ChestStyle.SLOTS) {
+            fillRest(plan.gridSlots());
         }
     }
 
