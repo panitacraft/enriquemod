@@ -154,12 +154,18 @@ com.panita.enriquecraft
 │  ├─ service/              business logic (HelpService, ServerInfoService, ...)
 │  ├─ commands/             auto-discovered commands (see below)
 │  └─ listeners/            auto-discovered listeners
-└─ staff/                   the staff module: the /staff menu, /staff coords, /staff item, /staff invrestore
-   ├─ StaffModule.java
-   ├─ config/ commands/ listeners/ service/
-   ├─ data/                 records with their codecs (SavedCoordinate, SavedItem, DeathRecord)
-   ├─ gui/                  the module's menus
-   └─ message/              StaffMessages (the module's Spanish text) and the views that report outcomes
+├─ staff/                   the staff module: the /staff menu, /staff coords, /staff item, /staff invrestore
+│  ├─ StaffModule.java
+│  ├─ config/ commands/ listeners/ service/
+│  ├─ data/                 records with their codecs (SavedCoordinate, SavedItem, DeathRecord)
+│  ├─ gui/                  the module's menus
+│  └─ message/              StaffMessages (the module's Spanish text) and the views that report outcomes
+└─ auth/                    the auth module: who may play and how they prove it (see Authentication)
+   ├─ AuthModule.java, AuthHooks.java (the one static door the mixins use)
+   ├─ config/ commands/ listeners/ service/ mixin/
+   ├─ data/                 AuthAccount, PinCredential, AuthSession, HeldPosition, AuthMode
+   ├─ gui/                  PinMenu (the keypad screen) and PinKeypadMenu (its crafting-table form)
+   └─ message/              AuthMessages (Spanish text) and the views that report outcomes
 ```
 
 Every module follows the same layout:
@@ -186,6 +192,7 @@ Rules:
 - The entrypoint only registers modules. Commands and listeners are never registered by hand.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
 - Do not create the client mixin config until the first client enhancement needs a mixin.
+- A module that needs mixins has its own config, `enriquecraft.<module>.mixins.json`, listed in `fabric.mod.json`, whose package is `<module>.mixin`. Mixin forbids loading any other class from that package, so it holds only mixins. A mixin is not built by the service registry, so it reaches services through one static class in the module root (`AuthHooks`), installed when the module loads; without it every mixin leaves vanilla behavior untouched. This hooks class is the only static access to services.
 - Fabric events cannot be unregistered, so modules cannot be enabled or disabled while the server runs.
 
 ### Modules
@@ -249,6 +256,15 @@ Rules:
 - `Menu` in `core.gui` is the chest toolkit behind `UiChestMenu`; do not subclass it for new screens. It is display only: `MenuScreen` never lets a click move, drag, swap, drop or clone an item, so never work around it and never put a real inventory behind a menu.
 - Commands that need a player use `PlayerOnly.executes(...)`.
 - Each module keeps its Spanish texts in its own `<Name>Messages` class; text shared by every module lives in `core.message.Messages`.
+- A screen that a chest cannot be, such as the PIN keypad, overrides `UiMenu.openFallback(player)` to open a form of its own for players without the companion; it then looks after its own closing and redrawing (`PinMenu` does). A chest is still the default.
+- `UiElement.PinPad` is the keypad element: the server keeps the digits and sends only how many are typed, the attempts left, a count of wrong PINs (the client shakes the dots when it grows) and whether it succeeded; the client reports keys by id (`UiBuilder.pinPad`, `PinKeys`). The client companion takes the keyboard as presses of the same keys and lets neither Escape nor a close button dismiss it. It uses a compact size when the window is small.
+
+### Authentication
+- The server runs with `online-mode=false`. A mixin on the login (`ServerLoginPacketListenerImplMixin`) answers the game's "does this server authenticate players" question for each connection alone, so Microsoft accounts are verified by Mojang's session servers and everyone else joins offline. No Mojang call is made for a listed name: the whitelist (and the op list) decide the mode, and an entry carries it in its UUID (the real one of an account is premium, the offline one of the name is a PIN account; `AuthMode.of`). When the whitelist is off, an unlisted name is looked up (`PremiumLookup`, cached, limited to what Mojang allows) and refused when Mojang cannot answer; never guess that a name has no account.
+- `/whitelist add <name> [cracked|premium]` and `remove` are rewired by `WhitelistCommandMixin`, keeping the game's arguments and permissions and changing only what they run. Names are used exactly as typed: the game lowercases names it does not know, and an offline UUID depends on capitalization. A PIN player is let in under the capitalization of their whitelist entry. Changing a player's mode changes their UUID, so `PlayerDataMigration` copies their player data, statistics and advancements; it only runs while they are offline and never overwrites.
+- A player who must enter a PIN is a held player (`HeldPlayers`): moved to the spawn (their real position is kept on disk until they leave, so a crash cannot strand them), not announced, invulnerable, and everything their client sends except what the PIN screen needs is dropped in `PacketUtilsMixin` before it is handled. They leave this state by a correct PIN, a kick (too many wrong PINs, the timeout, staff) or disconnecting. Never add a way for a held player's packet to reach a handler.
+- PINs are stored only as a salted PBKDF2 hash mixed with a pepper kept in `config/enriquecraft-auth.key`, outside the world data; the file is never regenerated silently, since that would invalidate every PIN. Remembered logins keep a keyed hash of the address, never the address, and count from the moment the PIN was typed. Wrong PINs kick; kicks block the address for a while (`AttemptLimiter`, in memory). A name that logs in with a PIN cannot be taken over while it is online, since the game would otherwise disconnect its owner.
+- Connections of PIN players are not encrypted by the game, so a PIN travels in clear text. This is a known limit of offline-mode login, accepted by the owner.
 
 ### Messaging
 - All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
