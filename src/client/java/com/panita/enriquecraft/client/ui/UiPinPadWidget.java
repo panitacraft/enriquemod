@@ -10,6 +10,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.Component;
 
+import java.util.Map;
+
 /**
  * The PIN keypad: a headline, a row of dots that fill as digits are typed, the attempts that are left as
  * small pips, and twelve keys. It draws what the server described and reports presses of its keys; the
@@ -18,49 +20,51 @@ import net.minecraft.network.chat.Component;
  */
 final class UiPinPadWidget extends AbstractWidget {
 
-    private static final int KEY_WIDTH = 38;
-    private static final int KEY_HEIGHT = 26;
-    private static final int KEY_GAP = 5;
     private static final int KEY_COLUMNS = 3;
     private static final int KEY_ROWS = 4;
     private static final int DOT = 10;
     private static final int DOT_GAP = 7;
     private static final int PIP = 6;
     private static final int PIP_GAP = 5;
-    private static final int GAP_AFTER_TITLE = 4;
-    private static final int GAP_AFTER_HINT = 12;
-    private static final int GAP_AFTER_DOTS = 7;
-    private static final int GAP_AFTER_PIPS = 12;
     private static final float TITLE_SCALE = 1.25F;
     private static final int SUCCESS_COLOR = 0xFF3FA66B;
     private static final int USED_PIP = 0xFF5A2320;
+
+    /** How roomy the keypad is; the compact one is for a window too small for the usual one. */
+    private record Sizes(int keyWidth, int keyHeight, int keyGap, int afterTitle, int afterHint, int afterDots, int afterPips) {
+        static final Sizes NORMAL = new Sizes(38, 24, 4, 4, 10, 6, 10);
+        static final Sizes COMPACT = new Sizes(34, 18, 3, 2, 6, 4, 6);
+    }
 
     private final Font font;
     private final UiElement.PinPad pad;
     private final UiActions actions;
     private final PinPadAnimation animation;
     private final Component title;
-    private final int keypadWidth = KEY_COLUMNS * KEY_WIDTH + (KEY_COLUMNS - 1) * KEY_GAP;
+    private final Sizes sizes;
+    private final int keypadWidth;
     private final int titleHeight;
     private final int dotsTop;
     private final int pipsTop;
     private final int keypadTop;
 
-    UiPinPadWidget(Font font, UiElement.PinPad pad, UiActions actions) {
+    UiPinPadWidget(Font font, UiElement.PinPad pad, UiActions actions, boolean compact) {
         super(0, 0, 0, 0, pad.title());
         this.font = font;
         this.pad = pad;
         this.actions = actions;
         this.animation = actions.pinPadAnimation();
+        this.sizes = compact ? Sizes.COMPACT : Sizes.NORMAL;
+        this.keypadWidth = KEY_COLUMNS * sizes.keyWidth + (KEY_COLUMNS - 1) * sizes.keyGap;
         this.title = pad.title().copy().withStyle(style -> style.withFont(UiTheme.TITLE_FONT));
         this.titleHeight = Math.round(font.lineHeight * TITLE_SCALE);
-        this.dotsTop = titleHeight + GAP_AFTER_TITLE + font.lineHeight + GAP_AFTER_HINT;
-        this.pipsTop = dotsTop + DOT + GAP_AFTER_DOTS;
-        this.keypadTop = pipsTop + PIP + GAP_AFTER_PIPS;
+        this.dotsTop = titleHeight + sizes.afterTitle + font.lineHeight + sizes.afterHint;
+        this.pipsTop = dotsTop + DOT + sizes.afterDots;
+        this.keypadTop = pipsTop + PIP + sizes.afterPips;
         int dotsWidth = pad.length() * DOT + (pad.length() - 1) * DOT_GAP;
         setWidth(Math.max(keypadWidth, Math.max(dotsWidth, Math.max(
                 Math.round(font.width(title) * TITLE_SCALE), font.width(pad.hint())))));
-        setHeight(keypadTop + KEY_ROWS * KEY_HEIGHT + (KEY_ROWS - 1) * KEY_GAP);
+        setHeight(keypadTop + KEY_ROWS * sizes.keyHeight + (KEY_ROWS - 1) * sizes.keyGap);
         animation.observe(pad, System.currentTimeMillis());
     }
 
@@ -76,11 +80,11 @@ final class UiPinPadWidget extends AbstractWidget {
     }
 
     private int keyLeft(int column) {
-        return getX() + (getWidth() - keypadWidth) / 2 + column * (KEY_WIDTH + KEY_GAP);
+        return getX() + (getWidth() - keypadWidth) / 2 + column * (sizes.keyWidth + sizes.keyGap);
     }
 
     private int keyTop(int row) {
-        return getY() + keypadTop + row * (KEY_HEIGHT + KEY_GAP);
+        return getY() + keypadTop + row * (sizes.keyHeight + sizes.keyGap);
     }
 
     /** The key under a point, or -1 when it is between keys or outside the keypad. */
@@ -89,7 +93,7 @@ final class UiPinPadWidget extends AbstractWidget {
             for (int column = 0; column < KEY_COLUMNS; column++) {
                 int left = keyLeft(column);
                 int top = keyTop(row);
-                if (x >= left && x < left + KEY_WIDTH && y >= top && y < top + KEY_HEIGHT) {
+                if (x >= left && x < left + sizes.keyWidth && y >= top && y < top + sizes.keyHeight) {
                     return keyAt(column, row);
                 }
             }
@@ -106,21 +110,26 @@ final class UiPinPadWidget extends AbstractWidget {
         actions.press(pad.firstKeyId() + key, 0, false);
     }
 
-    /** The key a physical key stands for: digits and numpad digits, Backspace, Delete; or -1. */
-    static int keyOfKeyboard(int glfwKey) {
-        if (glfwKey >= InputConstants.KEY_0 && glfwKey <= InputConstants.KEY_9) {
-            return glfwKey - InputConstants.KEY_0;
-        }
-        if (glfwKey >= InputConstants.KEY_NUMPAD0 && glfwKey <= InputConstants.KEY_NUMPAD9) {
-            return glfwKey - InputConstants.KEY_NUMPAD0;
-        }
-        if (glfwKey == InputConstants.KEY_BACKSPACE) {
-            return UiElement.PinPad.BACKSPACE;
-        }
-        if (glfwKey == InputConstants.KEY_DELETE) {
-            return UiElement.PinPad.CLEAR;
-        }
-        return -1;
+    /**
+     * What each physical key does on the keypad: the digits of the top row and of the numpad, Backspace and
+     * Delete. The game numbers keys by their place on the keyboard, and zero comes after nine there, so the
+     * digits cannot be found by counting from one key.
+     */
+    private static final Map<Integer, Integer> KEYBOARD = Map.ofEntries(
+            Map.entry(InputConstants.KEY_0, 0), Map.entry(InputConstants.KEY_1, 1), Map.entry(InputConstants.KEY_2, 2),
+            Map.entry(InputConstants.KEY_3, 3), Map.entry(InputConstants.KEY_4, 4), Map.entry(InputConstants.KEY_5, 5),
+            Map.entry(InputConstants.KEY_6, 6), Map.entry(InputConstants.KEY_7, 7), Map.entry(InputConstants.KEY_8, 8),
+            Map.entry(InputConstants.KEY_9, 9), Map.entry(InputConstants.KEY_NUMPAD0, 0),
+            Map.entry(InputConstants.KEY_NUMPAD1, 1), Map.entry(InputConstants.KEY_NUMPAD2, 2),
+            Map.entry(InputConstants.KEY_NUMPAD3, 3), Map.entry(InputConstants.KEY_NUMPAD4, 4),
+            Map.entry(InputConstants.KEY_NUMPAD5, 5), Map.entry(InputConstants.KEY_NUMPAD6, 6),
+            Map.entry(InputConstants.KEY_NUMPAD7, 7), Map.entry(InputConstants.KEY_NUMPAD8, 8),
+            Map.entry(InputConstants.KEY_NUMPAD9, 9), Map.entry(InputConstants.KEY_BACKSPACE, UiElement.PinPad.BACKSPACE),
+            Map.entry(InputConstants.KEY_DELETE, UiElement.PinPad.CLEAR));
+
+    /** The key a physical key stands for, or -1 when it stands for none. */
+    static int keyOfKeyboard(int physicalKey) {
+        return KEYBOARD.getOrDefault(physicalKey, -1);
     }
 
     @Override
@@ -158,7 +167,7 @@ final class UiPinPadWidget extends AbstractWidget {
         graphics.pose().scale(TITLE_SCALE, TITLE_SCALE);
         graphics.text(font, title, 0, 0, UiTheme.TEXT);
         graphics.pose().popMatrix();
-        graphics.centeredText(font, pad.hint(), centerX, getY() + titleHeight + GAP_AFTER_TITLE, UiTheme.MUTED);
+        graphics.centeredText(font, pad.hint(), centerX, getY() + titleHeight + sizes.afterTitle, UiTheme.MUTED);
     }
 
     private void extractDots(GuiGraphicsExtractor graphics, long now, int centerX) {
@@ -213,8 +222,8 @@ final class UiPinPadWidget extends AbstractWidget {
                 int border = key == pressed ? UiTheme.Tone.SUCCESS.hoverBorder() : hover ? tone.hoverBorder() : tone.border();
                 int left = keyLeft(column);
                 int top = keyTop(row);
-                UiTheme.pill(graphics, left, top, KEY_WIDTH, KEY_HEIGHT, fill, border);
-                graphics.centeredText(font, label(key), left + KEY_WIDTH / 2, top + (KEY_HEIGHT - font.lineHeight) / 2 + 1,
+                UiTheme.pill(graphics, left, top, sizes.keyWidth, sizes.keyHeight, fill, border);
+                graphics.centeredText(font, label(key), left + sizes.keyWidth / 2, top + (sizes.keyHeight - font.lineHeight) / 2 + 1,
                         pad.success() ? UiTheme.DISABLED : UiTheme.TEXT);
             }
         }
