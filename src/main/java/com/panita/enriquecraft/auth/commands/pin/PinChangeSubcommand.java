@@ -36,14 +36,22 @@ public final class PinChangeSubcommand implements ModCommand {
     }
 
     private int change(CommandContext<CommandSourceStack> context, ServerPlayer player) {
+        CommandSourceStack source = context.getSource();
+        if (!source.getServer().isDedicatedServer()) {
+            view.notAServer(source);
+            return 0;
+        }
         if (AuthMode.of(player.getUUID(), player.getGameProfile().name()) == AuthMode.PREMIUM) {
-            view.premiumHasNoPin(context.getSource());
+            view.premiumHasNoPin(source);
             return 0;
         }
-        if (!changes.begin(player)) {
-            view.noPinYet(context.getSource());
-            return 0;
+        switch (changes.begin(player)) {
+            case NO_PIN -> view.noPinYet(source);
+            case BLOCKED -> view.changeBlocked(source);
+            case OPENED -> {
+                return Command.SINGLE_SUCCESS;
+            }
         }
-        return Command.SINGLE_SUCCESS;
+        return 0;
     }
 }

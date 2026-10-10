@@ -45,15 +45,17 @@ public final class AuthModule implements EnriquecraftModule {
         UiService ui = services.get(UiService.class);
         PinHasher hasher = PinHasher.withPepperFile(FabricLoader.getInstance().getConfigDir().resolve(PEPPER_FILE));
         AccountService accounts = new AccountService(services.get(WorldData.class), hasher, clock);
-        AttemptLimiter limiter = new AttemptLimiter(clock);
+        // A lockout is `maxAttempts` wrong PINs, so that many times `kicksBeforeBlock` of them block an address.
+        AttemptLimiter limiter = new AttemptLimiter(clock, () -> config.kicksBeforeBlock.get() * config.maxAttempts.get(),
+                () -> Duration.ofMinutes(config.kickWindowMinutes.get()), () -> Duration.ofMinutes(config.blockMinutes.get()));
         PremiumLookup lookup = new PremiumLookup(PremiumLookup.mojang(), clock,
                 () -> Duration.ofMinutes(config.lookupCacheMinutes.get()), config.lookupMaxRequestsPerTenMinutes::get);
-        LoginGate gate = new LoginGate(limiter, lookup);
         RefusalView refusals = new RefusalView(new MessageFormatter(services.get(CoreConfig.class)));
         PinMenus screens = new PinMenus(ui, new PinView(ui.factory(), config), config);
         HeldPlayers held = new HeldPlayers(accounts, limiter, config, refusals, screens,
                 services.get(ClientCapabilities.class), services.get(Messenger.class));
 
+        LoginGate gate = new LoginGate(limiter, lookup, held::isHeld);
         WhitelistHandler whitelist = new WhitelistHandler(new WhitelistAdmin(lookup), new PlayerDataMigration(),
                 new WhitelistView(services.get(Messenger.class)));
 
@@ -63,7 +65,7 @@ public final class AuthModule implements EnriquecraftModule {
         services.register(LoginGate.class, gate);
         services.register(RefusalView.class, refusals);
         services.register(HeldPlayers.class, held);
-        services.register(PinChanges.class, new PinChanges(accounts, config, screens, services.get(Messenger.class)));
+        services.register(PinChanges.class, new PinChanges(accounts, limiter, config, screens, services.get(Messenger.class)));
         services.register(WhitelistHandler.class, whitelist);
         services.register(AdminView.class, new AdminView(services.get(Messenger.class)));
         AuthHooks.install(gate, refusals, held, whitelist);

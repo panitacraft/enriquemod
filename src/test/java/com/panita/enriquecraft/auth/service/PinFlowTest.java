@@ -25,11 +25,17 @@ class PinFlowTest {
     private AccountService accounts;
     private int accepted;
     private int lockedOut;
+    private int wrongPins;
 
     private final PinFlow.Listener listener = new PinFlow.Listener() {
         @Override
         public void accepted() {
             accepted++;
+        }
+
+        @Override
+        public void wrongPin() {
+            wrongPins++;
         }
 
         @Override
@@ -113,6 +119,34 @@ class PinFlowTest {
     }
 
     @Test
+    void everyWrongPinIsReportedTheMomentItIsTypedNotWhenItsKickWouldCome() {
+        PinFlow flow = entering();
+
+        type(flow, "0000");
+        assertEquals(1, wrongPins);
+        waitTicks(flow, PinFlow.WRONG_TICKS);
+        type(flow, "0000");
+        assertEquals(2, wrongPins);
+        waitTicks(flow, PinFlow.WRONG_TICKS);
+        type(flow, "0000");
+
+        // The third is counted at once, while its result is still being shown and no kick has happened.
+        assertEquals(3, wrongPins);
+        assertEquals(0, lockedOut);
+    }
+
+    @Test
+    void aMismatchIsNotAWrongPinForTheAddress() {
+        PinFlow flow = choosing();
+        type(flow, "4821");
+        waitTicks(flow, PinFlow.ADVANCE_TICKS);
+
+        type(flow, "4822");
+
+        assertEquals(0, wrongPins);
+    }
+
+    @Test
     void thirdWrongPinLocksOutAfterItIsShown() {
         PinFlow flow = entering();
         for (int attempt = 0; attempt < 3; attempt++) {
@@ -192,6 +226,21 @@ class PinFlowTest {
         assertFalse(accounts.verify(PLAYER, "1234"));
         waitTicks(flow, PinFlow.SUCCESS_TICKS);
         assertEquals(1, accepted);
+    }
+
+    @Test
+    void theDotsKeepTheLengthOfTheOldPinWhileItsResultIsShown() {
+        accounts.setPin(PLAYER, "Tezzlar", "1234");
+        PinFlow flow = new PinFlow(PLAYER, "Tezzlar", PinEntry.changing(4, 6, 3), accounts, listener);
+
+        type(flow, "1234");
+
+        assertEquals(PinFlow.Phase.ADVANCE, flow.phase());
+        assertEquals(4, flow.shownLength());
+        assertEquals(4, flow.shownDigits());
+        waitTicks(flow, PinFlow.ADVANCE_TICKS);
+        assertEquals(6, flow.shownLength());
+        assertEquals(0, flow.shownDigits());
     }
 
     @Test

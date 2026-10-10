@@ -22,10 +22,10 @@ class LoginGateTest {
     private final AtomicInteger asked = new AtomicInteger();
     private PremiumLookup.Result answer = new PremiumLookup.Result.Missing();
     private final Instant now = Instant.parse("2026-10-10T12:00:00Z");
-    private final LoginGate gate = new LoginGate(new AttemptLimiter(() -> now), new PremiumLookup(name -> {
+    private final LoginGate gate = new LoginGate(new AttemptLimiter(() -> now, () -> 9, () -> Duration.ofMinutes(10), () -> Duration.ofMinutes(15)), new PremiumLookup(name -> {
         asked.incrementAndGet();
         return CompletableFuture.completedFuture(answer);
-    }, () -> now, () -> Duration.ofMinutes(30), () -> 500));
+    }, () -> now, () -> Duration.ofMinutes(30), () -> 500), player -> false);
 
     private LoginGate.Verdict plan(Optional<Duration> blocked, boolean whitelist, Optional<NameAndId> listed) {
         return plan(blocked, whitelist, false, listed);

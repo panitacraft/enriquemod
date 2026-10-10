@@ -15,33 +15,34 @@ class AttemptLimiterTest {
     private static final Duration BLOCK = Duration.ofMinutes(15);
 
     private Instant now = Instant.parse("2026-10-10T12:00:00Z");
-    private final AttemptLimiter limiter = new AttemptLimiter(() -> now);
+    private int failuresBeforeBlock = 3;
+    private final AttemptLimiter limiter = new AttemptLimiter(() -> now, () -> failuresBeforeBlock, () -> WINDOW, () -> BLOCK);
 
     @Test
-    void anAddressIsBlockedAfterEnoughKicksWithinTheWindow() {
-        assertFalse(limiter.recordKick("a", 3, WINDOW, BLOCK));
+    void anAddressIsBlockedAfterEnoughWrongPinsWithinTheWindow() {
+        assertFalse(limiter.recordFailure("a"));
         now = now.plusSeconds(60);
-        assertFalse(limiter.recordKick("a", 3, WINDOW, BLOCK));
+        assertFalse(limiter.recordFailure("a"));
         now = now.plusSeconds(60);
 
-        assertTrue(limiter.recordKick("a", 3, WINDOW, BLOCK));
+        assertTrue(limiter.recordFailure("a"));
         assertEquals(BLOCK, limiter.blockedFor("a").orElseThrow());
     }
 
     @Test
-    void kicksOutsideTheWindowDoNotCount() {
-        limiter.recordKick("a", 3, WINDOW, BLOCK);
-        limiter.recordKick("a", 3, WINDOW, BLOCK);
+    void wrongPinsOutsideTheWindowDoNotCount() {
+        limiter.recordFailure("a");
+        limiter.recordFailure("a");
         now = now.plus(WINDOW).plusSeconds(1);
 
-        assertFalse(limiter.recordKick("a", 3, WINDOW, BLOCK));
+        assertFalse(limiter.recordFailure("a"));
         assertTrue(limiter.blockedFor("a").isEmpty());
     }
 
     @Test
     void theBlockEndsAndOtherAddressesAreNotAffected() {
-        for (int kick = 0; kick < 3; kick++) {
-            limiter.recordKick("a", 3, WINDOW, BLOCK);
+        for (int failure = 0; failure < 3; failure++) {
+            limiter.recordFailure("a");
         }
 
         assertTrue(limiter.blockedFor("b").isEmpty());
@@ -50,10 +51,22 @@ class AttemptLimiterTest {
     }
 
     @Test
-    void clearingForgetsTheKicks() {
-        limiter.recordKick("a", 2, WINDOW, BLOCK);
+    void clearingForgetsTheWrongPins() {
+        failuresBeforeBlock = 2;
+        limiter.recordFailure("a");
         limiter.clear("a");
 
-        assertFalse(limiter.recordKick("a", 2, WINDOW, BLOCK));
+        assertFalse(limiter.recordFailure("a"));
+    }
+
+    @Test
+    void theLimitIsReadWhenItIsNeededSoAReloadTakesEffect() {
+        failuresBeforeBlock = 5;
+        for (int failure = 0; failure < 3; failure++) {
+            limiter.recordFailure("a");
+        }
+        failuresBeforeBlock = 4;
+
+        assertTrue(limiter.recordFailure("a"));
     }
 }

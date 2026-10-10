@@ -70,7 +70,7 @@ final class PinMenu extends UiMenu implements PinScreens.Screen {
     protected UiElement describe(UiBuilder builder) {
         PinView.Texts texts = view.of(flow);
         int maxAttempts = flow.maxAttempts();
-        return builder.pinPad(texts.title(), texts.hint(), flow.length(), flow.shownDigits(),
+        return builder.pinPad(texts.title(), texts.hint(), flow.shownLength(), flow.shownDigits(),
                 maxAttempts == 0 ? 0 : flow.attemptsLeft(), maxAttempts, flow.shakes(), flow.success(), keys);
     }
 

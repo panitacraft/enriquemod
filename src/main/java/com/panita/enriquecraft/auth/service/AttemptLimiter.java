@@ -7,45 +7,58 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /**
- * Blocks an address that keeps failing the PIN screen: each kick for too many wrong PINs is counted,
- * and an address kicked too many times within a window is refused for a while. The counts live in
- * memory only, so a restart clears them.
+ * Blocks an address that keeps typing wrong PINs: every wrong PIN is counted the moment it is typed, and an
+ * address with too many of them within a window is refused for a while. Counting each one, rather than the
+ * kicks they lead to, is what stops a player who disconnects just before being kicked, or reconnects for
+ * three fresh attempts each time, from guessing without limit. The counts live in memory only, so a restart
+ * clears them.
  */
 public final class AttemptLimiter {
 
     private static final class Record {
-        private final Deque<Instant> kicks = new ArrayDeque<>();
+        private final Deque<Instant> failures = new ArrayDeque<>();
         private volatile Instant blockedUntil = Instant.MIN;
     }
 
     private final Map<String, Record> records = new ConcurrentHashMap<>();
     private final Supplier<Instant> clock;
+    private final IntSupplier failuresBeforeBlock;
+    private final Supplier<Duration> window;
+    private final Supplier<Duration> blockFor;
 
-    public AttemptLimiter(Supplier<Instant> clock) {
+    /**
+     * @param failuresBeforeBlock how many wrong PINs within the window block an address
+     * @param window              how long a wrong PIN keeps counting
+     * @param blockFor            how long a block lasts
+     */
+    public AttemptLimiter(Supplier<Instant> clock, IntSupplier failuresBeforeBlock, Supplier<Duration> window,
+                          Supplier<Duration> blockFor) {
         this.clock = clock;
+        this.failuresBeforeBlock = failuresBeforeBlock;
+        this.window = window;
+        this.blockFor = blockFor;
     }
 
     /**
-     * Counts a kick for an address.
+     * Counts a wrong PIN typed from an address.
      *
-     * @param kicksBeforeBlock how many kicks within the window block the address
-     * @param window           how long a kick keeps counting
-     * @param blockFor         how long the block lasts
      * @return whether the address is blocked now
      */
-    public boolean recordKick(String address, int kicksBeforeBlock, Duration window, Duration blockFor) {
+    public boolean recordFailure(String address) {
         Instant now = clock.get();
+        Duration counting = window.get();
         boolean[] blocked = new boolean[1];
         records.compute(address, (key, record) -> {
             Record current = record == null ? new Record() : record;
-            current.kicks.removeIf(kick -> kick.plus(window).isBefore(now));
-            current.kicks.addLast(now);
-            if (current.kicks.size() >= kicksBeforeBlock) {
-                current.blockedUntil = now.plus(blockFor);
-                current.kicks.clear();
+            current.failures.removeIf(failure -> failure.plus(counting).isBefore(now));
+            current.failures.addLast(now);
+            if (current.failures.size() >= failuresBeforeBlock.getAsInt()) {
+                current.blockedUntil = now.plus(blockFor.get());
+                current.failures.clear();
                 blocked[0] = true;
             }
             return current;

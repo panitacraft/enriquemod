@@ -39,6 +39,10 @@ public final class LogoutCommand implements ModCommand {
     }
 
     private int logout(CommandContext<CommandSourceStack> context, ServerPlayer player) {
+        if (!context.getSource().getServer().isDedicatedServer()) {
+            view.notAServer(context.getSource());
+            return 0;
+        }
         if (AuthMode.of(player.getUUID(), player.getGameProfile().name()) == AuthMode.PREMIUM) {
             view.premiumHasNoSession(context.getSource());
             return 0;

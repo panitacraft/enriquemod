@@ -60,6 +60,7 @@ public final class PremiumLookup {
     private static final Duration TIMEOUT = Duration.ofSeconds(4);
     private static final Duration BUDGET_WINDOW = Duration.ofMinutes(10);
     private static final Pattern ACCOUNT_NAME = Pattern.compile("[A-Za-z0-9_]{1,16}");
+    private static final int MAX_CACHED = 1000;
 
     private final Fetcher fetcher;
     private final Supplier<Instant> clock;
@@ -110,10 +111,25 @@ public final class PremiumLookup {
                 })
                 .thenApply(result -> {
                     if (!(result instanceof Result.Unavailable)) {
-                        cache.put(key, new Cached(result, clock.get().plus(cacheFor.get())));
+                        remember(key, result);
                     }
                     return result;
                 });
+    }
+
+    /**
+     * Keeps an answer. Names that never come back would stay forever, so when the cache is large the expired
+     * ones are dropped, and if that is not enough (the whole cache is fresh) it is emptied.
+     */
+    private void remember(String key, Result result) {
+        Instant now = clock.get();
+        if (cache.size() >= MAX_CACHED) {
+            cache.values().removeIf(cached -> !cached.expiresAt().isAfter(now));
+            if (cache.size() >= MAX_CACHED) {
+                cache.clear();
+            }
+        }
+        cache.put(key, new Cached(result, now.plus(cacheFor.get())));
     }
 
     private synchronized boolean takeRequest() {

@@ -22,12 +22,12 @@ import net.minecraft.network.protocol.game.ServerboundClientTickEndPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,8 +111,8 @@ public final class HeldPlayers {
         if (accounts.hasValidSession(id, ip)) {
             return;
         }
-        int length = accounts.pinLength(id).orElse(config.pinLength.get());
-        PinEntry entry = new PinEntry(length, config.maxAttempts.get(), accounts.pinLength(id).isPresent());
+        Optional<Integer> pinLength = accounts.pinLength(id);
+        PinEntry entry = new PinEntry(pinLength.orElse(config.pinLength.get()), config.maxAttempts.get(), pinLength.isPresent());
         PinFlow flow = new PinFlow(id, name, entry, accounts, new PinFlow.Listener() {
             @Override
             public void accepted() {
@@ -120,8 +120,16 @@ public final class HeldPlayers {
             }
 
             @Override
+            public void wrongPin() {
+                limiter.recordFailure(ip);
+            }
+
+            @Override
             public void lockedOut() {
-                lockOut(id);
+                Held holder = held.get(id);
+                if (holder != null) {
+                    kick(holder, refusals.tooManyAttempts());
+                }
             }
         });
         held.put(id, new Held(player, ip, flow));
@@ -219,19 +227,9 @@ public final class HeldPlayers {
             holder.screen.close();
         }
         restore(holder.player);
-        MinecraftServer server = holder.player.level().getServer();
-        server.getPlayerList().broadcastSystemMessage(Component.translatable("multiplayer.player.joined",
-                holder.player.getDisplayName()).withStyle(ChatFormatting.YELLOW), false);
-    }
-
-    private void lockOut(UUID id) {
-        Held holder = held.get(id);
-        if (holder == null) {
-            return;
-        }
-        limiter.recordKick(holder.address, config.kicksBeforeBlock.get(),
-                Duration.ofMinutes(config.kickWindowMinutes.get()), Duration.ofMinutes(config.blockMinutes.get()));
-        kick(holder, refusals.tooManyAttempts());
+        // The game's own announcement, held back until now; its key is one every client knows.
+        messenger.broadcast(holder.player.level().getServer(), Component.translatable("multiplayer.player.joined",
+                holder.player.getDisplayName()).withStyle(ChatFormatting.YELLOW));
     }
 
     private void kick(Held holder, Component reason) {

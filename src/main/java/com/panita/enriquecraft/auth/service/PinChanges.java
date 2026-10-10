@@ -16,9 +16,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * The players who are changing their PIN: they enter the current one and then choose a new one, in the same
  * screen used to log in. Unlike a held player they are in the game, so nothing is taken from them; closing
  * the screen just gives the change up. Changing the PIN never kicks anyone: after too many wrong PINs the
- * change is refused and the PIN stays as it was.
+ * change is refused and the PIN stays as it was. Wrong current PINs count against the address like those of
+ * a login, and an address that is blocked cannot start a change, so an open game is no way to guess the PIN.
  */
 public final class PinChanges {
+
+    /** What asking to change a PIN came to. */
+    public enum Begin {
+        OPENED, NO_PIN, BLOCKED
+    }
 
     private static final class Change {
         private final ServerPlayer player;
@@ -35,27 +41,30 @@ public final class PinChanges {
 
     private final Map<UUID, Change> active = new ConcurrentHashMap<>();
     private final AccountService accounts;
+    private final AttemptLimiter limiter;
     private final AuthConfig config;
     private final PinScreens screens;
     private final Messenger messenger;
 
-    public PinChanges(AccountService accounts, AuthConfig config, PinScreens screens, Messenger messenger) {
+    public PinChanges(AccountService accounts, AttemptLimiter limiter, AuthConfig config, PinScreens screens,
+                      Messenger messenger) {
         this.accounts = accounts;
+        this.limiter = limiter;
         this.config = config;
         this.screens = screens;
         this.messenger = messenger;
     }
 
-    /**
-     * Opens the screen for a player to change their PIN.
-     *
-     * @return false when the player has no PIN to change
-     */
-    public boolean begin(ServerPlayer player) {
+    /** Opens the screen for a player to change their PIN, unless they have none or their address is blocked. */
+    public Begin begin(ServerPlayer player) {
         UUID id = player.getUUID();
         Optional<Integer> oldLength = accounts.pinLength(id);
         if (oldLength.isEmpty()) {
-            return false;
+            return Begin.NO_PIN;
+        }
+        String address = Addresses.of(player.connection.getRemoteAddress());
+        if (limiter.blockedFor(address).isPresent()) {
+            return Begin.BLOCKED;
         }
         cancel(id);
         PinEntry entry = PinEntry.changing(oldLength.get(), config.pinLength.get(), config.maxAttempts.get());
@@ -66,14 +75,19 @@ public final class PinChanges {
             }
 
             @Override
+            public void wrongPin() {
+                limiter.recordFailure(address);
+            }
+
+            @Override
             public void lockedOut() {
                 finish(id, false);
             }
         });
-        Change change = new Change(player, Addresses.of(player.connection.getRemoteAddress()), flow);
+        Change change = new Change(player, address, flow);
         active.put(id, change);
         change.screen = screens.open(player, flow, () -> active.remove(id, change));
-        return true;
+        return Begin.OPENED;
     }
 
     public void tick() {
@@ -100,6 +114,7 @@ public final class PinChanges {
         if (changed) {
             // The new PIN ends the old session, so the player is given a fresh one from this moment.
             accounts.startSession(id, change.address, Duration.ofHours(config.sessionHours.get()));
+            limiter.clear(change.address);
         } else {
             messenger.send(change.player, Message.error(AuthMessages.Commands.CHANGE_REFUSED).prefixed());
         }

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuthModeTest {
 
@@ -27,11 +26,5 @@ class AuthModeTest {
         UUID other = NameAndId.createOffline("Someone").id();
 
         assertEquals(AuthMode.PREMIUM, AuthMode.of(other, "Tezzlar"));
-    }
-
-    @Test
-    void idsFindTheirMode() {
-        assertEquals(AuthMode.CRACKED, AuthMode.byId("cracked").orElseThrow());
-        assertTrue(AuthMode.byId("other").isEmpty());
     }
 }

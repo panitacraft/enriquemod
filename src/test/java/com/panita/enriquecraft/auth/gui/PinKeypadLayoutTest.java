@@ -56,6 +56,10 @@ class PinKeypadLayoutTest {
             }
 
             @Override
+            public void wrongPin() {
+            }
+
+            @Override
             public void lockedOut() {
             }
         });

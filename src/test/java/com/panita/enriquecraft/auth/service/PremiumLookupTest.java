@@ -90,6 +90,20 @@ class PremiumLookupTest {
     }
 
     @Test
+    void theCacheDoesNotGrowWithoutBound() {
+        budget = 100_000;
+        for (int name = 0; name < 2500; name++) {
+            lookup.lookup("name" + name).join();
+        }
+        int askedBefore = calls.get();
+
+        // Everything is still fresh, yet the cache was emptied rather than left to grow: early names are asked again.
+        lookup.lookup("name0").join();
+
+        assertEquals(askedBefore + 1, calls.get());
+    }
+
+    @Test
     void aFailingFetchIsUnavailable() {
         PremiumLookup failing = new PremiumLookup(name -> CompletableFuture.failedFuture(new RuntimeException("down")),
                 () -> now, () -> Duration.ofMinutes(30), () -> 500);

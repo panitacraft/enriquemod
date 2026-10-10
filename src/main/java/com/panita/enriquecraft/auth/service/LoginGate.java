@@ -2,12 +2,14 @@ package com.panita.enriquecraft.auth.service;
 
 import com.panita.enriquecraft.auth.data.AuthMode;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.PlayerList;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 /**
  * Decides, as soon as a player says their name and before anything else is exchanged, whether they may
@@ -44,10 +46,16 @@ public final class LoginGate {
 
     private final AttemptLimiter limiter;
     private final PremiumLookup lookup;
+    private final Predicate<ServerPlayer> isHeld;
 
-    public LoginGate(AttemptLimiter limiter, PremiumLookup lookup) {
+    /**
+     * @param isHeld tells whether a connected player is still waiting at the PIN screen; such a player has proved
+     *               nothing, so a newcomer may replace them
+     */
+    public LoginGate(AttemptLimiter limiter, PremiumLookup lookup, Predicate<ServerPlayer> isHeld) {
         this.limiter = limiter;
         this.lookup = lookup;
+        this.isHeld = isHeld;
     }
 
     /**
@@ -57,7 +65,8 @@ public final class LoginGate {
     public CompletableFuture<Verdict> admit(MinecraftServer server, String address, String name) {
         return CompletableFuture.supplyAsync(() -> {
             PlayerList players = server.getPlayerList();
-            return plan(limiter.blockedFor(address), players.isUsingWhitelist(), players.getPlayerByName(name) != null,
+            ServerPlayer connected = players.getPlayerByName(name);
+            return plan(limiter.blockedFor(address), players.isUsingWhitelist(), connected != null && !isHeld.test(connected),
                     WhitelistModes.listed(players, name), name);
         }, server).thenCompose(plan -> plan);
     }

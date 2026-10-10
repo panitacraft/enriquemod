@@ -32,6 +32,9 @@ public final class PinFlow {
         /** The PIN was accepted and its celebration is over. */
         void accepted();
 
+        /** A wrong PIN was just typed, the moment it was, before anything is shown; each one counts against the address. */
+        void wrongPin();
+
         /** The last wrong PIN was shown and no attempt is left. */
         void lockedOut();
     }
@@ -51,6 +54,7 @@ public final class PinFlow {
     private int shakes;
     private boolean lockedOut;
     private boolean created;
+    private int shownLength;
 
     public PinFlow(UUID id, String name, PinEntry entry, AccountService accounts, Listener listener) {
         this.id = id;
@@ -62,6 +66,8 @@ public final class PinFlow {
 
     public void digit(int digit) {
         if (phase == Phase.INPUT) {
+            // The entry may change length when it moves on (changing a PIN), and the result shown is of the old one.
+            shownLength = entry.length();
             apply(entry.press(digit, pin -> accounts.verify(id, pin)));
         }
     }
@@ -88,9 +94,13 @@ public final class PinFlow {
                 succeed();
             }
             case CONFIRM_NEEDED, OLD_VERIFIED -> enter(Phase.ADVANCE, ADVANCE_TICKS);
-            case WRONG -> fail(Failure.WRONG_PIN);
+            case WRONG -> {
+                listener.wrongPin();
+                fail(Failure.WRONG_PIN);
+            }
             case MISMATCH -> fail(Failure.MISMATCH);
             case LOCKED_OUT -> {
+                listener.wrongPin();
                 lockedOut = true;
                 fail(Failure.WRONG_PIN);
             }
@@ -151,9 +161,14 @@ public final class PinFlow {
         return entry.length();
     }
 
+    /** How many dots there are: the length of what is being typed, or of what the result shown was about. */
+    public int shownLength() {
+        return phase == Phase.INPUT ? entry.length() : shownLength;
+    }
+
     /** How many dots are filled: while a result is shown, all of them. */
     public int shownDigits() {
-        return phase == Phase.INPUT ? entry.filled() : entry.length();
+        return phase == Phase.INPUT ? entry.filled() : shownLength;
     }
 
     public int attemptsLeft() {

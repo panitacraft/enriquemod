@@ -4,8 +4,6 @@ import com.mojang.serialization.Codec;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.StringRepresentable;
 
-import java.util.Arrays;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -29,10 +27,6 @@ public enum AuthMode implements StringRepresentable {
     @Override
     public String getSerializedName() {
         return id;
-    }
-
-    public static Optional<AuthMode> byId(String id) {
-        return Arrays.stream(values()).filter(mode -> mode.id.equals(id)).findFirst();
     }
 
     /**

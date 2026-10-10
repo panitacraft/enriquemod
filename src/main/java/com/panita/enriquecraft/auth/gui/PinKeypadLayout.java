@@ -79,8 +79,8 @@ final class PinKeypadLayout {
     }
 
     private static void placeProgress(MenuFactory factory, PinFlow flow, List<ItemStack> slots) {
-        int first = PROGRESS_ROW + (ROW - flow.length()) / 2;
-        for (int index = 0; index < flow.length(); index++) {
+        int first = PROGRESS_ROW + (ROW - flow.shownLength()) / 2;
+        for (int index = 0; index < flow.shownLength(); index++) {
             boolean typed = index < flow.shownDigits();
             Item item;
             String name;

@@ -34,9 +34,9 @@ public final class AuthConfig implements ModConfig {
         loginTimeoutSeconds = builder.intRange("pin.timeoutSeconds", 60, 10, 600,
                 "How long a player may take to enter their PIN before being kicked.");
         kicksBeforeBlock = builder.intRange("lockout.kicksBeforeBlock", 3, 1, 20,
-                "How many kicks for wrong PINs, within the window, block an address.");
+                "How many lockouts within the window block an address. A lockout is as many wrong PINs as pin.maxAttempts allows, and every wrong PIN counts when it is typed, so leaving before the kick does not avoid it.");
         kickWindowMinutes = builder.intRange("lockout.windowMinutes", 10, 1, 1440,
-                "How long a kick for wrong PINs keeps counting toward a block.");
+                "How long a wrong PIN keeps counting toward a block.");
         blockMinutes = builder.intRange("lockout.blockMinutes", 15, 1, 10080,
                 "How long a blocked address is refused.");
         lookupCacheMinutes = builder.intRange("premiumLookup.cacheMinutes", 30, 1, 1440,

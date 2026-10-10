@@ -50,6 +50,10 @@ class PinViewTest {
             }
 
             @Override
+            public void wrongPin() {
+            }
+
+            @Override
             public void lockedOut() {
             }
         });
@@ -73,6 +77,10 @@ class PinViewTest {
         PinFlow flow = new PinFlow(PLAYER, "Tezzlar", PinEntry.changing(4, 4, 3), accounts, new PinFlow.Listener() {
             @Override
             public void accepted() {
+            }
+
+            @Override
+            public void wrongPin() {
             }
 
             @Override

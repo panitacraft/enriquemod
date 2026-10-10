@@ -75,6 +75,8 @@ public final class AuthMessages {
         public static final String CHANGE_DESCRIPTION = "Cambia tu PIN: escribes el actual y luego eliges uno nuevo";
         public static final String CHANGE_REFUSED = "Demasiados intentos con el PIN actual: tu PIN no se cambió.";
         public static final String PREMIUM_HAS_NO_PIN = "Las cuentas premium no usan PIN: entras con tu cuenta de Microsoft.";
+        public static final String CHANGE_BLOCKED = "Demasiados intentos fallidos desde tu conexión. Espera unos minutos antes de cambiar tu PIN.";
+        public static final String NOT_A_SERVER = "Esto solo funciona en un servidor, no en un mundo de un jugador.";
         public static final String NO_PIN_YET = "Todavía no tienes un PIN guardado.";
         public static final String RESET_DONE = "PIN de <bold>{name}</bold> borrado. Elegirá uno nuevo la próxima vez que entre.";
         public static final String NO_ACCOUNT = "<bold>{name}</bold> no tiene un PIN guardado.";

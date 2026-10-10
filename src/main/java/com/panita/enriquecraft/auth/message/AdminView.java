@@ -35,6 +35,14 @@ public final class AdminView {
         messenger.send(source, Message.info(AuthMessages.Commands.PREMIUM_HAS_NO_PIN).prefixed());
     }
 
+    public void changeBlocked(CommandSourceStack source) {
+        messenger.send(source, Message.error(AuthMessages.Commands.CHANGE_BLOCKED).prefixed());
+    }
+
+    public void notAServer(CommandSourceStack source) {
+        messenger.send(source, Message.info(AuthMessages.Commands.NOT_A_SERVER).prefixed());
+    }
+
     public void noPinYet(CommandSourceStack source) {
         messenger.send(source, Message.error(AuthMessages.Commands.NO_PIN_YET).prefixed());
     }
