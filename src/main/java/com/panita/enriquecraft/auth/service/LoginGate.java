@@ -30,6 +30,10 @@ public final class LoginGate {
         record Blocked(Duration remaining) implements Verdict {
         }
 
+        /** Someone who proves themselves with a PIN is already connected under this name; a newcomer must not kick them. */
+        record AlreadyOnline() implements Verdict {
+        }
+
         record NotWhitelisted() implements Verdict {
         }
 
@@ -53,27 +57,36 @@ public final class LoginGate {
     public CompletableFuture<Verdict> admit(MinecraftServer server, String address, String name) {
         return CompletableFuture.supplyAsync(() -> {
             PlayerList players = server.getPlayerList();
-            return plan(limiter.blockedFor(address), players.isUsingWhitelist(),
+            return plan(limiter.blockedFor(address), players.isUsingWhitelist(), players.getPlayerByName(name) != null,
                     WhitelistModes.listed(players, name), name);
         }, server).thenCompose(plan -> plan);
     }
 
     /** What to do given what is known about the address and the name. */
-    CompletableFuture<Verdict> plan(Optional<Duration> blocked, boolean usingWhitelist, Optional<NameAndId> listed,
+    CompletableFuture<Verdict> plan(Optional<Duration> blocked, boolean usingWhitelist, boolean online, Optional<NameAndId> listed,
                                     String name) {
         if (blocked.isPresent()) {
             return CompletableFuture.completedFuture(new Verdict.Blocked(blocked.get()));
         }
         if (listed.isPresent()) {
-            return CompletableFuture.completedFuture(new Verdict.Proceed(AuthMode.of(listed.get()), listed.get().name()));
+            return CompletableFuture.completedFuture(proceed(AuthMode.of(listed.get()), listed.get().name(), online));
         }
         if (usingWhitelist) {
             return CompletableFuture.completedFuture(new Verdict.NotWhitelisted());
         }
         return lookup.lookup(name).thenApply(result -> switch (result) {
             case PremiumLookup.Result.Found found -> new Verdict.Proceed(AuthMode.PREMIUM, found.profile().name());
-            case PremiumLookup.Result.Missing missing -> new Verdict.Proceed(AuthMode.CRACKED, name);
+            case PremiumLookup.Result.Missing missing -> proceed(AuthMode.CRACKED, name, online);
             case PremiumLookup.Result.Unavailable unavailable -> new Verdict.Unavailable();
         });
+    }
+
+    /**
+     * Lets a player in, unless they would take the place of someone who uses a PIN: the game disconnects a
+     * player who is already connected under the same name, so anyone who knew a name could keep its owner out
+     * of the server. A player with a Microsoft account proved who they are, so they do replace an old connection.
+     */
+    private static Verdict proceed(AuthMode mode, String name, boolean online) {
+        return mode == AuthMode.CRACKED && online ? new Verdict.AlreadyOnline() : new Verdict.Proceed(mode, name);
     }
 }

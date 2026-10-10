@@ -25,6 +25,8 @@ public final class RefusalView {
             case LoginGate.Verdict.Proceed proceed -> Optional.empty();
             case LoginGate.Verdict.Blocked blocked -> Optional.of(formatter.format(
                     Message.plain(AuthMessages.Refusal.BLOCKED).with("minutes", minutes(blocked.remaining()))));
+            case LoginGate.Verdict.AlreadyOnline alreadyOnline ->
+                    Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.ALREADY_ONLINE)));
             case LoginGate.Verdict.NotWhitelisted notWhitelisted ->
                     Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.NOT_WHITELISTED)));
             case LoginGate.Verdict.Unavailable unavailable ->

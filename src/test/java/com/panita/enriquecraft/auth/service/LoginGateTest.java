@@ -28,7 +28,11 @@ class LoginGateTest {
     }, () -> now, () -> Duration.ofMinutes(30), () -> 500));
 
     private LoginGate.Verdict plan(Optional<Duration> blocked, boolean whitelist, Optional<NameAndId> listed) {
-        return gate.plan(blocked, whitelist, listed, "typed").join();
+        return plan(blocked, whitelist, false, listed);
+    }
+
+    private LoginGate.Verdict plan(Optional<Duration> blocked, boolean whitelist, boolean online, Optional<NameAndId> listed) {
+        return gate.plan(blocked, whitelist, online, listed, "typed").join();
     }
 
     @Test
@@ -46,6 +50,24 @@ class LoginGateTest {
     }
 
     @Test
+    void aPinNameThatIsAlreadyOnlineCannotBeTakenOver() {
+        assertInstanceOf(LoginGate.Verdict.AlreadyOnline.class, plan(Optional.empty(), true, true, Optional.of(CRACKED)));
+    }
+
+    @Test
+    void aPremiumNameThatIsAlreadyOnlineIsReplacedBecauseTheOwnerProvedThemselves() {
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM, "Javithor360"), plan(Optional.empty(), true, true, Optional.of(PREMIUM)));
+    }
+
+    @Test
+    void anUnknownNameThatIsAlreadyOnlineAndHasNoAccountCannotBeTakenOverEither() {
+        answer = new PremiumLookup.Result.Missing();
+
+        assertInstanceOf(LoginGate.Verdict.AlreadyOnline.class,
+                gate.plan(Optional.empty(), false, true, Optional.empty(), "Other").join());
+    }
+
+    @Test
     void anUnlistedNameIsRefusedWhileTheWhitelistIsOn() {
         assertInstanceOf(LoginGate.Verdict.NotWhitelisted.class, plan(Optional.empty(), true, Optional.empty()));
         assertEquals(0, asked.get());
@@ -54,10 +76,10 @@ class LoginGateTest {
     @Test
     void withTheWhitelistOffMojangDecidesTheModeAndTheSpelling() {
         answer = new PremiumLookup.Result.Found(PREMIUM);
-        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM, "Javithor360"), gate.plan(Optional.empty(), false, Optional.empty(), "javithor360").join());
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM, "Javithor360"), gate.plan(Optional.empty(), false, false, Optional.empty(), "javithor360").join());
 
         answer = new PremiumLookup.Result.Missing();
-        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED, "Other"), gate.plan(Optional.empty(), false, Optional.empty(), "Other").join());
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED, "Other"), gate.plan(Optional.empty(), false, false, Optional.empty(), "Other").join());
     }
 
     @Test
