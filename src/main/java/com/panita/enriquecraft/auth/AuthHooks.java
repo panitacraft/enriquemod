@@ -3,10 +3,13 @@ package com.panita.enriquecraft.auth;
 import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.auth.message.RefusalView;
 import com.panita.enriquecraft.auth.service.Addresses;
+import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.auth.service.LoginGate;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,14 +29,16 @@ public final class AuthHooks {
 
     private final LoginGate gate;
     private final RefusalView refusals;
+    private final HeldPlayers held;
 
-    private AuthHooks(LoginGate gate, RefusalView refusals) {
+    private AuthHooks(LoginGate gate, RefusalView refusals, HeldPlayers held) {
         this.gate = gate;
         this.refusals = refusals;
+        this.held = held;
     }
 
-    static void install(LoginGate gate, RefusalView refusals) {
-        instance = new AuthHooks(gate, refusals);
+    static void install(LoginGate gate, RefusalView refusals, HeldPlayers held) {
+        instance = new AuthHooks(gate, refusals, held);
     }
 
     public static @Nullable AuthHooks get() {
@@ -59,5 +64,24 @@ public final class AuthHooks {
                 refuse.accept(refusals.of(verdict).orElseThrow());
             }
         });
+    }
+
+    /** A player is being placed in the world: decides whether they must enter a PIN. */
+    public void playerJoining(Connection connection, ServerPlayer player) {
+        held.joining(player, connection.getRemoteAddress());
+    }
+
+    public boolean isHeld(ServerPlayer player) {
+        return held.isHeld(player);
+    }
+
+    /** A player is leaving; returns whether they were held, in which case their leaving is not announced. */
+    public boolean leaving(ServerPlayer player) {
+        return held.leaving(player);
+    }
+
+    /** Whether a packet of this player must be dropped. */
+    public boolean blocks(ServerPlayer player, Packet<?> packet) {
+        return held.blocks(player, packet);
     }
 }

@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.auth.config;
 
+import com.panita.enriquecraft.auth.message.AuthMessages;
 import com.panita.enriquecraft.core.framework.config.ConfigSectionBuilder;
 import com.panita.enriquecraft.core.framework.config.ConfigValue;
 import com.panita.enriquecraft.core.framework.config.ModConfig;
@@ -9,6 +10,7 @@ import com.panita.enriquecraft.core.framework.config.ModConfig;
  */
 public final class AuthConfig implements ModConfig {
 
+    public final ConfigValue<String> screenTitle;
     public final ConfigValue<Integer> pinLength;
     public final ConfigValue<Integer> maxAttempts;
     public final ConfigValue<Integer> sessionHours;
@@ -20,6 +22,9 @@ public final class AuthConfig implements ModConfig {
     public final ConfigValue<Integer> lookupMaxRequestsPerTenMinutes;
 
     public AuthConfig(ConfigSectionBuilder builder) {
+        screenTitle = builder.string("screen.title", AuthMessages.Pin.SCREEN_TITLE,
+                "Title of the PIN screen. Supports text tags and legacy color codes.",
+                text -> !text.isBlank(), "must not be blank");
         pinLength = builder.intRange("pin.length", 4, 4, 6,
                 "How many digits the PIN of a new account has. Accounts keep the length they were created with.");
         maxAttempts = builder.intRange("pin.maxAttempts", 3, 1, 10,
