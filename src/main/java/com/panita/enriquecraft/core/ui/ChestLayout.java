@@ -145,6 +145,7 @@ final class ChestLayout {
             case UiElement.Spacer ignored -> null;
             case UiElement.Page ignored -> null;
             case UiElement.Divider ignored -> null;
+            case UiElement.PinPad ignored -> null;
             case UiElement.Detail detail -> detail(detail);
             case UiElement.Dropdown dropdown -> MenuItem.button(stack(dropdown), click -> choose(dropdown, click));
             case UiElement.Scroll scroll -> throw containerInsideAnotherContainer();

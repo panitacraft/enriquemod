@@ -196,6 +196,7 @@ final class UiLayouts {
             case UiElement.TextInput input -> input(input);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Divider ignored -> new UiDividerWidget();
+            case UiElement.PinPad pad -> new UiPinPadWidget(font, pad, actions);
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
                 case FOOTER -> footerButton(button);

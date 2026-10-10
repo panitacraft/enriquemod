@@ -56,6 +56,17 @@ public abstract class UiMenu {
         return ChestStyle.PLAIN;
     }
 
+    /**
+     * Shows the screen to a player without the client companion in a form of its own, instead of as a chest.
+     * Only for screens a chest cannot be, such as a keypad laid out as a crafting table; such a menu looks
+     * after its own closing and redrawing.
+     *
+     * @return whether it did; by default it does not, and the chest is used
+     */
+    protected boolean openFallback(ServerPlayer player) {
+        return false;
+    }
+
     /** Called when the player closes the screen or another one replaces it. */
     protected void onClose() {
     }

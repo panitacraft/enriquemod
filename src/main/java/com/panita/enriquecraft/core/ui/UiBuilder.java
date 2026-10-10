@@ -135,6 +135,35 @@ public final class UiBuilder {
     }
 
     /**
+     * The keypad that asks for a PIN. Its twelve keys get consecutive ids; a left press on one is reported to
+     * the keys, anything else is ignored. See {@link UiElement.PinPad} for what the other values mean.
+     */
+    public UiElement.PinPad pinPad(Component title, Component hint, int length, int filled, int attemptsLeft,
+                                   int maxAttempts, int shakes, boolean success, PinKeys keys) {
+        int firstKeyId = nextId;
+        nextId += UiElement.PinPad.KEYS;
+        for (int digit = 0; digit <= 9; digit++) {
+            int pressed = digit;
+            handlers.put(firstKeyId + digit, click -> {
+                if (click.isLeft()) {
+                    keys.digit(pressed);
+                }
+            });
+        }
+        handlers.put(firstKeyId + UiElement.PinPad.BACKSPACE, click -> {
+            if (click.isLeft()) {
+                keys.backspace();
+            }
+        });
+        handlers.put(firstKeyId + UiElement.PinPad.CLEAR, click -> {
+            if (click.isLeft()) {
+                keys.clear();
+            }
+        });
+        return new UiElement.PinPad(title, hint, length, filled, attemptsLeft, maxAttempts, shakes, success, firstKeyId);
+    }
+
+    /**
      * Lets the player drag a button onto another draggable one in the client companion. A chest cannot drag, so a
      * menu that offers this also offers a way to do the same with clicks there.
      *

@@ -28,4 +28,7 @@ interface UiActions {
      * @param targetId  the id of the button they dropped it on
      */
     void drop(int draggedId, int targetId);
+
+    /** What a PIN keypad remembers across the rebuilds of the screen it is on. */
+    PinPadAnimation pinPadAnimation();
 }
