@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import static com.panita.enriquecraft.auth.service.PinEntry.Outcome;
 import static com.panita.enriquecraft.auth.service.PinEntry.Step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PinEntryTest {
 
@@ -88,6 +90,33 @@ class PinEntryTest {
 
         assertEquals(Outcome.INCOMPLETE, type(entry, "12345", "123456"));
         assertEquals(Outcome.VERIFIED, entry.press(6, "123456"::equals));
+    }
+
+    @Test
+    void changingAPinEntersTheCurrentOneThenChoosesANewOneTwice() {
+        PinEntry entry = PinEntry.changing(4, 6, 3);
+        assertEquals(Step.ENTER, entry.step());
+
+        assertEquals(Outcome.OLD_VERIFIED, type(entry, "1234", "1234"));
+        assertEquals(Step.CREATE, entry.step());
+        assertEquals(6, entry.length());
+        assertEquals(Outcome.CONFIRM_NEEDED, type(entry, "482159", ""));
+        assertEquals(Outcome.CREATED, type(entry, "482159", ""));
+        assertEquals("482159", entry.createdPin());
+    }
+
+    @Test
+    void aWrongCurrentPinWhileChangingCostsAttemptsLikeAnyOther() {
+        PinEntry entry = PinEntry.changing(4, 4, 2);
+
+        assertEquals(Outcome.WRONG, type(entry, "0000", "1234"));
+        assertEquals(Outcome.LOCKED_OUT, type(entry, "0000", "1234"));
+        assertTrue(entry.isChanging());
+    }
+
+    @Test
+    void anOrdinaryEntryIsNotAChange() {
+        assertFalse(new PinEntry(4, 3, true).isChanging());
     }
 
     @Test

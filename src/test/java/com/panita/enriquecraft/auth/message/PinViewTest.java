@@ -68,6 +68,23 @@ class PinViewTest {
     }
 
     @Test
+    void changingAPinAsksForTheCurrentOneFirst() {
+        accounts.setPin(PLAYER, "Tezzlar", "1234");
+        PinFlow flow = new PinFlow(PLAYER, "Tezzlar", PinEntry.changing(4, 4, 3), accounts, new PinFlow.Listener() {
+            @Override
+            public void accepted() {
+            }
+
+            @Override
+            public void lockedOut() {
+            }
+        });
+
+        assertEquals("Ingresa tu PIN actual", view.of(flow).title().getString());
+        assertEquals("Luego elegirás uno nuevo", view.of(flow).hint().getString());
+    }
+
+    @Test
     void choosingAPinAsksForTheLengthAndThenForConfirmation() {
         PinFlow flow = flow(false);
 

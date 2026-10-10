@@ -24,6 +24,8 @@ public final class PinEntry {
         INCOMPLETE,
         /** The PIN was right. */
         VERIFIED,
+        /** The current PIN was right and the player is changing it: they now choose the new one. */
+        OLD_VERIFIED,
         /** The PIN was wrong and the player may try again. */
         WRONG,
         /** The PIN was wrong and no attempt is left. */
@@ -36,8 +38,10 @@ public final class PinEntry {
         CREATED
     }
 
-    private final int length;
+    private int length;
     private final int maxAttempts;
+    private final int newLength;
+    private final boolean changing;
     private final StringBuilder typed = new StringBuilder();
     private Step step;
     private int attemptsLeft;
@@ -50,10 +54,32 @@ public final class PinEntry {
      * @param hasPin      whether the player already has a PIN to enter, instead of choosing one
      */
     public PinEntry(int length, int maxAttempts, boolean hasPin) {
+        this(length, length, maxAttempts, hasPin ? Step.ENTER : Step.CREATE, false);
+    }
+
+    private PinEntry(int length, int newLength, int maxAttempts, Step step, boolean changing) {
         this.length = length;
+        this.newLength = newLength;
         this.maxAttempts = maxAttempts;
         this.attemptsLeft = maxAttempts;
-        this.step = hasPin ? Step.ENTER : Step.CREATE;
+        this.step = step;
+        this.changing = changing;
+    }
+
+    /**
+     * A player who changes their PIN: they enter the current one, which proves it is them, and then choose a
+     * new one, typed twice. The new PIN may have another length than the old one.
+     *
+     * @param oldLength the digits of the current PIN
+     * @param newLength the digits of the new PIN
+     */
+    public static PinEntry changing(int oldLength, int newLength, int maxAttempts) {
+        return new PinEntry(oldLength, newLength, maxAttempts, Step.ENTER, true);
+    }
+
+    /** Whether this is a change of PIN, in which the current one is entered first and the player is already in. */
+    public boolean isChanging() {
+        return changing;
     }
 
     public Step step() {
@@ -99,7 +125,7 @@ public final class PinEntry {
         String pin = typed.toString();
         typed.setLength(0);
         return switch (step) {
-            case ENTER -> verifier.test(pin) ? Outcome.VERIFIED : failedAttempt();
+            case ENTER -> verifier.test(pin) ? verified() : failedAttempt();
             case CREATE -> {
                 first = pin;
                 step = Step.CONFIRM;
@@ -115,6 +141,16 @@ public final class PinEntry {
                 yield Outcome.MISMATCH;
             }
         };
+    }
+
+    /** The current PIN was right: that is the end when logging in, and the start of choosing a new one when changing. */
+    private Outcome verified() {
+        if (!changing) {
+            return Outcome.VERIFIED;
+        }
+        length = newLength;
+        step = Step.CREATE;
+        return Outcome.OLD_VERIFIED;
     }
 
     private Outcome failedAttempt() {

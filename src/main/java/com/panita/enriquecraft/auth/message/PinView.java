@@ -42,7 +42,9 @@ public final class PinView {
     private Texts ofStep(PinFlow flow) {
         PinEntry.Step step = flow.step();
         return switch (step) {
-            case ENTER -> texts(AuthMessages.Pin.ENTER_TITLE,
+            case ENTER -> flow.changing()
+                    ? texts(AuthMessages.Pin.CHANGE_TITLE, Message.plain(AuthMessages.Pin.CHANGE_HINT))
+                    : texts(AuthMessages.Pin.ENTER_TITLE,
                     Message.plain(AuthMessages.Pin.ENTER_HINT).with("name", flow.playerName()));
             case CREATE -> texts(AuthMessages.Pin.CREATE_TITLE,
                     Message.plain(AuthMessages.Pin.CREATE_HINT).with("length", flow.length()));

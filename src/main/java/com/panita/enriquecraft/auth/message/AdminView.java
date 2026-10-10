@@ -31,6 +31,14 @@ public final class AdminView {
         messenger.send(source, Message.error(AuthMessages.Commands.NOT_WAITING).with("name", name).prefixed());
     }
 
+    public void premiumHasNoPin(CommandSourceStack source) {
+        messenger.send(source, Message.info(AuthMessages.Commands.PREMIUM_HAS_NO_PIN).prefixed());
+    }
+
+    public void noPinYet(CommandSourceStack source) {
+        messenger.send(source, Message.error(AuthMessages.Commands.NO_PIN_YET).prefixed());
+    }
+
     public void premiumHasNoSession(CommandSourceStack source) {
         messenger.send(source, Message.info(AuthMessages.Commands.LOGGED_OUT_PREMIUM).prefixed());
     }

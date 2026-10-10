@@ -11,6 +11,7 @@ import com.panita.enriquecraft.auth.service.AccountService;
 import com.panita.enriquecraft.auth.service.AttemptLimiter;
 import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.auth.service.LoginGate;
+import com.panita.enriquecraft.auth.service.PinChanges;
 import com.panita.enriquecraft.auth.service.PinHasher;
 import com.panita.enriquecraft.auth.service.PlayerDataMigration;
 import com.panita.enriquecraft.auth.service.PremiumLookup;
@@ -62,6 +63,7 @@ public final class AuthModule implements EnriquecraftModule {
         services.register(LoginGate.class, gate);
         services.register(RefusalView.class, refusals);
         services.register(HeldPlayers.class, held);
+        services.register(PinChanges.class, new PinChanges(accounts, config, screens, services.get(Messenger.class)));
         services.register(WhitelistHandler.class, whitelist);
         services.register(AdminView.class, new AdminView(services.get(Messenger.class)));
         AuthHooks.install(gate, refusals, held, whitelist);

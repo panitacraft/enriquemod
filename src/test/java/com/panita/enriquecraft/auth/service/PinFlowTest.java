@@ -172,6 +172,41 @@ class PinFlowTest {
     }
 
     @Test
+    void changingAPinStoresTheNewOneOnlyAfterTheOldOneAndTheConfirmation() {
+        accounts.setPin(PLAYER, "Tezzlar", "1234");
+        PinFlow flow = new PinFlow(PLAYER, "Tezzlar", PinEntry.changing(4, 4, 3), accounts, listener);
+        assertTrue(flow.changing());
+
+        type(flow, "1234");
+        assertEquals(PinFlow.Phase.ADVANCE, flow.phase());
+        assertTrue(accounts.verify(PLAYER, "1234"));
+        waitTicks(flow, PinFlow.ADVANCE_TICKS);
+        assertEquals(PinEntry.Step.CREATE, flow.step());
+
+        type(flow, "9876");
+        waitTicks(flow, PinFlow.ADVANCE_TICKS);
+        type(flow, "9876");
+
+        assertTrue(flow.success());
+        assertTrue(accounts.verify(PLAYER, "9876"));
+        assertFalse(accounts.verify(PLAYER, "1234"));
+        waitTicks(flow, PinFlow.SUCCESS_TICKS);
+        assertEquals(1, accepted);
+    }
+
+    @Test
+    void aWrongCurrentPinWhileChangingLeavesThePinAsItWas() {
+        accounts.setPin(PLAYER, "Tezzlar", "1234");
+        PinFlow flow = new PinFlow(PLAYER, "Tezzlar", PinEntry.changing(4, 4, 1), accounts, listener);
+
+        type(flow, "0000");
+        waitTicks(flow, PinFlow.WRONG_TICKS);
+
+        assertEquals(1, lockedOut);
+        assertTrue(accounts.verify(PLAYER, "1234"));
+    }
+
+    @Test
     void choosingAPinShowsNoAttempts() {
         assertEquals(0, choosing().maxAttempts());
         assertEquals(3, entering().maxAttempts());

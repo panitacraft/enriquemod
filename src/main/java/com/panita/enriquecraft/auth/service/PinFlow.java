@@ -87,7 +87,7 @@ public final class PinFlow {
                 created = true;
                 succeed();
             }
-            case CONFIRM_NEEDED -> enter(Phase.ADVANCE, ADVANCE_TICKS);
+            case CONFIRM_NEEDED, OLD_VERIFIED -> enter(Phase.ADVANCE, ADVANCE_TICKS);
             case WRONG -> fail(Failure.WRONG_PIN);
             case MISMATCH -> fail(Failure.MISMATCH);
             case LOCKED_OUT -> {
@@ -177,6 +177,11 @@ public final class PinFlow {
     /** Whether the PIN that was accepted was just chosen, as opposed to entered. */
     public boolean wasCreated() {
         return created;
+    }
+
+    /** Whether the player is changing their PIN rather than logging in. */
+    public boolean changing() {
+        return entry.isChanging();
     }
 
     public String playerName() {

@@ -13,6 +13,8 @@ public final class AuthMessages {
         public static final String SCREEN_TITLE = "<bold><color #E040FB>P</color><color #E33EEE>A</color><color #E63CE1>N</color><color #E93AD4>I</color><color #EC38C7>T</color><color #F036BA>A</color><color #F335AC>C</color><color #F6339F>R</color><color #F93192>A</color><color #FC2F85>F</color><color #FF2D78>T</color></bold>";
 
         public static final String ENTER_TITLE = "Ingresa tu PIN";
+        public static final String CHANGE_TITLE = "Ingresa tu PIN actual";
+        public static final String CHANGE_HINT = "<gray>Luego elegirás uno nuevo";
         public static final String ENTER_HINT = "<gray>Hola, <white>{name}";
         public static final String CREATE_TITLE = "Crea tu PIN";
         public static final String CREATE_HINT = "<gray>Elige <white>{length}</white> dígitos que recuerdes";
@@ -69,6 +71,11 @@ public final class AuthMessages {
         public static final String MODE_DESCRIPTION = "Cambia a un jugador de la lista blanca entre cuenta premium y con PIN";
         public static final String LOGOUT_DESCRIPTION = "Cierra tu sesión: tendrás que ingresar tu PIN al volver a entrar";
 
+        public static final String PIN_DESCRIPTION = "Administra tu PIN de acceso";
+        public static final String CHANGE_DESCRIPTION = "Cambia tu PIN: escribes el actual y luego eliges uno nuevo";
+        public static final String CHANGE_REFUSED = "Demasiados intentos con el PIN actual: tu PIN no se cambió.";
+        public static final String PREMIUM_HAS_NO_PIN = "Las cuentas premium no usan PIN: entras con tu cuenta de Microsoft.";
+        public static final String NO_PIN_YET = "Todavía no tienes un PIN guardado.";
         public static final String RESET_DONE = "PIN de <bold>{name}</bold> borrado. Elegirá uno nuevo la próxima vez que entre.";
         public static final String NO_ACCOUNT = "<bold>{name}</bold> no tiene un PIN guardado.";
         public static final String FORCED = "<bold>{name}</bold> entró sin PIN.";
@@ -90,6 +97,7 @@ public final class AuthMessages {
     public static final class Refusal {
         public static final String NOT_WHITELISTED = "<red>No estás en la lista blanca de este servidor.";
         public static final String BLOCKED = "<red>Demasiados intentos fallidos.</red>\n<gray>Vuelve a intentarlo en <white>{minutes}</white> minuto(s).";
+        public static final String ALREADY_ONLINE = "<red>Ya hay alguien conectado con ese nombre.</red>\n<gray>Si eres tú, espera unos segundos y vuelve a intentarlo.";
         public static final String UNAVAILABLE = "<red>No se pudo verificar tu cuenta con Mojang.</red>\n<gray>Inténtalo de nuevo en un momento.";
         public static final String TOO_MANY_ATTEMPTS = "<red>PIN incorrecto demasiadas veces.</red>\n<gray>Vuelve a entrar para intentarlo de nuevo.";
         public static final String TIMEOUT = "<red>Tardaste demasiado en ingresar tu PIN.</red>\n<gray>Vuelve a entrar para intentarlo de nuevo.";
