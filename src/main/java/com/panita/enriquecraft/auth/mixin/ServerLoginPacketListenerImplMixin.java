@@ -2,8 +2,10 @@ package com.panita.enriquecraft.auth.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.authlib.GameProfile;
 import com.panita.enriquecraft.auth.AuthHooks;
 import com.panita.enriquecraft.auth.data.AuthMode;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.login.ServerboundHelloPacket;
@@ -22,7 +24,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Makes the server ask for a Microsoft login only from the players who have an account, instead of from
  * everyone or no one. When a player says their name, the decision is made first (it may take a moment,
  * so the hello is parked and replayed); then vanilla runs as usual, with its "does this server
- * authenticate players" question answered for this connection alone.
+ * authenticate players" question answered for this connection alone, and a player without an account is
+ * let in under the spelling of their name that the whitelist has, since the offline UUID depends on it.
  */
 @Mixin(ServerLoginPacketListenerImpl.class)
 public abstract class ServerLoginPacketListenerImplMixin {
@@ -37,6 +40,9 @@ public abstract class ServerLoginPacketListenerImplMixin {
 
     @Unique
     private volatile @Nullable AuthMode enriquecraft$mode;
+
+    @Unique
+    private volatile @Nullable String enriquecraft$name;
 
     @Unique
     private boolean enriquecraft$deciding;
@@ -59,7 +65,8 @@ public abstract class ServerLoginPacketListenerImplMixin {
             return;
         }
         enriquecraft$deciding = true;
-        hooks.admit(server, connection, packet.name(), mode -> {
+        hooks.admit(server, connection, packet.name(), (mode, name) -> {
+            enriquecraft$name = name;
             enriquecraft$mode = mode;
             handleHello(packet);
         }, this::disconnect);
@@ -70,5 +77,12 @@ public abstract class ServerLoginPacketListenerImplMixin {
     private boolean enriquecraft$authenticateOnlyPremium(MinecraftServer instance, Operation<Boolean> original) {
         AuthMode mode = enriquecraft$mode;
         return mode == null ? original.call(instance) : mode == AuthMode.PREMIUM;
+    }
+
+    @WrapOperation(method = "handleHello",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/core/UUIDUtil;createOfflineProfile(Ljava/lang/String;)Lcom/mojang/authlib/GameProfile;"))
+    private GameProfile enriquecraft$offlineUnderTheWhitelistsSpelling(String typed, Operation<GameProfile> original) {
+        String name = enriquecraft$name;
+        return original.call(name == null ? typed : name);
     }
 }

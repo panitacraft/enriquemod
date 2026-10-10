@@ -40,6 +40,11 @@ public final class AccountService {
         return store.get().stream().filter(account -> account.name().equalsIgnoreCase(name)).findFirst();
     }
 
+    /** The names of the players who have an account, for suggestions. */
+    public List<String> names() {
+        return store.get().stream().map(AuthAccount::name).sorted(String.CASE_INSENSITIVE_ORDER).toList();
+    }
+
     /** The number of digits of the player's PIN, or empty when they have not chosen one. */
     public Optional<Integer> pinLength(UUID id) {
         return find(id).flatMap(AuthAccount::pin).map(PinCredential::length);

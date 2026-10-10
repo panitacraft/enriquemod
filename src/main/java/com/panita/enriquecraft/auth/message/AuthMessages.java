@@ -43,6 +43,42 @@ public final class AuthMessages {
         }
     }
 
+    public static final class Whitelist {
+        public static final String MODE_PREMIUM = "premium";
+        public static final String MODE_CRACKED = "con PIN";
+
+        public static final String ADDED = "<bold>{name}</bold> añadido a la lista blanca como cuenta <green>{mode}</green>.";
+        public static final String REPLACED = "<bold>{name}</bold> ahora es una cuenta <green>{mode}</green>. Datos del jugador copiados: <white>{copied}</white> archivo(s).";
+        public static final String REPLACED_KEPT = " Ya existían <white>{kept}</white> del nuevo modo y no se tocaron.";
+        public static final String UNCHANGED = "<bold>{name}</bold> ya está en la lista blanca como cuenta <green>{mode}</green>.";
+        public static final String NOT_PREMIUM = "No existe ninguna cuenta de Microsoft llamada <bold>{name}</bold>. Usa <white>cracked</white> si no tiene cuenta.";
+        public static final String LOOKUP_FAILED = "No se pudo consultar a Mojang sobre <bold>{name}</bold>. Indica el modo: <white>cracked</white> o <white>premium</white>.";
+        public static final String MUST_BE_OFFLINE = "<bold>{name}</bold> está conectado. Desconéctalo primero para cambiar su modo, así sus datos se copian completos.";
+        public static final String INVALID_NAME = "<bold>{name}</bold> no es un nombre de jugador válido.";
+        public static final String REMOVED = "<bold>{name}</bold> eliminado de la lista blanca.";
+        public static final String NOT_LISTED = "<bold>{name}</bold> no está en la lista blanca.";
+
+        private Whitelist() {
+        }
+    }
+
+    public static final class Commands {
+        public static final String AUTH_DESCRIPTION = "Administra el acceso de los jugadores: PIN, sesiones y modo de cuenta";
+        public static final String RESET_DESCRIPTION = "Borra el PIN y la sesión de un jugador; elegirá un PIN nuevo al entrar";
+        public static final String FORCE_LOGIN_DESCRIPTION = "Deja entrar sin PIN, por esta vez, a un jugador que espera";
+        public static final String MODE_DESCRIPTION = "Cambia a un jugador de la lista blanca entre cuenta premium y con PIN";
+        public static final String LOGOUT_DESCRIPTION = "Cierra tu sesión: tendrás que ingresar tu PIN al volver a entrar";
+
+        public static final String RESET_DONE = "PIN de <bold>{name}</bold> borrado. Elegirá uno nuevo la próxima vez que entre.";
+        public static final String NO_ACCOUNT = "<bold>{name}</bold> no tiene un PIN guardado.";
+        public static final String FORCED = "<bold>{name}</bold> entró sin PIN.";
+        public static final String NOT_WAITING = "<bold>{name}</bold> no está esperando su PIN.";
+        public static final String LOGGED_OUT_PREMIUM = "Las cuentas premium no usan PIN: no hay sesión que cerrar.";
+
+        private Commands() {
+        }
+    }
+
     public static final class Session {
         public static final String REMEMBERED = "<gray>Tu sesión sigue activa: no necesitas ingresar tu PIN.";
 

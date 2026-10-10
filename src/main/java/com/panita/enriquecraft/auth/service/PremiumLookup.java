@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
@@ -58,6 +59,7 @@ public final class PremiumLookup {
     private static final String ENDPOINT = "https://api.minecraftservices.com/minecraft/profile/lookup/name/";
     private static final Duration TIMEOUT = Duration.ofSeconds(4);
     private static final Duration BUDGET_WINDOW = Duration.ofMinutes(10);
+    private static final Pattern ACCOUNT_NAME = Pattern.compile("[A-Za-z0-9_]{1,16}");
 
     private final Fetcher fetcher;
     private final Supplier<Instant> clock;
@@ -85,9 +87,13 @@ public final class PremiumLookup {
     }
 
     /**
-     * @param name a valid player name; the caller has already checked it, which is what keeps it safe to put in a URL
+     * @param name a player name as the game accepts them, which allows more than a Microsoft account may have
      */
     public CompletableFuture<Result> lookup(String name) {
+        // Only these names exist at Mojang, and anything else could change where the question goes.
+        if (!ACCOUNT_NAME.matcher(name).matches()) {
+            return CompletableFuture.completedFuture(new Result.Missing());
+        }
         String key = name.toLowerCase(Locale.ROOT);
         Cached cached = cache.get(key);
         if (cached != null && cached.expiresAt().isAfter(clock.get())) {

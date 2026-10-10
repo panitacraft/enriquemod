@@ -81,6 +81,15 @@ class PremiumLookupTest {
     }
 
     @Test
+    void namesNoAccountCanHaveAreMissingWithoutAskingAnyone() {
+        for (String name : new String[]{"../profile", "a?b", "a/b", "ñandú", "", "a".repeat(17), "with space"}) {
+            assertInstanceOf(PremiumLookup.Result.Missing.class, lookup.lookup(name).join(), name);
+        }
+
+        assertEquals(0, calls.get());
+    }
+
+    @Test
     void aFailingFetchIsUnavailable() {
         PremiumLookup failing = new PremiumLookup(name -> CompletableFuture.failedFuture(new RuntimeException("down")),
                 () -> now, () -> Duration.ofMinutes(30), () -> 500);

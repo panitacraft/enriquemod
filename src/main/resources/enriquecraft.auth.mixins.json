@@ -4,10 +4,12 @@
   "package": "com.panita.enriquecraft.auth.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "CommandNodeAccessor",
     "PacketUtilsMixin",
     "PlayerListMixin",
     "ServerGamePacketListenerImplMixin",
-    "ServerLoginPacketListenerImplMixin"
+    "ServerLoginPacketListenerImplMixin",
+    "WhitelistCommandMixin"
   ],
   "injectors": {
     "defaultRequire": 1

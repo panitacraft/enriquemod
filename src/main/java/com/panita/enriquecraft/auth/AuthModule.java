@@ -1,15 +1,20 @@
 package com.panita.enriquecraft.auth;
 
+import com.panita.enriquecraft.auth.commands.WhitelistHandler;
 import com.panita.enriquecraft.auth.config.AuthConfig;
 import com.panita.enriquecraft.auth.gui.PinMenus;
+import com.panita.enriquecraft.auth.message.AdminView;
 import com.panita.enriquecraft.auth.message.PinView;
 import com.panita.enriquecraft.auth.message.RefusalView;
+import com.panita.enriquecraft.auth.message.WhitelistView;
 import com.panita.enriquecraft.auth.service.AccountService;
 import com.panita.enriquecraft.auth.service.AttemptLimiter;
 import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.auth.service.LoginGate;
 import com.panita.enriquecraft.auth.service.PinHasher;
+import com.panita.enriquecraft.auth.service.PlayerDataMigration;
 import com.panita.enriquecraft.auth.service.PremiumLookup;
+import com.panita.enriquecraft.auth.service.WhitelistAdmin;
 import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
@@ -48,12 +53,17 @@ public final class AuthModule implements EnriquecraftModule {
         HeldPlayers held = new HeldPlayers(accounts, limiter, config, refusals, screens,
                 services.get(ClientCapabilities.class), services.get(Messenger.class));
 
+        WhitelistHandler whitelist = new WhitelistHandler(new WhitelistAdmin(lookup), new PlayerDataMigration(),
+                new WhitelistView(services.get(Messenger.class)));
+
         services.register(PinHasher.class, hasher);
         services.register(AccountService.class, accounts);
         services.register(AttemptLimiter.class, limiter);
         services.register(LoginGate.class, gate);
         services.register(RefusalView.class, refusals);
         services.register(HeldPlayers.class, held);
-        AuthHooks.install(gate, refusals, held);
+        services.register(WhitelistHandler.class, whitelist);
+        services.register(AdminView.class, new AdminView(services.get(Messenger.class)));
+        AuthHooks.install(gate, refusals, held, whitelist);
     }
 }

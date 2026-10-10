@@ -18,23 +18,18 @@ public final class WhitelistModes {
     }
 
     /**
-     * The mode of a name according to the whitelist and the ops, or empty when neither lists it. When
-     * entries disagree, a premium one wins: it demands real proof of the account, so it is the safer reading.
+     * The entry that rules a name according to the whitelist and the ops, or empty when neither lists it.
+     * When entries disagree, a premium one wins: it demands real proof of the account, so it is the safer reading.
      */
-    public static Optional<AuthMode> listedMode(PlayerList players, String name) {
+    public static Optional<NameAndId> listed(PlayerList players, String name) {
         return fromEntries(Stream.concat(
                 players.getWhiteList().getEntries().stream().map(entry -> entry.getUser()),
                 players.getOps().getEntries().stream().map(entry -> entry.getUser())).toList(), name);
     }
 
-    static Optional<AuthMode> fromEntries(Collection<NameAndId> entries, String name) {
-        Collection<AuthMode> modes = entries.stream()
-                .filter(entry -> entry.name().equalsIgnoreCase(name))
-                .map(AuthMode::of)
-                .toList();
-        if (modes.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(modes.contains(AuthMode.PREMIUM) ? AuthMode.PREMIUM : AuthMode.CRACKED);
+    static Optional<NameAndId> fromEntries(Collection<NameAndId> entries, String name) {
+        Collection<NameAndId> matching = entries.stream().filter(entry -> entry.name().equalsIgnoreCase(name)).toList();
+        return matching.stream().filter(entry -> AuthMode.of(entry) == AuthMode.PREMIUM).findFirst()
+                .or(() -> matching.stream().findFirst());
     }
 }

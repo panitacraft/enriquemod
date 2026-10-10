@@ -2,6 +2,7 @@ package com.panita.enriquecraft.auth.service;
 
 import com.panita.enriquecraft.auth.data.AuthMode;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.PlayerList;
 
 import java.time.Duration;
@@ -16,8 +17,13 @@ import java.util.concurrent.CompletableFuture;
 public final class LoginGate {
 
     public sealed interface Verdict {
-        /** The player may continue, proving themselves the given way. */
-        record Proceed(AuthMode mode) implements Verdict {
+        /**
+         * The player may continue, proving themselves the given way.
+         *
+         * @param name the name as the whitelist spells it; a PIN player is let in under it whatever capitalization
+         *             they typed, since the capitalization is part of their UUID
+         */
+        record Proceed(AuthMode mode, String name) implements Verdict {
         }
 
         /** The address failed too many PINs recently. */
@@ -48,25 +54,25 @@ public final class LoginGate {
         return CompletableFuture.supplyAsync(() -> {
             PlayerList players = server.getPlayerList();
             return plan(limiter.blockedFor(address), players.isUsingWhitelist(),
-                    WhitelistModes.listedMode(players, name), name);
+                    WhitelistModes.listed(players, name), name);
         }, server).thenCompose(plan -> plan);
     }
 
     /** What to do given what is known about the address and the name. */
-    CompletableFuture<Verdict> plan(Optional<Duration> blocked, boolean usingWhitelist, Optional<AuthMode> listed,
+    CompletableFuture<Verdict> plan(Optional<Duration> blocked, boolean usingWhitelist, Optional<NameAndId> listed,
                                     String name) {
         if (blocked.isPresent()) {
             return CompletableFuture.completedFuture(new Verdict.Blocked(blocked.get()));
         }
         if (listed.isPresent()) {
-            return CompletableFuture.completedFuture(new Verdict.Proceed(listed.get()));
+            return CompletableFuture.completedFuture(new Verdict.Proceed(AuthMode.of(listed.get()), listed.get().name()));
         }
         if (usingWhitelist) {
             return CompletableFuture.completedFuture(new Verdict.NotWhitelisted());
         }
         return lookup.lookup(name).thenApply(result -> switch (result) {
-            case PremiumLookup.Result.Found found -> new Verdict.Proceed(AuthMode.PREMIUM);
-            case PremiumLookup.Result.Missing missing -> new Verdict.Proceed(AuthMode.CRACKED);
+            case PremiumLookup.Result.Found found -> new Verdict.Proceed(AuthMode.PREMIUM, found.profile().name());
+            case PremiumLookup.Result.Missing missing -> new Verdict.Proceed(AuthMode.CRACKED, name);
             case PremiumLookup.Result.Unavailable unavailable -> new Verdict.Unavailable();
         });
     }

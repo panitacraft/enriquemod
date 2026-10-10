@@ -16,6 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class LoginGateTest {
 
+    private static final NameAndId PREMIUM = new NameAndId(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360");
+    private static final NameAndId CRACKED = NameAndId.createOffline("Tezzlar");
+
     private final AtomicInteger asked = new AtomicInteger();
     private PremiumLookup.Result answer = new PremiumLookup.Result.Missing();
     private final Instant now = Instant.parse("2026-10-10T12:00:00Z");
@@ -24,21 +27,21 @@ class LoginGateTest {
         return CompletableFuture.completedFuture(answer);
     }, () -> now, () -> Duration.ofMinutes(30), () -> 500));
 
-    private LoginGate.Verdict plan(Optional<Duration> blocked, boolean whitelist, Optional<AuthMode> listed) {
-        return gate.plan(blocked, whitelist, listed, "Someone").join();
+    private LoginGate.Verdict plan(Optional<Duration> blocked, boolean whitelist, Optional<NameAndId> listed) {
+        return gate.plan(blocked, whitelist, listed, "typed").join();
     }
 
     @Test
     void aBlockedAddressIsRefusedBeforeAnythingElse() {
-        LoginGate.Verdict verdict = plan(Optional.of(Duration.ofMinutes(5)), true, Optional.of(AuthMode.PREMIUM));
+        LoginGate.Verdict verdict = plan(Optional.of(Duration.ofMinutes(5)), true, Optional.of(PREMIUM));
 
         assertEquals(new LoginGate.Verdict.Blocked(Duration.ofMinutes(5)), verdict);
     }
 
     @Test
-    void aListedNameProceedsWithItsModeAndNeverAsksMojang() {
-        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED), plan(Optional.empty(), true, Optional.of(AuthMode.CRACKED)));
-        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM), plan(Optional.empty(), false, Optional.of(AuthMode.PREMIUM)));
+    void aListedNameProceedsWithItsModeAndSpellingAndNeverAsksMojang() {
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED, "Tezzlar"), plan(Optional.empty(), true, Optional.of(CRACKED)));
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM, "Javithor360"), plan(Optional.empty(), false, Optional.of(PREMIUM)));
         assertEquals(0, asked.get());
     }
 
@@ -49,12 +52,12 @@ class LoginGateTest {
     }
 
     @Test
-    void withTheWhitelistOffMojangDecidesTheMode() {
-        answer = new PremiumLookup.Result.Found(new NameAndId(UUID.randomUUID(), "Someone"));
-        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM), plan(Optional.empty(), false, Optional.empty()));
+    void withTheWhitelistOffMojangDecidesTheModeAndTheSpelling() {
+        answer = new PremiumLookup.Result.Found(PREMIUM);
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.PREMIUM, "Javithor360"), gate.plan(Optional.empty(), false, Optional.empty(), "javithor360").join());
 
         answer = new PremiumLookup.Result.Missing();
-        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED), gate.plan(Optional.empty(), false, Optional.empty(), "Other").join());
+        assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED, "Other"), gate.plan(Optional.empty(), false, Optional.empty(), "Other").join());
     }
 
     @Test
