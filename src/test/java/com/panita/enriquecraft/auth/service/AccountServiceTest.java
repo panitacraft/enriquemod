@@ -78,6 +78,18 @@ class AccountServiceTest {
     }
 
     @Test
+    void theRemainingTimeOfASessionIsKnownOnlyFromItsAddress() {
+        service.setPin(PLAYER, "Tezzlar", "1234");
+        service.startSession(PLAYER, "10.0.0.1", Duration.ofHours(24));
+        now = now.plus(Duration.ofHours(6));
+
+        assertEquals(Optional.of(Duration.ofHours(18)), service.sessionRemaining(PLAYER, "10.0.0.1"));
+        assertEquals(Optional.empty(), service.sessionRemaining(PLAYER, "10.0.0.2"));
+        now = now.plus(Duration.ofHours(19));
+        assertEquals(Optional.empty(), service.sessionRemaining(PLAYER, "10.0.0.1"));
+    }
+
+    @Test
     void endingASessionAndResettingForgetThem() {
         service.setPin(PLAYER, "Tezzlar", "1234");
         service.startSession(PLAYER, "10.0.0.1", Duration.ofHours(24));

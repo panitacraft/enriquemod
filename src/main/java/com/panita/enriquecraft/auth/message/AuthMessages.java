@@ -10,7 +10,7 @@ public final class AuthMessages {
     }
 
     public static final class Pin {
-        public static final String SCREEN_TITLE = "<bold><color #E040FB>P</color><color #E33EEE>A</color><color #E63CE1>N</color><color #E93AD4>I</color><color #EC38C7>T</color><color #F036BA>A</color><color #F335AC>C</color><color #F6339F>R</color><color #F93192>A</color><color #FC2F85>F</color><color #FF2D78>T</color></bold>";
+        public static final String SCREEN_TITLE = "{{PREFIX}}";
 
         public static final String ENTER_TITLE = "Ingresa tu PIN";
         public static final String CHANGE_TITLE = "Ingresa tu PIN actual";
@@ -88,10 +88,19 @@ public final class AuthMessages {
         }
     }
 
-    public static final class Session {
-        public static final String REMEMBERED = "<gray>Tu sesión sigue activa: no necesitas ingresar tu PIN.";
+    public static final class Login {
+        public static final String WELCOME_TITLE = "{{PREFIX}}";
+        public static final String WELCOME_SUBTITLE = "<gray>Bienvenido de nuevo";
+        public static final String AUTOMATIC = "<green>Sesión iniciada automáticamente.";
+        public static final String SESSION_ACTIVE = "<green>Sesión vigente durante <white>{time}</white>.";
 
-        private Session() {
+        /** Shown to players without the client companion before the PIN screen opens. */
+        public static final String INTRO_CREATE_TITLE = "<b><red>REGISTRA TU PIN";
+        public static final String INTRO_CREATE_SUBTITLE = "<gray>Elige <white>{length}</white> dígitos para definir tu clave de acceso";
+        public static final String INTRO_ENTER_TITLE = "<b><red>INGRESA TU PIN";
+        public static final String INTRO_ENTER_SUBTITLE = "<gray>Escribe tu clave de acceso para continuar";
+
+        private Login() {
         }
     }
 

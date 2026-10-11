@@ -6,6 +6,7 @@ import com.panita.enriquecraft.auth.gui.PinMenus;
 import com.panita.enriquecraft.auth.message.AdminView;
 import com.panita.enriquecraft.auth.message.AuthMessages;
 import com.panita.enriquecraft.auth.message.PinView;
+import com.panita.enriquecraft.auth.message.LoginView;
 import com.panita.enriquecraft.auth.message.RefusalView;
 import com.panita.enriquecraft.auth.message.WhitelistView;
 import com.panita.enriquecraft.auth.service.AccountService;
@@ -59,7 +60,7 @@ public final class AuthModule implements EnriquecraftModule {
         RefusalView refusals = new RefusalView(services.get(MessageFormatter.class));
         PinMenus screens = new PinMenus(ui, new PinView(ui.factory(), config));
         HeldPlayers held = new HeldPlayers(accounts, limiter, config, refusals, screens,
-                services.get(ClientCapabilities.class), services.get(Messenger.class));
+                services.get(ClientCapabilities.class), new LoginView(services.get(Messenger.class)));
 
         LoginGate gate = new LoginGate(limiter, lookup, held::isHeld);
         WhitelistHandler whitelist = new WhitelistHandler(new WhitelistAdmin(lookup), new PlayerDataMigration(),

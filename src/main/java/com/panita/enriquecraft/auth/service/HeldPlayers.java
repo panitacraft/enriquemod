@@ -3,10 +3,8 @@ package com.panita.enriquecraft.auth.service;
 import com.panita.enriquecraft.auth.config.AuthConfig;
 import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.auth.data.HeldState;
-import com.panita.enriquecraft.auth.message.AuthMessages;
+import com.panita.enriquecraft.auth.message.LoginView;
 import com.panita.enriquecraft.auth.message.RefusalView;
-import com.panita.enriquecraft.core.message.Message;
-import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.network.ClientFeature;
 import net.minecraft.network.chat.Component;
@@ -44,6 +42,8 @@ public final class HeldPlayers {
     private static final int ANNOUNCEMENT_WAIT_TICKS = 20;
     private static final int REOPEN_DELAY_TICKS = 3;
     private static final int TICKS_PER_SECOND = 20;
+    /** The explanation stays on screen at least this long, even when the chest opens at once. */
+    private static final int MIN_INTRO_SECONDS = 2;
 
     /** The only things a held player's client may say; everything else is dropped before it is handled. */
     private static final Set<Class<?>> ALLOWED_PACKETS = Set.of(
@@ -59,6 +59,7 @@ public final class HeldPlayers {
         private PinScreens.Screen screen;
         private int ticks;
         private int reopenAt = -1;
+        private int introUntil = -1;
         private boolean begun;
         private boolean kicked;
         private volatile boolean dismissed;
@@ -77,17 +78,17 @@ public final class HeldPlayers {
     private final RefusalView refusals;
     private final PinScreens screens;
     private final ClientCapabilities capabilities;
-    private final Messenger messenger;
+    private final LoginView loginView;
 
     public HeldPlayers(AccountService accounts, AttemptLimiter limiter, AuthConfig config, RefusalView refusals,
-                       PinScreens screens, ClientCapabilities capabilities, Messenger messenger) {
+                       PinScreens screens, ClientCapabilities capabilities, LoginView loginView) {
         this.accounts = accounts;
         this.limiter = limiter;
         this.config = config;
         this.refusals = refusals;
         this.screens = screens;
         this.capabilities = capabilities;
-        this.messenger = messenger;
+        this.loginView = loginView;
     }
 
     public boolean isHeld(ServerPlayer player) {
@@ -138,7 +139,7 @@ public final class HeldPlayers {
     public void begin(ServerPlayer player) {
         Held holder = held.get(player.getUUID());
         if (holder == null) {
-            welcomeWithSession(player);
+            welcomeWithoutPin(player);
             return;
         }
         // A leftover position means the server stopped while they waited: that one is the real one.
@@ -150,18 +151,24 @@ public final class HeldPlayers {
     }
 
     /**
-     * A player who logs in with a PIN and is not held came in on a remembered session: they are told so. One
-     * that a crash left in the waiting spot goes back to where they really were.
+     * A player who is not held came in without a PIN: a premium one with their Microsoft account, one with a PIN on
+     * a remembered session. Either is told so. One that a crash left in the waiting spot goes back to where they
+     * really were.
      */
-    private void welcomeWithSession(ServerPlayer player) {
+    private void welcomeWithoutPin(ServerPlayer player) {
         UUID id = player.getUUID();
-        if (AuthMode.of(id, player.getGameProfile().name()) != AuthMode.CRACKED) {
+        if (!player.level().getServer().isDedicatedServer()) {
+            return;
+        }
+        if (AuthMode.of(id, player.getGameProfile().name()) == AuthMode.PREMIUM) {
+            loginView.autoLogin(player);
             return;
         }
         if (accounts.heldAt(id).isPresent()) {
             restore(player);
         }
-        messenger.sendActionBar(player, Message.info(AuthMessages.Session.REMEMBERED));
+        String ip = Addresses.of(player.connection.getRemoteAddress());
+        accounts.sessionRemaining(id, ip).ifPresent(remaining -> loginView.sessionActive(player, remaining));
     }
 
     public void tick() {
@@ -186,9 +193,8 @@ public final class HeldPlayers {
 
     private void keepScreenOpen(Held holder) {
         if (holder.screen == null) {
-            boolean announced = capabilities.supports(holder.player.getUUID(), ClientFeature.CUSTOM_UI);
-            if (holder.player.connection.hasClientLoaded() && (announced || holder.ticks >= ANNOUNCEMENT_WAIT_TICKS)) {
-                open(holder);
+            if (holder.player.connection.hasClientLoaded()) {
+                openOrIntroduce(holder);
             }
         } else if (holder.dismissed) {
             // Closing the screen does not get the player out of waiting: it comes back.
@@ -198,6 +204,28 @@ public final class HeldPlayers {
                 holder.reopenAt = -1;
                 open(holder);
             }
+        }
+    }
+
+    /**
+     * Opens the screen at once for a client that announced the companion. Any other client is first told what it is
+     * about to be asked, then gets the chest after the time the administrator chose.
+     */
+    private void openOrIntroduce(Held holder) {
+        if (capabilities.supports(holder.player.getUUID(), ClientFeature.CUSTOM_UI)) {
+            open(holder);
+            return;
+        }
+        if (holder.ticks < ANNOUNCEMENT_WAIT_TICKS) {
+            return;
+        }
+        if (holder.introUntil < 0) {
+            int seconds = config.introSeconds.get();
+            loginView.intro(holder.player, holder.flow, Duration.ofSeconds(Math.max(seconds, MIN_INTRO_SECONDS)));
+            holder.introUntil = holder.ticks + seconds * TICKS_PER_SECOND;
+        }
+        if (holder.ticks >= holder.introUntil) {
+            open(holder);
         }
     }
 
@@ -226,6 +254,11 @@ public final class HeldPlayers {
             holder.screen.close();
         }
         restore(holder.player);
+        if (remember) {
+            loginView.sessionActive(holder.player, Duration.ofHours(config.sessionHours.get()));
+        } else {
+            loginView.letIn(holder.player);
+        }
     }
 
     private void kick(Held holder, Component reason) {

@@ -80,6 +80,14 @@ public final class AccountService {
                 .orElse(false);
     }
 
+    /** How much longer the remembered login of a player lasts from this address, or empty when there is none. */
+    public Optional<Duration> sessionRemaining(UUID id, String address) {
+        Instant now = clock.get();
+        return find(id).flatMap(AuthAccount::session)
+                .filter(session -> session.isValidFor(hasher.fingerprint(address), now))
+                .map(session -> Duration.between(now, session.expiresAt()));
+    }
+
     /** Ends the remembered login. Returns whether there was an account. */
     public boolean endSession(UUID id) {
         return update(id, account -> account.withSession(Optional.empty()));
