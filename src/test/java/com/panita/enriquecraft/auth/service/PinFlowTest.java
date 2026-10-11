@@ -90,7 +90,7 @@ class PinFlowTest {
     void aWrongPinShakesAndShowsFullDotsUntilItClears() {
         PinFlow flow = entering();
 
-        type(flow, "0000");
+        type(flow, "9999");
 
         assertEquals(PinFlow.Phase.WRONG, flow.phase());
         assertEquals(PinFlow.Failure.WRONG_PIN, flow.failure());
@@ -106,7 +106,7 @@ class PinFlowTest {
     @Test
     void digitsAreIgnoredWhileAResultIsShown() {
         PinFlow flow = entering();
-        type(flow, "0000");
+        type(flow, "9999");
 
         type(flow, "1234");
         flow.backspace();
@@ -122,13 +122,13 @@ class PinFlowTest {
     void everyWrongPinIsReportedTheMomentItIsTypedNotWhenItsKickWouldCome() {
         PinFlow flow = entering();
 
-        type(flow, "0000");
+        type(flow, "9999");
         assertEquals(1, wrongPins);
         waitTicks(flow, PinFlow.WRONG_TICKS);
-        type(flow, "0000");
+        type(flow, "9999");
         assertEquals(2, wrongPins);
         waitTicks(flow, PinFlow.WRONG_TICKS);
-        type(flow, "0000");
+        type(flow, "9999");
 
         // The third is counted at once, while its result is still being shown and no kick has happened.
         assertEquals(3, wrongPins);
@@ -150,7 +150,7 @@ class PinFlowTest {
     void thirdWrongPinLocksOutAfterItIsShown() {
         PinFlow flow = entering();
         for (int attempt = 0; attempt < 3; attempt++) {
-            type(flow, "0000");
+            type(flow, "9999");
             waitTicks(flow, PinFlow.WRONG_TICKS);
         }
 
@@ -161,7 +161,7 @@ class PinFlowTest {
     @Test
     void aCorrectPinAfterMistakesIsAccepted() {
         PinFlow flow = entering();
-        type(flow, "0000");
+        type(flow, "9999");
         waitTicks(flow, PinFlow.WRONG_TICKS);
 
         type(flow, "1234");
@@ -248,7 +248,7 @@ class PinFlowTest {
         accounts.setPin(PLAYER, "Tezzlar", "1234");
         PinFlow flow = new PinFlow(PLAYER, "Tezzlar", PinEntry.changing(4, 4, 1), accounts, listener);
 
-        type(flow, "0000");
+        type(flow, "9999");
         waitTicks(flow, PinFlow.WRONG_TICKS);
 
         assertEquals(1, lockedOut);

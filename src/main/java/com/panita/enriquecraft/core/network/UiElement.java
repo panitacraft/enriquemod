@@ -219,7 +219,8 @@ public sealed interface UiElement {
     }
 
     /**
-     * The keypad that asks for a PIN: a row of dots, one per digit, that fill as digits are typed, and twelve keys.
+     * The keypad that asks for a PIN: a row of dots, one per digit, that fill as digits are typed, and eleven keys:
+     * the digits 1 to 9 (a PIN has no zero), backspace and clear.
      * The server owns the digits typed; the client companion only draws what it is told and reports key presses by
      * their ids. It also takes the physical keyboard (digits, numpad, Backspace) as presses of the same keys, and
      * does not let Escape close the screen. A chest has no place for it: a screen with a keypad describes its chest
@@ -233,16 +234,16 @@ public sealed interface UiElement {
      * @param maxAttempts  how many wrong PINs were allowed to begin with; zero draws no pips
      * @param shakes       counts the wrong PINs so far; the client companion shakes the dots whenever it grows
      * @param success      whether the PIN was accepted, which the client companion celebrates
-     * @param firstKeyId   the id of key {@code 0}; digits are the ids up to {@code +9}, then backspace at
-     *                     {@link #BACKSPACE} and clear at {@link #CLEAR}
+     * @param firstKeyId   the id of the key for digit 1; the digits 1 to 9 take the ids up to {@code +8}, then backspace
+     *                     at {@link #BACKSPACE} and clear at {@link #CLEAR}, counted from it
      */
     record PinPad(Component title, Component hint, int length, int filled, int attemptsLeft, int maxAttempts,
                   int shakes, boolean success, int firstKeyId) implements UiElement {
         public static final int MAX_LENGTH = 12;
         public static final int MAX_ATTEMPTS = 10;
-        public static final int KEYS = 12;
-        public static final int BACKSPACE = 10;
-        public static final int CLEAR = 11;
+        public static final int KEYS = 11;
+        public static final int BACKSPACE = 9;
+        public static final int CLEAR = 10;
 
         public PinPad {
             if (length < 1 || length > MAX_LENGTH || filled < 0 || filled > length || maxAttempts < 0

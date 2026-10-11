@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.auth.gui;
 
-import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.PinKeys;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
@@ -67,12 +66,10 @@ final class PinKeypadMenu extends AbstractContainerMenu {
     }
 
     private void press(int key) {
-        if (key < 0) {
-            return;
-        }
         switch (key) {
-            case UiElement.PinPad.BACKSPACE -> keys.backspace();
-            case UiElement.PinPad.CLEAR -> keys.clear();
+            case PinKeypadLayout.NO_KEY -> { }
+            case PinKeypadLayout.BACKSPACE_KEY -> keys.backspace();
+            case PinKeypadLayout.CLEAR_KEY -> keys.clear();
             default -> keys.digit(key);
         }
     }

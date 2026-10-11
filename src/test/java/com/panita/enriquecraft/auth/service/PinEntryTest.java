@@ -31,7 +31,7 @@ class PinEntryTest {
     void wrongPinsCostAttemptsAndTheLastOneLocksOut() {
         PinEntry entry = new PinEntry(4, 3, true);
 
-        assertEquals(Outcome.WRONG, type(entry, "0000", "1234"));
+        assertEquals(Outcome.WRONG, type(entry, "9999", "1234"));
         assertEquals(2, entry.attemptsLeft());
         assertEquals(0, entry.filled());
         assertEquals(Outcome.WRONG, type(entry, "1111", "1234"));
@@ -42,7 +42,7 @@ class PinEntryTest {
     @Test
     void aCorrectPinAfterMistakesStillWorks() {
         PinEntry entry = new PinEntry(4, 3, true);
-        type(entry, "0000", "1234");
+        type(entry, "9999", "1234");
 
         assertEquals(Outcome.VERIFIED, type(entry, "1234", "1234"));
     }
@@ -74,7 +74,7 @@ class PinEntryTest {
     @Test
     void backspaceAndClearRemoveTypedDigits() {
         PinEntry entry = new PinEntry(6, 3, true);
-        type(entry, "123", "000000");
+        type(entry, "123", "999999");
 
         entry.backspace();
         assertEquals(2, entry.filled());
@@ -109,8 +109,8 @@ class PinEntryTest {
     void aWrongCurrentPinWhileChangingCostsAttemptsLikeAnyOther() {
         PinEntry entry = PinEntry.changing(4, 4, 2);
 
-        assertEquals(Outcome.WRONG, type(entry, "0000", "1234"));
-        assertEquals(Outcome.LOCKED_OUT, type(entry, "0000", "1234"));
+        assertEquals(Outcome.WRONG, type(entry, "9999", "1234"));
+        assertEquals(Outcome.LOCKED_OUT, type(entry, "9999", "1234"));
         assertTrue(entry.isChanging());
     }
 
@@ -120,9 +120,10 @@ class PinEntryTest {
     }
 
     @Test
-    void thingsThatAreNotDigitsAreIgnored() {
+    void zeroIsNotADigitOfAPinAndOtherThingsThatAreNotDigitsAreIgnored() {
         PinEntry entry = new PinEntry(4, 3, true);
 
+        assertEquals(Outcome.INCOMPLETE, entry.press(0, pin -> true));
         assertEquals(Outcome.INCOMPLETE, entry.press(10, pin -> true));
         assertEquals(Outcome.INCOMPLETE, entry.press(-1, pin -> true));
         assertEquals(0, entry.filled());

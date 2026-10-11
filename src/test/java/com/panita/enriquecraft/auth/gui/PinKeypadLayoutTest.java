@@ -10,7 +10,6 @@ import com.panita.enriquecraft.auth.service.PinHasher;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.gui.MenuFactory;
-import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -85,18 +84,18 @@ class PinKeypadLayoutTest {
         for (int digit = 1; digit <= 9; digit++) {
             assertEquals(digit, PinKeypadLayout.keyAt(digit));
         }
-        assertEquals(0, PinKeypadLayout.keyAt(32));
-        assertEquals(UiElement.PinPad.BACKSPACE, PinKeypadLayout.keyAt(31));
-        assertEquals(UiElement.PinPad.CLEAR, PinKeypadLayout.keyAt(33));
+        assertEquals(PinKeypadLayout.NO_KEY, PinKeypadLayout.keyAt(32));
+        assertEquals(PinKeypadLayout.BACKSPACE_KEY, PinKeypadLayout.keyAt(31));
+        assertEquals(PinKeypadLayout.CLEAR_KEY, PinKeypadLayout.keyAt(33));
     }
 
     @Test
     void slotsThatAreNoKeyDoNothing() {
-        assertEquals(-1, PinKeypadLayout.keyAt(0));
-        assertEquals(-1, PinKeypadLayout.keyAt(10));
-        assertEquals(-1, PinKeypadLayout.keyAt(19));
-        assertEquals(-1, PinKeypadLayout.keyAt(45));
-        assertEquals(-1, PinKeypadLayout.keyAt(-999));
+        assertEquals(PinKeypadLayout.NO_KEY, PinKeypadLayout.keyAt(0));
+        assertEquals(PinKeypadLayout.NO_KEY, PinKeypadLayout.keyAt(10));
+        assertEquals(PinKeypadLayout.NO_KEY, PinKeypadLayout.keyAt(19));
+        assertEquals(PinKeypadLayout.NO_KEY, PinKeypadLayout.keyAt(45));
+        assertEquals(PinKeypadLayout.NO_KEY, PinKeypadLayout.keyAt(-999));
     }
 
     @Test
@@ -112,8 +111,8 @@ class PinKeypadLayoutTest {
         assertTrue(slots.get(22).is(Items.BARRIER));
         assertTrue(slots.get(23).is(Items.STAINED_GLASS_PANE.lightGray()));
         assertTrue(slots.get(24).is(Items.STAINED_GLASS_PANE.lightGray()));
-        assertTrue(slots.get(20).isEmpty());
-        assertTrue(slots.get(25).isEmpty());
+        assertTrue(isFiller(slots.get(20)));
+        assertTrue(isFiller(slots.get(25)));
     }
 
     @Test
@@ -123,7 +122,7 @@ class PinKeypadLayoutTest {
         for (int column = 1; column <= 6; column++) {
             assertTrue(slots.get(19 + column).is(Items.STAINED_GLASS_PANE.lightGray()), "column " + column);
         }
-        assertTrue(slots.get(19 + 7).isEmpty());
+        assertTrue(isFiller(slots.get(19 + 7)));
     }
 
     @Test
@@ -163,14 +162,30 @@ class PinKeypadLayoutTest {
     }
 
     @Test
-    void theRestOfTheInventoryIsEmptySoNothingRealIsShown() {
+    void theRestOfTheInventoryIsBlackGlassAndTheHotbarIsEmpty() {
         List<ItemStack> slots = render(entering(4));
 
         for (int slot = 37; slot < PinKeypadLayout.SIZE; slot++) {
-            assertTrue(slots.get(slot).isEmpty(), "slot " + slot);
+            assertTrue(slots.get(slot).isEmpty(), "hotbar slot " + slot);
         }
-        for (int slot = 28; slot < 31; slot++) {
-            assertTrue(slots.get(slot).isEmpty(), "slot " + slot);
+        // The bottom row has backspace at 31 and clear at 33; the rest of it, and of the other rows, is glass.
+        for (int slot : new int[]{10, 11, 18, 19, 20, 25, 27, 28, 29, 30, 32, 34, 36}) {
+            assertTrue(isFiller(slots.get(slot)), "slot " + slot);
         }
+    }
+
+    @Test
+    void thereIsNoZeroKey() {
+        List<ItemStack> slots = render(entering(4));
+
+        assertTrue(slots.get(31).is(Items.ARROW));
+        assertTrue(slots.get(33).is(Items.DYE.red()));
+        assertTrue(isFiller(slots.get(32)));
+    }
+
+    /** Black glass that says nothing, as the game draws no tooltip for it. */
+    private static boolean isFiller(ItemStack stack) {
+        return stack.is(Items.STAINED_GLASS_PANE.black()) && stack.getCount() == 1
+                && stack.has(net.minecraft.core.component.DataComponents.TOOLTIP_DISPLAY);
     }
 }

@@ -14,13 +14,14 @@ import java.util.Map;
 
 /**
  * The PIN keypad: a headline, a row of dots that fill as digits are typed, the attempts that are left as
- * small pips, and twelve keys. It draws what the server described and reports presses of its keys; the
+ * small pips, and its keys. It draws what the server described and reports presses of its keys; the
  * digits themselves are only ever known to the server. Wrong PINs shake the dots, a new digit pops, a
  * correct PIN turns them green.
  */
 final class UiPinPadWidget extends AbstractWidget {
 
     private static final int KEY_COLUMNS = 3;
+    private static final int DIGITS = 9;
     private static final int KEY_ROWS = 4;
     private static final int DOT = 10;
     private static final int DOT_GAP = 7;
@@ -68,34 +69,27 @@ final class UiPinPadWidget extends AbstractWidget {
         animation.observe(pad, System.currentTimeMillis());
     }
 
-    /** Which of the twelve keys sits at a place on the keypad: the digits, then backspace, zero and clear. */
-    private static int keyAt(int column, int row) {
-        int place = row * KEY_COLUMNS + column;
-        return switch (place) {
-            case 9 -> UiElement.PinPad.BACKSPACE;
-            case 10 -> 0;
-            case 11 -> UiElement.PinPad.CLEAR;
-            default -> place + 1;
-        };
-    }
-
-    private int keyLeft(int column) {
-        return getX() + (getWidth() - keypadWidth) / 2 + column * (sizes.keyWidth + sizes.keyGap);
-    }
-
-    private int keyTop(int row) {
-        return getY() + keypadTop + row * (sizes.keyHeight + sizes.keyGap);
+    /**
+     * Where a key is, in pixels from the corner of the keypad: the digits in three columns, then backspace and
+     * clear sharing the last row, each as wide as one half of it. Returns left, top, width and height.
+     */
+    private int[] keyRect(int key) {
+        int left = getX() + (getWidth() - keypadWidth) / 2;
+        if (key < DIGITS) {
+            return new int[]{left + key % KEY_COLUMNS * (sizes.keyWidth + sizes.keyGap),
+                    getY() + keypadTop + key / KEY_COLUMNS * (sizes.keyHeight + sizes.keyGap), sizes.keyWidth, sizes.keyHeight};
+        }
+        int half = (keypadWidth - sizes.keyGap) / 2;
+        return new int[]{key == UiElement.PinPad.BACKSPACE ? left : left + keypadWidth - half,
+                getY() + keypadTop + (KEY_ROWS - 1) * (sizes.keyHeight + sizes.keyGap), half, sizes.keyHeight};
     }
 
     /** The key under a point, or -1 when it is between keys or outside the keypad. */
     private int keyUnder(double x, double y) {
-        for (int row = 0; row < KEY_ROWS; row++) {
-            for (int column = 0; column < KEY_COLUMNS; column++) {
-                int left = keyLeft(column);
-                int top = keyTop(row);
-                if (x >= left && x < left + sizes.keyWidth && y >= top && y < top + sizes.keyHeight) {
-                    return keyAt(column, row);
-                }
+        for (int key = 0; key < UiElement.PinPad.KEYS; key++) {
+            int[] rect = keyRect(key);
+            if (x >= rect[0] && x < rect[0] + rect[2] && y >= rect[1] && y < rect[1] + rect[3]) {
+                return key;
             }
         }
         return -1;
@@ -111,20 +105,19 @@ final class UiPinPadWidget extends AbstractWidget {
     }
 
     /**
-     * What each physical key does on the keypad: the digits of the top row and of the numpad, Backspace and
-     * Delete. The game numbers keys by their place on the keyboard, and zero comes after nine there, so the
-     * digits cannot be found by counting from one key.
+     * What each physical key does on the keypad, as the index of a key: the digits 1 to 9 of the top row and of the
+     * numpad, Backspace and Delete. There is no zero. The game numbers keys by their place on the keyboard, and
+     * zero comes after nine there, so the digits cannot be found by counting from one key.
      */
     private static final Map<Integer, Integer> KEYBOARD = Map.ofEntries(
-            Map.entry(InputConstants.KEY_0, 0), Map.entry(InputConstants.KEY_1, 1), Map.entry(InputConstants.KEY_2, 2),
-            Map.entry(InputConstants.KEY_3, 3), Map.entry(InputConstants.KEY_4, 4), Map.entry(InputConstants.KEY_5, 5),
-            Map.entry(InputConstants.KEY_6, 6), Map.entry(InputConstants.KEY_7, 7), Map.entry(InputConstants.KEY_8, 8),
-            Map.entry(InputConstants.KEY_9, 9), Map.entry(InputConstants.KEY_NUMPAD0, 0),
-            Map.entry(InputConstants.KEY_NUMPAD1, 1), Map.entry(InputConstants.KEY_NUMPAD2, 2),
-            Map.entry(InputConstants.KEY_NUMPAD3, 3), Map.entry(InputConstants.KEY_NUMPAD4, 4),
-            Map.entry(InputConstants.KEY_NUMPAD5, 5), Map.entry(InputConstants.KEY_NUMPAD6, 6),
-            Map.entry(InputConstants.KEY_NUMPAD7, 7), Map.entry(InputConstants.KEY_NUMPAD8, 8),
-            Map.entry(InputConstants.KEY_NUMPAD9, 9), Map.entry(InputConstants.KEY_BACKSPACE, UiElement.PinPad.BACKSPACE),
+            Map.entry(InputConstants.KEY_1, 0), Map.entry(InputConstants.KEY_2, 1), Map.entry(InputConstants.KEY_3, 2),
+            Map.entry(InputConstants.KEY_4, 3), Map.entry(InputConstants.KEY_5, 4), Map.entry(InputConstants.KEY_6, 5),
+            Map.entry(InputConstants.KEY_7, 6), Map.entry(InputConstants.KEY_8, 7), Map.entry(InputConstants.KEY_9, 8),
+            Map.entry(InputConstants.KEY_NUMPAD1, 0), Map.entry(InputConstants.KEY_NUMPAD2, 1),
+            Map.entry(InputConstants.KEY_NUMPAD3, 2), Map.entry(InputConstants.KEY_NUMPAD4, 3),
+            Map.entry(InputConstants.KEY_NUMPAD5, 4), Map.entry(InputConstants.KEY_NUMPAD6, 5),
+            Map.entry(InputConstants.KEY_NUMPAD7, 6), Map.entry(InputConstants.KEY_NUMPAD8, 7),
+            Map.entry(InputConstants.KEY_NUMPAD9, 8), Map.entry(InputConstants.KEY_BACKSPACE, UiElement.PinPad.BACKSPACE),
             Map.entry(InputConstants.KEY_DELETE, UiElement.PinPad.CLEAR));
 
     /** The key a physical key stands for, or -1 when it stands for none. */
@@ -213,19 +206,15 @@ final class UiPinPadWidget extends AbstractWidget {
     private void extractKeys(GuiGraphicsExtractor graphics, long now, int mouseX, int mouseY) {
         int pressed = animation.pressedKey(now);
         int hovered = pad.success() ? -1 : keyUnder(mouseX, mouseY);
-        for (int row = 0; row < KEY_ROWS; row++) {
-            for (int column = 0; column < KEY_COLUMNS; column++) {
-                int key = keyAt(column, row);
-                UiTheme.Tone tone = key == UiElement.PinPad.CLEAR ? UiTheme.Tone.DANGER : UiTheme.Tone.ACTION;
-                boolean hover = key == hovered;
-                int fill = key == pressed ? UiTheme.Tone.SUCCESS.hoverFill() : hover ? tone.hoverFill() : tone.fill();
-                int border = key == pressed ? UiTheme.Tone.SUCCESS.hoverBorder() : hover ? tone.hoverBorder() : tone.border();
-                int left = keyLeft(column);
-                int top = keyTop(row);
-                UiTheme.pill(graphics, left, top, sizes.keyWidth, sizes.keyHeight, fill, border);
-                graphics.centeredText(font, label(key), left + sizes.keyWidth / 2, top + (sizes.keyHeight - font.lineHeight) / 2 + 1,
-                        pad.success() ? UiTheme.DISABLED : UiTheme.TEXT);
-            }
+        for (int key = 0; key < UiElement.PinPad.KEYS; key++) {
+            UiTheme.Tone tone = key == UiElement.PinPad.CLEAR ? UiTheme.Tone.DANGER : UiTheme.Tone.ACTION;
+            boolean hover = key == hovered;
+            int fill = key == pressed ? UiTheme.Tone.SUCCESS.hoverFill() : hover ? tone.hoverFill() : tone.fill();
+            int border = key == pressed ? UiTheme.Tone.SUCCESS.hoverBorder() : hover ? tone.hoverBorder() : tone.border();
+            int[] rect = keyRect(key);
+            UiTheme.pill(graphics, rect[0], rect[1], rect[2], rect[3], fill, border);
+            graphics.centeredText(font, label(key), rect[0] + rect[2] / 2, rect[1] + (rect[3] - font.lineHeight) / 2 + 1,
+                    pad.success() ? UiTheme.DISABLED : UiTheme.TEXT);
         }
     }
 
@@ -233,7 +222,7 @@ final class UiPinPadWidget extends AbstractWidget {
         return switch (key) {
             case UiElement.PinPad.BACKSPACE -> "←";
             case UiElement.PinPad.CLEAR -> "✕";
-            default -> String.valueOf(key);
+            default -> String.valueOf(key + 1);
         };
     }
 

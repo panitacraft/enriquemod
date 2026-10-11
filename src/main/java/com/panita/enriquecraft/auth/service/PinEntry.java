@@ -115,7 +115,8 @@ public final class PinEntry {
      * @param verifier tells whether a typed PIN is the player's own; only used when entering
      */
     public Outcome press(int digit, Predicate<String> verifier) {
-        if (digit < 0 || digit > 9 || typed.length() >= length) {
+        // A PIN has no zero: the keypads do not have the key, and a client that sends one is ignored.
+        if (digit < 1 || digit > 9 || typed.length() >= length) {
             return Outcome.INCOMPLETE;
         }
         typed.append((char) ('0' + digit));

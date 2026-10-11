@@ -135,16 +135,16 @@ public final class UiBuilder {
     }
 
     /**
-     * The keypad that asks for a PIN. Its twelve keys get consecutive ids; a left press on one is reported to
+     * The keypad that asks for a PIN. Its eleven keys get consecutive ids; a left press on one is reported to
      * the keys, anything else is ignored. See {@link UiElement.PinPad} for what the other values mean.
      */
     public UiElement.PinPad pinPad(Component title, Component hint, int length, int filled, int attemptsLeft,
                                    int maxAttempts, int shakes, boolean success, PinKeys keys) {
         int firstKeyId = nextId;
         nextId += UiElement.PinPad.KEYS;
-        for (int digit = 0; digit <= 9; digit++) {
+        for (int digit = 1; digit <= 9; digit++) {
             int pressed = digit;
-            handlers.put(firstKeyId + digit, click -> {
+            handlers.put(firstKeyId + digit - 1, click -> {
                 if (click.isLeft()) {
                     keys.digit(pressed);
                 }

@@ -109,7 +109,7 @@ class PinViewTest {
     void aWrongPinSaysHowManyAttemptsAreLeft() {
         PinFlow flow = flow(true);
 
-        type(flow, "0000");
+        type(flow, "9999");
 
         assertEquals("PIN incorrecto", view.of(flow).title().getString());
         assertEquals("Te quedan 2 intento(s)", view.of(flow).hint().getString());

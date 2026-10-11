@@ -50,13 +50,13 @@ class UiBuilderPinPadTest {
         UiElement.PinPad pad = builder.pinPad(Component.empty(), Component.empty(), 4, 0, 3, 3, 0, false, keys);
         UiLayout layout = layout(builder, pad);
 
-        for (int digit = 0; digit <= 9; digit++) {
-            layout.handlers().get(pad.firstKeyId() + digit).accept(new UiClick(null, 0, false));
+        for (int digit = 1; digit <= 9; digit++) {
+            layout.handlers().get(pad.firstKeyId() + digit - 1).accept(new UiClick(null, 0, false));
         }
         layout.handlers().get(pad.firstKeyId() + UiElement.PinPad.BACKSPACE).accept(new UiClick(null, 0, false));
         layout.handlers().get(pad.firstKeyId() + UiElement.PinPad.CLEAR).accept(new UiClick(null, 0, false));
 
-        assertEquals(List.of("digit 0", "digit 1", "digit 2", "digit 3", "digit 4", "digit 5", "digit 6", "digit 7",
+        assertEquals(List.of("digit 1", "digit 2", "digit 3", "digit 4", "digit 5", "digit 6", "digit 7",
                 "digit 8", "digit 9", "backspace", "clear"), pressed);
     }
 
