@@ -1,9 +1,13 @@
 package com.panita.enriquecraft.core.framework.config;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -32,6 +36,14 @@ final class ValueTypes {
      */
     static ValueType<String> string(Predicate<String> validator, String rule) {
         return new StringType(validator, rule);
+    }
+
+    /**
+     * @param keyValidator accepts the valid keys
+     * @param keyRule      the rule for keys in the form "must ..."
+     */
+    static ValueType<Map<String, String>> stringMap(Predicate<String> keyValidator, String keyRule) {
+        return new StringMapType(keyValidator, keyRule);
     }
 
     private record BoolType() implements ValueType<Boolean> {
@@ -106,6 +118,41 @@ final class ValueTypes {
         @Override
         public Optional<String> constraint() {
             return Optional.ofNullable(rule);
+        }
+    }
+
+    private record StringMapType(Predicate<String> keyValidator, String keyRule) implements ValueType<Map<String, String>> {
+
+        @Override
+        public Map<String, String> parse(JsonElement element) {
+            if (!element.isJsonObject()) {
+                throw new InvalidValueException("must be an object of texts");
+            }
+            Map<String, String> entries = new LinkedHashMap<>();
+            for (Map.Entry<String, JsonElement> member : element.getAsJsonObject().entrySet()) {
+                String key = member.getKey();
+                if (!keyValidator.test(key)) {
+                    throw new InvalidValueException("the key '" + key + "' " + keyRule);
+                }
+                JsonElement value = member.getValue();
+                if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString() || value.getAsString().isBlank()) {
+                    throw new InvalidValueException("the value of '" + key + "' must be a text that is not blank");
+                }
+                entries.put(key, value.getAsString());
+            }
+            return Collections.unmodifiableMap(entries);
+        }
+
+        @Override
+        public JsonElement toJson(Map<String, String> value) {
+            JsonObject object = new JsonObject();
+            value.forEach(object::addProperty);
+            return object;
+        }
+
+        @Override
+        public Optional<String> constraint() {
+            return Optional.of("an object of texts whose keys " + keyRule);
         }
     }
 }

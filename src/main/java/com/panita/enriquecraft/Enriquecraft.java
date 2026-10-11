@@ -1,6 +1,7 @@
 package com.panita.enriquecraft;
 
 import com.panita.enriquecraft.auth.AuthModule;
+import com.panita.enriquecraft.chat.ChatModule;
 import com.panita.enriquecraft.core.CoreModule;
 import com.panita.enriquecraft.core.framework.module.ModuleManager;
 import com.panita.enriquecraft.staff.StaffModule;
@@ -16,5 +17,6 @@ public class Enriquecraft implements ModInitializer {
         modules.register(new CoreModule());
         modules.register(new StaffModule());
         modules.register(new AuthModule());
+        modules.register(new ChatModule());
     }
 }

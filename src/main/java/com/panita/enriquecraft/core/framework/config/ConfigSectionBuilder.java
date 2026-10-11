@@ -2,6 +2,7 @@ package com.panita.enriquecraft.core.framework.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -38,6 +39,25 @@ public final class ConfigSectionBuilder {
     public ConfigValue<String> string(String path, String defaultValue, String comment,
                                       Predicate<String> validator, String rule) {
         return define(path, defaultValue, comment, ValueTypes.string(validator, rule));
+    }
+
+    /**
+     * A table of texts, such as a trigger and what it stands for. Keys keep the order of the file.
+     *
+     * @param keyValidator accepts the valid keys
+     * @param keyRule      the rule for keys in the form "must ...", shown in the file and in reports
+     */
+    public ConfigValue<Map<String, String>> stringMap(String path, Map<String, String> defaultValue, String comment,
+                                                      Predicate<String> keyValidator, String keyRule) {
+        return define(path, defaultValue, comment, ValueTypes.stringMap(keyValidator, keyRule));
+    }
+
+    /**
+     * A setting whose shape is the module's own, such as a set of channels. The type's {@code parse} must throw an
+     * {@link InvalidValueException} that names the part that is wrong, since the whole value then falls back to its default.
+     */
+    public <T> ConfigValue<T> custom(String path, T defaultValue, String comment, ValueType<T> type) {
+        return define(path, defaultValue, comment, type);
     }
 
     List<ConfigValue<?>> values() {

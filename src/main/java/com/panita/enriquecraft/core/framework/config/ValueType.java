@@ -5,9 +5,11 @@ import com.google.gson.JsonElement;
 import java.util.Optional;
 
 /**
- * How a config value is read from and written to the file, and which rule it must satisfy.
+ * How a config value is read from and written to the file, and which rule it must satisfy. The built-in types
+ * cover single numbers, flags and texts; a module whose setting has a shape of its own implements this and declares
+ * it with {@link ConfigSectionBuilder#custom}.
  */
-interface ValueType<T> {
+public interface ValueType<T> {
 
     /**
      * Converts a raw file value into a usable one.
