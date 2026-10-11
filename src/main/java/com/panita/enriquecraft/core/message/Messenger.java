@@ -10,6 +10,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent;
 
+import java.util.Collection;
+
 /**
  * Single entry point for every message shown to players, on every channel: chat, action bar,
  * title and boss bar. Only vanilla packets are used, so vanilla clients see everything.
@@ -114,6 +116,27 @@ public final class Messenger {
 
     private void broadcast(MinecraftServer server, Component component) {
         server.getPlayerList().broadcastSystemMessage(component, false);
+    }
+
+    // Finished components: for text that is built from parts, such as a chat line that carries what a player typed
+
+    /**
+     * Formats a message, with its named arguments, resolving placeholders for the context player. The result is
+     * delivered with {@link #deliver}.
+     */
+    public Component format(Message message, ServerPlayer context) {
+        return formatForPlayer(context, message);
+    }
+
+    /** Sends a finished component to the given players. */
+    public void deliver(Collection<ServerPlayer> receivers, Component component) {
+        receivers.forEach(receiver -> receiver.sendSystemMessage(component));
+    }
+
+    /** Sends a finished component to the given players and writes it to the console. */
+    public void deliver(MinecraftServer server, Collection<ServerPlayer> receivers, Component component) {
+        server.sendSystemMessage(component);
+        deliver(receivers, component);
     }
 
     // Action bar: placeholders resolve for the receiving player
