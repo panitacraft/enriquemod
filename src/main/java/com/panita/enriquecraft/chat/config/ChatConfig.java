@@ -23,6 +23,7 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Boolean> deathMessage;
     public final ConfigValue<Boolean> advancementMessage;
     public final ConfigValue<Boolean> welcomeMessage;
+    public final ConfigValue<Boolean> motdEnabled;
 
     public ChatConfig(ConfigSectionBuilder builder) {
         channels = builder.custom("channels", DefaultChannels.table(),
@@ -50,5 +51,8 @@ public final class ChatConfig implements ModConfig {
         deathMessage = builder.bool("events.death.enabled", true, "Shows a message in chat when a player dies.");
         advancementMessage = builder.bool("events.advancement.enabled", true, "Shows a message in chat when a player makes an advancement.");
         welcomeMessage = builder.bool("welcome.enabled", true, "Sends the welcome message to a player once they are in.");
+        motdEnabled = builder.bool("motd.enabled", true,
+                "Shows the motd of the messages file in the server list, instead of the motd of server.properties. It is built again\n"
+                        + "every few seconds, so placeholders such as %server:online% stay current.");
     }
 }

@@ -39,6 +39,15 @@ public final class ChatMessages {
         }
     }
 
+    /** The text of the server list: two lines, and server placeholders such as the number of players online. */
+    public static final class Motd {
+        public static final String TEXT = "<bold><gradient:#920000:#BA5B5B:#920000>Enriquecraft</gradient></bold> <dark_gray>»</dark_gray> <gray>Servidor privado\n"
+                + "<gray>Jugadores en línea: <white>%server:online%</white>/<white>%server:max_players%</white>";
+
+        private Motd() {
+        }
+    }
+
     public static final class Welcome {
         public static final String TEXT = "<bold>¡Bienvenido, {player}!</bold>\n"
                 + "<gray>Usa <yellow>/chat</yellow> para cambiar de canal y <yellow>/enriquecraft help</yellow> para ver los comandos.";

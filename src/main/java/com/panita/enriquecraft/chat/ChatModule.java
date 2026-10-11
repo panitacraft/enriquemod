@@ -14,6 +14,7 @@ import com.panita.enriquecraft.chat.message.WelcomeView;
 import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.NicknameService;
+import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.ReplyTracker;
 import com.panita.enriquecraft.chat.service.SystemMessageClassifier;
@@ -76,6 +77,6 @@ public final class ChatModule implements EnriquecraftModule {
         new ChatPlaceholders(nicknames, selection).register();
         SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
-        ChatHooks.install(nicknames, systemMessages, privateMessages, chat);
+        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config));
     }
 }

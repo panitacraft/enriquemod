@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.chat;
 
 import com.panita.enriquecraft.chat.service.ChatService;
+import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.SystemMessages;
@@ -26,16 +27,20 @@ public final class ChatHooks {
     private final SystemMessages systemMessages;
     private final PrivateMessages privateMessages;
     private final ChatService chat;
+    private final MotdService motd;
 
-    private ChatHooks(NicknameService nicknames, SystemMessages systemMessages, PrivateMessages privateMessages, ChatService chat) {
+    private ChatHooks(NicknameService nicknames, SystemMessages systemMessages, PrivateMessages privateMessages, ChatService chat,
+                      MotdService motd) {
         this.nicknames = nicknames;
         this.systemMessages = systemMessages;
         this.privateMessages = privateMessages;
         this.chat = chat;
+        this.motd = motd;
     }
 
-    static void install(NicknameService nicknames, SystemMessages systemMessages, PrivateMessages privateMessages, ChatService chat) {
-        instance = new ChatHooks(nicknames, systemMessages, privateMessages, chat);
+    static void install(NicknameService nicknames, SystemMessages systemMessages, PrivateMessages privateMessages, ChatService chat,
+                        MotdService motd) {
+        instance = new ChatHooks(nicknames, systemMessages, privateMessages, chat, motd);
     }
 
     public static @Nullable ChatHooks get() {
@@ -60,6 +65,11 @@ public final class ChatHooks {
     /** A message the game is about to broadcast to everyone; true when the module took it over and the game must not send it. */
     public boolean systemMessage(MinecraftServer server, Component message) {
         return systemMessages.handle(server, message);
+    }
+
+    /** The text for the server list, or null when the game keeps its own. */
+    public @Nullable Component motd(MinecraftServer server) {
+        return motd.motd(server);
     }
 
     /** {@code /msg}: sends the message the way the module shows private messages. */
