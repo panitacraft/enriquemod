@@ -65,6 +65,16 @@ public final class ChatMessages {
         }
     }
 
+    public static final class Sudo {
+        public static final String DESCRIPTION = "Hace que un jugador ejecute un comando o diga un mensaje";
+        public static final String DONE = "Hecho como <bold>{player}</bold>: <white>{text}</white>";
+        public static final String TOO_POWERFUL = "No puedes usar sudo sobre un jugador con más permisos que tú.";
+        public static final String NOT_AVAILABLE = "Ese jugador no está disponible.";
+
+        private Sudo() {
+        }
+    }
+
     public static final class Nickname {
         public static final String NICK_DESCRIPTION = "Cambia tu apodo en el chat";
         public static final String REAL_NAME_DESCRIPTION = "Muestra quién tiene un apodo";
