@@ -40,7 +40,7 @@ public final class UiService {
     void open(ServerPlayer player, UiMenu menu) {
         if (offersCustomScreens(player)) {
             openCustomScreen(player, menu);
-        } else {
+        } else if (!menu.openFallback(player)) {
             UiChestMenu chest = new UiChestMenu(menu);
             menu.showingAs(chest);
             chest.open(player);

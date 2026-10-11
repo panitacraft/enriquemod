@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Owns the single config file. Each module binds one section; values are validated on load and
@@ -32,17 +33,34 @@ import java.util.Set;
 public final class ConfigManager {
 
     static final String FILE_NAME = "enriquecraft.json5";
+    private static final String MAIN_HEADER = """
+            // Enriquecraft configuration.
+            // Change a value and run /enriquecraft reload, or restart the server.
+            """;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigManager.class);
 
     private final Path file;
-    private final ConfigRenderer renderer = new ConfigRenderer();
+    private final ConfigRenderer renderer;
+    private final String issuePrefix;
     private final Map<String, List<ConfigValue<?>>> sections = new LinkedHashMap<>();
     private JsonObject root = new JsonObject();
     private boolean fileReadable = true;
 
     public ConfigManager(Path configDirectory) {
-        this.file = configDirectory.resolve(FILE_NAME);
+        this(configDirectory, FILE_NAME, MAIN_HEADER, "");
+    }
+
+    /**
+     * A manager for another file, such as the one that holds the texts of the mod.
+     *
+     * @param header      the comment written at the top of the file
+     * @param issuePrefix put before the path of every problem it reports, so reports of different files tell apart
+     */
+    public ConfigManager(Path configDirectory, String fileName, String header, String issuePrefix) {
+        this.file = configDirectory.resolve(fileName);
+        this.renderer = new ConfigRenderer(header);
+        this.issuePrefix = issuePrefix;
         ReadResult result = read();
         if (result.error() == null) {
             root = result.root();
@@ -59,11 +77,28 @@ public final class ConfigManager {
      * @param type    the config class; it must have one public constructor taking a {@link ConfigSectionBuilder}
      */
     public <T extends ModConfig> T bind(String section, Class<T> type) {
+        ConfigSectionBuilder builder = new ConfigSectionBuilder();
+        T config = construct(type, builder);
+        bindValues(section, builder);
+        return config;
+    }
+
+    /**
+     * Declares a section whose values are not known until the program runs, such as the texts of a module.
+     * The declaration keeps the values it creates; they are loaded from the file as for any other section.
+     *
+     * @param declaration creates the values of the section with the builder it is given
+     */
+    public void bindSection(String section, Consumer<ConfigSectionBuilder> declaration) {
+        ConfigSectionBuilder builder = new ConfigSectionBuilder();
+        declaration.accept(builder);
+        bindValues(section, builder);
+    }
+
+    private void bindValues(String section, ConfigSectionBuilder builder) {
         if (sections.containsKey(section)) {
             throw new IllegalStateException("The config section '" + section + "' is already bound");
         }
-        ConfigSectionBuilder builder = new ConfigSectionBuilder();
-        T config = construct(type, builder);
         List<ConfigValue<?>> values = builder.values();
         sections.put(section, values);
 
@@ -73,7 +108,6 @@ public final class ConfigManager {
             save();
         }
         log(issues);
-        return config;
     }
 
     /**
@@ -114,7 +148,7 @@ public final class ConfigManager {
             if (sectionElement.isJsonObject()) {
                 section = sectionElement.getAsJsonObject();
             } else {
-                issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, sectionName, "must be an object"));
+                issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, issuePrefix + sectionName, "must be an object"));
             }
         }
 
@@ -126,7 +160,7 @@ public final class ConfigManager {
                 missing = true;
             } else {
                 value.apply(raw).ifPresent(reason ->
-                        issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, sectionName + "." + value.path(), reason)));
+                        issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, issuePrefix + sectionName + "." + value.path(), reason)));
             }
         }
         if (section != null) {
@@ -160,10 +194,10 @@ public final class ConfigManager {
                 if (member.getValue().isJsonObject()) {
                     collectUnknownKeys(sectionName, member.getValue().getAsJsonObject(), path, valuePaths, parentPaths, issues);
                 } else {
-                    issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, sectionName + "." + path, "must be an object"));
+                    issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, issuePrefix + sectionName + "." + path, "must be an object"));
                 }
             } else {
-                issues.add(new ConfigIssue(ConfigIssue.Kind.UNKNOWN_KEY, sectionName + "." + path, "no module declares this key"));
+                issues.add(new ConfigIssue(ConfigIssue.Kind.UNKNOWN_KEY, issuePrefix + sectionName + "." + path, "no module declares this key"));
             }
         }
     }

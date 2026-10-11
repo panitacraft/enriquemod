@@ -9,6 +9,7 @@ import com.panita.enriquecraft.core.framework.config.ModConfig;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
+import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.framework.scan.ClassScanner;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Loads modules: binds their config section, registers their services, then discovers and builds
+ * Loads modules: binds their config section and their texts, registers their services, then discovers and builds
  * their listeners and commands.
  * Modules are loaded in the order they are registered, so later modules can use earlier services.
  */
@@ -28,18 +29,21 @@ public final class ModuleManager {
     private final ServiceRegistry services = new ServiceRegistry();
     private final CommandCatalog catalog = new CommandCatalog();
     private final ConfigManager configManager = new ConfigManager(FabricLoader.getInstance().getConfigDir());
+    private final MessageCatalog messages = new MessageCatalog(FabricLoader.getInstance().getConfigDir());
     private final ClassScanner scanner;
 
     public ModuleManager(String modId) {
         this.scanner = new ClassScanner(modId);
         services.register(CommandCatalog.class, catalog);
         services.register(ConfigManager.class, configManager);
+        services.register(MessageCatalog.class, messages);
         services.register(WorldData.class, new WorldData());
         new CommandRegistry(catalog, new CommandTreeBuilder()).register();
     }
 
     public void register(EnriquecraftModule module) {
         bindConfig(module);
+        module.messages().ifPresent(holder -> messages.register(module.configSection(), holder));
         module.registerServices(services);
 
         List<Class<? extends ModListener>> listeners = scanner.scan(module.listenerPackage(), ModListener.class);

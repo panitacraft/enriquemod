@@ -18,7 +18,7 @@
     ]
   },
   "mixins": [
-    "enriquecraft.mixins.json"
+    "enriquecraft.auth.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",

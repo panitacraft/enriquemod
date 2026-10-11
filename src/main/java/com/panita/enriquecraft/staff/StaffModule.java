@@ -10,15 +10,23 @@ import com.panita.enriquecraft.staff.gui.StaffMenus;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import com.panita.enriquecraft.staff.message.CustomItemView;
 import com.panita.enriquecraft.staff.message.DeathInventoryView;
+import com.panita.enriquecraft.staff.message.StaffMessages;
 import com.panita.enriquecraft.staff.service.CoordinateService;
 import com.panita.enriquecraft.staff.service.CustomItemService;
 import com.panita.enriquecraft.staff.service.DeathInventoryService;
+
+import java.util.Optional;
 
 /**
  * Tools for the server staff: saved coordinates, saved custom items and death inventory
  * recovery, all under the {@code /staff} command.
  */
 public final class StaffModule implements EnriquecraftModule {
+
+    @Override
+    public Optional<Class<?>> messages() {
+        return Optional.of(StaffMessages.class);
+    }
 
     @Override
     public void registerServices(ServiceRegistry services) {

@@ -11,6 +11,13 @@ public record ConfigReport(List<ConfigIssue> issues) {
         issues = List.copyOf(issues);
     }
 
+    /** This report followed by another, as when two files are reloaded together. */
+    public ConfigReport and(ConfigReport other) {
+        List<ConfigIssue> all = new java.util.ArrayList<>(issues);
+        all.addAll(other.issues());
+        return new ConfigReport(all);
+    }
+
     public boolean isClean() {
         return issues.isEmpty();
     }

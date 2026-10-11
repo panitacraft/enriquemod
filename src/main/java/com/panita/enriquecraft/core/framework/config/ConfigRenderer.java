@@ -20,10 +20,12 @@ final class ConfigRenderer {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create();
     private static final String INDENT = "  ";
-    private static final String HEADER = """
-            // Enriquecraft configuration.
-            // Change a value and run /enriquecraft reload, or restart the server.
-            """;
+
+    private final String header;
+
+    ConfigRenderer(String header) {
+        this.header = header;
+    }
 
     String render(Map<String, List<ConfigValue<?>>> sections, JsonObject original) {
         List<String> members = new ArrayList<>();
@@ -37,7 +39,7 @@ final class ConfigRenderer {
                 members.add(INDENT + quote(extra.getKey()) + ": " + pretty(extra.getValue(), 1));
             }
         }
-        return HEADER + "{\n" + String.join(",\n", members) + "\n}\n";
+        return header + "{\n" + String.join(",\n", members) + "\n}\n";
     }
 
     private String objectText(Node node, JsonObject original, int depth) {

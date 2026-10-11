@@ -35,6 +35,7 @@ public final class UiElementCodec {
     private static final byte SCROLL = 9;
     private static final byte DROPDOWN = 10;
     private static final byte DIVIDER = 11;
+    private static final byte PIN_PAD = 12;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -121,6 +122,18 @@ public final class UiElementCodec {
                 TOOLTIP.encode(buffer, dropdown.options());
                 buffer.writeVarInt(dropdown.selected());
             }
+            case UiElement.PinPad pad -> {
+                buffer.writeByte(PIN_PAD);
+                ComponentSerialization.STREAM_CODEC.encode(buffer, pad.title());
+                ComponentSerialization.STREAM_CODEC.encode(buffer, pad.hint());
+                buffer.writeVarInt(pad.length());
+                buffer.writeVarInt(pad.filled());
+                buffer.writeVarInt(pad.attemptsLeft());
+                buffer.writeVarInt(pad.maxAttempts());
+                buffer.writeVarInt(pad.shakes());
+                buffer.writeBoolean(pad.success());
+                buffer.writeVarInt(pad.firstKeyId());
+            }
             case UiElement.Divider ignored -> buffer.writeByte(DIVIDER);
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
@@ -162,6 +175,7 @@ public final class UiElementCodec {
             case DETAIL -> readDetail(buffer);
             case SCROLL -> readScroll(buffer, depth);
             case DROPDOWN -> readDropdown(buffer);
+            case PIN_PAD -> readPinPad(buffer);
             case DIVIDER -> new UiElement.Divider();
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
@@ -202,6 +216,23 @@ public final class UiElementCodec {
         int selected = buffer.readVarInt();
         try {
             return new UiElement.Dropdown(id, label, options, selected);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
+    }
+
+    private static UiElement readPinPad(RegistryFriendlyByteBuf buffer) {
+        Component title = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        Component hint = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        int length = buffer.readVarInt();
+        int filled = buffer.readVarInt();
+        int attemptsLeft = buffer.readVarInt();
+        int maxAttempts = buffer.readVarInt();
+        int shakes = buffer.readVarInt();
+        boolean success = buffer.readBoolean();
+        int firstKeyId = buffer.readVarInt();
+        try {
+            return new UiElement.PinPad(title, hint, length, filled, attemptsLeft, maxAttempts, shakes, success, firstKeyId);
         } catch (IllegalArgumentException e) {
             throw new DecoderException(e.getMessage());
         }

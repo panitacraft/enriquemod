@@ -154,12 +154,18 @@ com.panita.enriquecraft
 │  ├─ service/              business logic (HelpService, ServerInfoService, ...)
 │  ├─ commands/             auto-discovered commands (see below)
 │  └─ listeners/            auto-discovered listeners
-└─ staff/                   the staff module: the /staff menu, /staff coords, /staff item, /staff invrestore
-   ├─ StaffModule.java
-   ├─ config/ commands/ listeners/ service/
-   ├─ data/                 records with their codecs (SavedCoordinate, SavedItem, DeathRecord)
-   ├─ gui/                  the module's menus
-   └─ message/              StaffMessages (the module's Spanish text) and the views that report outcomes
+├─ staff/                   the staff module: the /staff menu, /staff coords, /staff item, /staff invrestore
+│  ├─ StaffModule.java
+│  ├─ config/ commands/ listeners/ service/
+│  ├─ data/                 records with their codecs (SavedCoordinate, SavedItem, DeathRecord)
+│  ├─ gui/                  the module's menus
+│  └─ message/              StaffMessages (the module's Spanish text) and the views that report outcomes
+└─ auth/                    the auth module: who may play and how they prove it (see Authentication)
+   ├─ AuthModule.java, AuthHooks.java (the one static door the mixins use)
+   ├─ config/ commands/ listeners/ service/ mixin/
+   ├─ data/                 AuthAccount, PinCredential, AuthSession, HeldState, AuthMode
+   ├─ gui/                  PinMenu (the keypad screen) and PinKeypadMenu (its crafting-table form)
+   └─ message/              AuthMessages (Spanish text) and the views that report outcomes
 ```
 
 Every module follows the same layout:
@@ -186,6 +192,7 @@ Rules:
 - The entrypoint only registers modules. Commands and listeners are never registered by hand.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
 - Do not create the client mixin config until the first client enhancement needs a mixin.
+- A module that needs mixins has its own config, `enriquecraft.<module>.mixins.json`, listed in `fabric.mod.json`, whose package is `<module>.mixin`. Mixin forbids loading any other class from that package, so it holds only mixins. A mixin is not built by the service registry, so it reaches services through one static class in the module root (`AuthHooks`), installed when the module loads; without it every mixin leaves vanilla behavior untouched. This hooks class is the only static access to services.
 - Fabric events cannot be unregistered, so modules cannot be enabled or disabled while the server runs.
 
 ### Modules
@@ -215,7 +222,7 @@ Rules:
 - Declare each value once, with its default, a comment, and its rule: `bool`, `intRange(min, max)`, or `string` with a validator and a rule written as "must ...". Defaults of player-visible text come from `Messages`. Add a new value type to `ValueTypes` only when a setting needs it.
 - Read values with `config.value.get()` at the moment they are needed. Never cache them, never use string-path getters, and never repeat a default at a call site.
 - Behavior the framework guarantees: a missing key is added to the file with its comment; a value that is missing, has the wrong type, or breaks its rule uses the default and is reported; keys nobody declares are kept and reported; a file that cannot be parsed is never overwritten (startup uses defaults, a reload keeps the previous values). Values the administrator wrote are kept as written, even when invalid.
-- `/enriquecraft reload` reloads the file. Text shown to players about config problems is Spanish and lists only paths; the detailed reasons are English and go to the console.
+- `/enriquecraft reload` reloads this file and the messages file. Text shown to players about config problems is Spanish and lists only paths; the detailed reasons are English and go to the console.
 
 ### Data files
 - Game data (records, items, inventories) is stored as SNBT, never JSON, because JSON cannot tell an int from a byte or a long and would change the custom data of every item. The config file stays JSON5 since people edit it by hand.
@@ -249,12 +256,23 @@ Rules:
 - `Menu` in `core.gui` is the chest toolkit behind `UiChestMenu`; do not subclass it for new screens. It is display only: `MenuScreen` never lets a click move, drag, swap, drop or clone an item, so never work around it and never put a real inventory behind a menu.
 - Commands that need a player use `PlayerOnly.executes(...)`.
 - Each module keeps its Spanish texts in its own `<Name>Messages` class; text shared by every module lives in `core.message.Messages`.
+- A screen that a chest cannot be, such as the PIN keypad, overrides `UiMenu.openFallback(player)` to open a form of its own for players without the companion; it then looks after its own closing and redrawing (`PinMenu` does). A chest is still the default.
+- `UiElement.PinPad` is the keypad element: the server keeps the digits and sends only how many are typed, the attempts left, a count of wrong PINs (the client shakes the dots when it grows) and whether it succeeded; the client reports keys by id (`UiBuilder.pinPad`, `PinKeys`). The client companion takes the keyboard as presses of the same keys and lets neither Escape nor a close button dismiss it. It uses a compact size when the window is small.
+
+### Authentication
+- The server runs with `online-mode=false`. A mixin on the login (`ServerLoginPacketListenerImplMixin`) answers the game's "does this server authenticate players" question for each connection alone, so Microsoft accounts are verified by Mojang's session servers and everyone else joins offline. No Mojang call is made for a listed name: the whitelist (and the op list) decide the mode, and an entry carries it in its UUID (the real one of an account is premium, the offline one of the name is a PIN account; `AuthMode.of`). When the whitelist is off, an unlisted name is looked up (`PremiumLookup`, cached, limited to what Mojang allows) and refused when Mojang cannot answer; never guess that a name has no account.
+- `/whitelist add <name> [cracked|premium]` and `remove` are rewired by `WhitelistCommandMixin`, keeping the game's arguments and permissions and changing only what they run. Names are used exactly as typed: the game lowercases names it does not know, and an offline UUID depends on capitalization. A PIN player is let in under the capitalization of their whitelist entry. Changing a player's mode changes their UUID, so `PlayerDataMigration` copies their player data, statistics and advancements; it only runs while they are offline and never overwrites.
+- A player who must enter a PIN is a held player (`HeldPlayers`): moved to the spawn (their real position and game mode are kept on disk until they leave, so a crash cannot strand them), put in spectator mode when `pin.spectatorWhileWaiting` is on, announced like any join so staff can report them, invulnerable, and everything their client sends except what the PIN screen needs is dropped in `PacketUtilsMixin` before it is handled. They leave this state by a correct PIN, a kick (too many wrong PINs, the timeout, staff) or disconnecting. Never add a way for a held player's packet to reach a handler.
+- PINs are stored only as a salted PBKDF2 hash mixed with a pepper kept in `config/enriquecraft-auth.key`, outside the world data; the file is never regenerated silently, since that would invalidate every PIN. Remembered logins keep a keyed hash of the address, never the address, and count from the moment the PIN was typed. PINs use the digits 1 to 9 (no zero). Wrong PINs kick after `pin.maxAttempts`; `lockout.kicksBeforeBlock` kicks within `lockout.windowSeconds` block the address for `lockout.blockSeconds` (`AttemptLimiter`, in memory). A name that logs in with a PIN cannot be taken over while it is online, since the game would otherwise disconnect its owner.
+- Login messages come from `LoginView`: a welcome title and a chat line about the session (premium players: "automatic login"; PIN players: how long the session lasts, via `Durations`). A client without the companion is first shown a title that explains the PIN screen and gets the chest after `pin.introSeconds`; a client that announced the companion gets its screen at once.
+- Connections of PIN players are not encrypted by the game, so a PIN travels in clear text. This is a known limit of offline-mode login that the owner has not yet confirmed as acceptable.
 
 ### Messaging
 - All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly.
 - `Messenger` has two ways to send. A raw string (`send`, `prefixedSend`, `broadcast`, `prefixedBroadcast`, `sendActionBar`, `showTitle`, `showBossBar`, ...) is the quick way for plain text. A `Message` adds named arguments (`{name}`) and a level, and is used when a template has dynamic values. Every method that sends a prefixed message has a non-prefixed twin, and the `placeholder` variants resolve server placeholders (`%player:name%`) for a context player; the other variants do not resolve placeholders.
 - Raw strings and templates accept text tags (`<bold>`) and legacy color codes (`&c`). Templates live in `Messages`, grouped by feature. Pass dynamic values with `Message.with(...)`, never by string concatenation: arguments are inserted as finished components, so their content is never parsed. Only administrator-written text may be sent as a raw string (as `/broadcast` does).
-- Use `MessageLevel` (`info`, `success`, `warning`, `error`) for color and icon, and `prefixed()` when the mod prefix is wanted. The prefix comes from the config (`messages.prefix`).
+- Use `MessageLevel` (`info`, `success`, `warning`, `error`) for color and icon, and `prefixed()` when the mod prefix is wanted. The prefix is `{{PREFIX}} {{SEPARATOR}} ` (by default a gradient "Enriquecraft" and a dark gray »); both come from the `Variables` group of `Messages`, so the administrator changes them in the messages file (`core.variables.prefix`, `core.variables.separator`). Any text may use `{{PREFIX}}` and `{{SEPARATOR}}`, such as a title that is only the prefix; never write the prefix out by hand.
+- Every player-visible text is configurable. Texts are the `public static final String` constants of nested classes in a module's `<Name>Messages` class, declared to the framework by `EnriquecraftModule.messages()`. `MessageCatalog` lists them in `config/enriquecraft-messages.json5`, one section per module and one key per constant (`Pin.ENTER_TITLE` is `pin.enterTitle`), and `Messenger`/`MessageFormatter` swap a constant for what the file says, so code keeps passing the constant. Constants with exactly the same wording are one setting. A text must be a whole constant: never build one by concatenating constants, because only whole constants are found again. `/enriquecraft reload` reloads this file too.
 - `/broadcast <prefixed|raw> <message>` sends the text as written, with or without the prefix. Commands never add their own labels or layouts to it.
 
 ## 7. Working Process

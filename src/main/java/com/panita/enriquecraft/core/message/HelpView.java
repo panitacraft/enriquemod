@@ -3,6 +3,7 @@ package com.panita.enriquecraft.core.message;
 import com.panita.enriquecraft.core.framework.command.CommandEntry;
 import com.panita.enriquecraft.core.service.HelpService;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 
 import java.util.Optional;
 
@@ -12,9 +13,11 @@ import java.util.Optional;
 public final class HelpView {
 
     private final Messenger messenger;
+    private final MessageFormatter formatter;
     private final HelpService helpService;
 
-    public HelpView(Messenger messenger, HelpService helpService) {
+    public HelpView(Messenger messenger, MessageFormatter formatter, HelpService helpService) {
+        this.formatter = formatter;
         this.messenger = messenger;
         this.helpService = helpService;
     }
@@ -24,7 +27,7 @@ public final class HelpView {
         for (CommandEntry entry : helpService.visibleEntries(source)) {
             messenger.send(source, Message.plain(Messages.Help.ENTRY)
                     .with("command", entry.displayPath())
-                    .with("description", entry.spec().description()));
+                    .with("description", description(entry)));
         }
     }
 
@@ -41,10 +44,15 @@ public final class HelpView {
         }
         messenger.send(source, Message.plain(Messages.Help.USAGE_HEADER)
                 .with("command", entry.get().displayPath())
-                .with("description", entry.get().spec().description()));
+                .with("description", description(entry.get())));
         for (String usage : helpService.usages(source, entry.get())) {
             messenger.send(source, Message.plain(Messages.Help.USAGE_LINE).with("usage", usage));
         }
         return true;
+    }
+
+    /** What a command is for, as the administrator wants it said: the description is the default text of a message. */
+    private Component description(CommandEntry entry) {
+        return formatter.format(Message.plain(entry.spec().description()));
     }
 }

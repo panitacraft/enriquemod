@@ -79,6 +79,7 @@ final class ServerUiScreen extends Screen implements UiActions {
 
     private final int sessionId;
     private final ItemStack icon;
+    private final PinPadAnimation pinPadAnimation = new PinPadAnimation();
     private UiElement root;
     private ScreenParts parts = ScreenParts.split(new UiElement.Spacer());
     private List<UiDropdownWidget> dropdowns = List.of();
@@ -218,7 +219,9 @@ final class ServerUiScreen extends Screen implements UiActions {
         headerStart.addChild(new UiTitleWidget(font, title, compact ? COMPACT_TITLE_SCALE : TITLE_SCALE),
                 settings -> settings.alignVerticallyMiddle());
         headerStart.arrangeElements();
-        UiButtonWidget close = UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
+        // A screen that asks for a PIN cannot be dismissed: there is nothing to go back to.
+        UiButtonWidget close = locked() ? null
+                : UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
 
         LayoutElement body = layouts.build(parts.body());
         arrange(body);
@@ -240,12 +243,14 @@ final class ServerUiScreen extends Screen implements UiActions {
         arrange(footerEnd);
 
         int footerWidth = footerStart.getWidth() + footerMiddle.getWidth() + footerEnd.getWidth() + 2 * GROUP_GAP;
-        int headerWidth = headerStart.getWidth() + GROUP_GAP + close.getWidth();
+        int headerWidth = headerStart.getWidth() + (close == null ? 0 : GROUP_GAP + close.getWidth());
         int contentWidth = Math.max(MIN_WIDTH, Math.max(body.getWidth(), Math.max(headerWidth, footerWidth)));
 
         header = new FrameLayout(contentWidth, HEADER_HEIGHT);
         header.addChild(headerStart, settings -> settings.alignHorizontallyLeft().alignVerticallyMiddle());
-        header.addChild(close, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
+        if (close != null) {
+            header.addChild(close, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
+        }
 
         FrameLayout bodyFrame = new FrameLayout(contentWidth, 0);
         bodyFrame.addChild(body, settings -> settings.alignHorizontallyCenter());
@@ -308,6 +313,35 @@ final class ServerUiScreen extends Screen implements UiActions {
         ClientPlayNetworking.send(new UiDropC2S(sessionId, draggedId, targetId));
     }
 
+    @Override
+    public PinPadAnimation pinPadAnimation() {
+        return pinPadAnimation;
+    }
+
+    /** Whether the screen is a PIN keypad, which neither Escape nor a close button may dismiss. */
+    private boolean locked() {
+        return containsPinPad(root);
+    }
+
+    private static boolean containsPinPad(UiElement element) {
+        return switch (element) {
+            case UiElement.PinPad ignored -> true;
+            case UiElement.Column column -> column.children().stream().anyMatch(ServerUiScreen::containsPinPad);
+            case UiElement.Row row -> row.children().stream().anyMatch(ServerUiScreen::containsPinPad);
+            case UiElement.Scroll scroll -> containsPinPad(scroll.content());
+            default -> false;
+        };
+    }
+
+    private @Nullable UiPinPadWidget pinPadWidget() {
+        for (var child : children()) {
+            if (child instanceof UiPinPadWidget pad) {
+                return pad;
+            }
+        }
+        return null;
+    }
+
     /** Closes the whole screen, whatever it was opened from. */
     private void closeAll() {
         super.onClose();
@@ -321,6 +355,9 @@ final class ServerUiScreen extends Screen implements UiActions {
     /** Escape goes back to the screen this one was opened from, and closes only when there is none. */
     @Override
     public void onClose() {
+        if (locked()) {
+            return;
+        }
         UiElement.Button goBack = goBack();
         if (goBack != null) {
             press(goBack.id(), 0, false);
@@ -443,6 +480,15 @@ final class ServerUiScreen extends Screen implements UiActions {
     /** Escape drops an edit in progress, or closes an open list, before it goes back. */
     @Override
     public boolean keyPressed(KeyEvent event) {
+        UiPinPadWidget pad = pinPadWidget();
+        if (pad != null) {
+            // The keyboard types into a keypad as the mouse does; Escape does nothing.
+            int key = UiPinPadWidget.keyOfKeyboard(event.key());
+            if (key >= 0) {
+                pad.pressKey(key);
+            }
+            return key >= 0 || event.isEscape();
+        }
         if (event.isEscape() && dragging) {
             dragCandidate = null;
             dragging = false;

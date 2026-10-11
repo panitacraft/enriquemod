@@ -45,10 +45,12 @@ public final class Messages {
         }
     }
 
-    public static final class Prefix {
-        public static final String DEFAULT = "<color #F2B134>[Enriquecraft]</color>";
+    /** Words that can be written in any text between double braces, such as {{PREFIX}}. */
+    public static final class Variables {
+        public static final String PREFIX = "<b><gradient:#920000:#BA5B5B:#920000><shadow:#3A0620:1>Enriquecraft</shadow></gradient></b>";
+        public static final String SEPARATOR = "<dark_gray>»</dark_gray>";
 
-        private Prefix() {
+        private Variables() {
         }
     }
 
