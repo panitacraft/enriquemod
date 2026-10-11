@@ -83,6 +83,11 @@ public final class AuthHooks {
         held.leaving(player);
     }
 
+    /** Whether the player has no Microsoft account behind their name, so the game can never get a profile key from them. */
+    public boolean hasNoProfileKey(ServerPlayer player) {
+        return AuthMode.of(player.getUUID(), player.getGameProfile().name()) == AuthMode.CRACKED;
+    }
+
     /** Whether the player has not entered their PIN yet. */
     public boolean isHeld(ServerPlayer player) {
         return held.isHeld(player);
