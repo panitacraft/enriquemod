@@ -48,7 +48,8 @@ public final class ChatEvents {
      * @param channel the channel the line was written in
      * @param sender  who wrote it
      * @param text    what they wrote, as plain text
+     * @param emote   whether it is what they do, written with {@code /me}, rather than what they say
      */
-    public record ChatMessage(ChannelDefinition channel, ServerPlayer sender, String text) {
+    public record ChatMessage(ChannelDefinition channel, ServerPlayer sender, String text, boolean emote) {
     }
 }

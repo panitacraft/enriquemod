@@ -4,6 +4,8 @@
   "package": "com.panita.enriquecraft.chat.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "EmoteCommandsMixin",
+    "MsgCommandMixin",
     "PlayerDisplayNameMixin",
     "PlayerListSystemMessageMixin",
     "ServerPlayerTabNameMixin"
