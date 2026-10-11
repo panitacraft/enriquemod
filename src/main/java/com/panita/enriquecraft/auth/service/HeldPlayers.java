@@ -3,6 +3,7 @@ package com.panita.enriquecraft.auth.service;
 import com.panita.enriquecraft.auth.config.AuthConfig;
 import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.auth.data.HeldState;
+import com.panita.enriquecraft.auth.event.AuthEvents;
 import com.panita.enriquecraft.auth.message.LoginView;
 import com.panita.enriquecraft.auth.message.RefusalView;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
@@ -162,6 +163,7 @@ public final class HeldPlayers {
         }
         if (AuthMode.of(id, player.getGameProfile().name()) == AuthMode.PREMIUM) {
             loginView.autoLogin(player);
+            AuthEvents.PLAYER_READY.invoker().onReady(player);
             return;
         }
         if (accounts.heldAt(id).isPresent()) {
@@ -169,6 +171,7 @@ public final class HeldPlayers {
         }
         String ip = Addresses.of(player.connection.getRemoteAddress());
         accounts.sessionRemaining(id, ip).ifPresent(remaining -> loginView.sessionActive(player, remaining));
+        AuthEvents.PLAYER_READY.invoker().onReady(player);
     }
 
     public void tick() {
@@ -259,6 +262,7 @@ public final class HeldPlayers {
         } else {
             loginView.letIn(holder.player);
         }
+        AuthEvents.PLAYER_READY.invoker().onReady(holder.player);
     }
 
     private void kick(Held holder, Component reason) {
