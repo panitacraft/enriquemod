@@ -14,6 +14,9 @@ public final class ChatConfig implements ModConfig {
 
     public final ConfigValue<Map<String, ChannelDefinition>> channels;
     public final ConfigValue<Map<String, String>> emojis;
+    public final ConfigValue<Integer> nicknameMinLength;
+    public final ConfigValue<Integer> nicknameMaxLength;
+    public final ConfigValue<Integer> nicknameCooldownSeconds;
 
     public ChatConfig(ConfigSectionBuilder builder) {
         channels = builder.custom("channels", DefaultChannels.table(),
@@ -28,5 +31,11 @@ public final class ChatConfig implements ModConfig {
                         + "Use symbols the game's font draws. Remove every entry to turn emojis off.",
                 trigger -> !trigger.isBlank() && trigger.length() <= 32 && trigger.strip().equals(trigger) && !trigger.contains(" "),
                 "must be 1 to 32 characters long, without spaces");
+        nicknameMinLength = builder.intRange("nickname.minLength", 3, 1, 32,
+                "The fewest characters a nickname can have, not counting its colors and styles.");
+        nicknameMaxLength = builder.intRange("nickname.maxLength", 16, 1, 32,
+                "The most characters a nickname can have, not counting its colors and styles.");
+        nicknameCooldownSeconds = builder.intRange("nickname.cooldownSeconds", 300, 0, 86_400,
+                "Seconds a player must wait before changing their nickname again. 0 turns the wait off.");
     }
 }

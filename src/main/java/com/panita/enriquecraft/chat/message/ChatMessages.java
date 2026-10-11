@@ -23,6 +23,27 @@ public final class ChatMessages {
         }
     }
 
+    public static final class Nickname {
+        public static final String NICK_DESCRIPTION = "Cambia tu apodo en el chat";
+        public static final String REAL_NAME_DESCRIPTION = "Muestra quién tiene un apodo";
+        public static final String CHANGED = "Tu apodo ahora es {nickname}.";
+        public static final String CHANGED_OTHER = "El apodo de <bold>{player}</bold> ahora es {nickname}.";
+        public static final String CLEARED = "Tu apodo fue quitado.";
+        public static final String CLEARED_OTHER = "Se quitó el apodo de <bold>{player}</bold>.";
+        public static final String NOT_SET = "No tienes un apodo.";
+        public static final String NOT_SET_OTHER = "<bold>{player}</bold> no tiene un apodo.";
+        public static final String TOO_SHORT = "El apodo debe tener al menos <bold>{min}</bold> caracteres.";
+        public static final String TOO_LONG = "El apodo puede tener hasta <bold>{max}</bold> caracteres.";
+        public static final String BAD_CHARACTERS = "El apodo solo puede llevar letras, números, espacios y los signos _ . -";
+        public static final String TAKEN = "Ese nombre ya lo usa otro jugador.";
+        public static final String COOLDOWN = "Debes esperar <bold>{time}</bold> para cambiar el apodo otra vez.";
+        public static final String REAL_NAME = "<bold>{nickname}</bold> es <bold>{name}</bold>.";
+        public static final String REAL_NAME_NONE = "Nadie tiene el apodo <bold>{nickname}</bold>.";
+
+        private Nickname() {
+        }
+    }
+
     public static final class Channel {
         public static final String CHAT_DESCRIPTION = "Cambia el canal en el que escribes";
         public static final String ALL_DESCRIPTION = "Envía un mensaje al chat global sin cambiar de canal";
