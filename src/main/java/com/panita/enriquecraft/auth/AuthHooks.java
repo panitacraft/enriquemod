@@ -78,13 +78,9 @@ public final class AuthHooks {
         held.joining(player, connection.getRemoteAddress());
     }
 
-    public boolean isHeld(ServerPlayer player) {
-        return held.isHeld(player);
-    }
-
-    /** A player is leaving; returns whether they were held, in which case their leaving is not announced. */
-    public boolean leaving(ServerPlayer player) {
-        return held.leaving(player);
+    /** A player is leaving: if they were waiting for the PIN screen they are put back as they really were. */
+    public void leaving(ServerPlayer player) {
+        held.leaving(player);
     }
 
     /** Whether a packet of this player must be dropped. */

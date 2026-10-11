@@ -47,11 +47,11 @@ public final class AuthModule implements EnriquecraftModule {
         AccountService accounts = new AccountService(services.get(WorldData.class), hasher, clock);
         // A lockout is `maxAttempts` wrong PINs, so that many times `kicksBeforeBlock` of them block an address.
         AttemptLimiter limiter = new AttemptLimiter(clock, () -> config.kicksBeforeBlock.get() * config.maxAttempts.get(),
-                () -> Duration.ofMinutes(config.kickWindowMinutes.get()), () -> Duration.ofMinutes(config.blockMinutes.get()));
+                () -> Duration.ofSeconds(config.windowSeconds.get()), () -> Duration.ofSeconds(config.blockSeconds.get()));
         PremiumLookup lookup = new PremiumLookup(PremiumLookup.mojang(), clock,
                 () -> Duration.ofMinutes(config.lookupCacheMinutes.get()), config.lookupMaxRequestsPerTenMinutes::get);
         RefusalView refusals = new RefusalView(new MessageFormatter(services.get(CoreConfig.class)));
-        PinMenus screens = new PinMenus(ui, new PinView(ui.factory(), config), config);
+        PinMenus screens = new PinMenus(ui, new PinView(ui.factory(), config));
         HeldPlayers held = new HeldPlayers(accounts, limiter, config, refusals, screens,
                 services.get(ClientCapabilities.class), services.get(Messenger.class));
 

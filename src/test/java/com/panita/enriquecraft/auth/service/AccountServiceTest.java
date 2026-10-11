@@ -1,9 +1,10 @@
 package com.panita.enriquecraft.auth.service;
 
 import com.panita.enriquecraft.MinecraftTestSupport;
-import com.panita.enriquecraft.auth.data.HeldPosition;
+import com.panita.enriquecraft.auth.data.HeldState;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,8 +109,8 @@ class AccountServiceTest {
     }
 
     @Test
-    void theHeldPositionIsKeptUntilCleared() {
-        HeldPosition position = new HeldPosition(Level.NETHER, 1.5, 64, -3.25, 90F, 10F);
+    void theHeldStateIsKeptUntilCleared() {
+        HeldState position = new HeldState(Level.NETHER, 1.5, 64, -3.25, 90F, 10F, Optional.of(GameType.SURVIVAL));
 
         service.holdAt(PLAYER, "Tezzlar", position);
 

@@ -1,11 +1,12 @@
 package com.panita.enriquecraft.auth.service;
 
-import com.panita.enriquecraft.auth.data.HeldPosition;
+import com.panita.enriquecraft.auth.data.HeldState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Relative;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.LevelData;
 
 import java.util.Optional;
@@ -20,21 +21,28 @@ public final class Limbo {
     private Limbo() {
     }
 
-    /** Moves the player to the waiting spot. */
-    public static void enter(ServerPlayer player) {
+    /**
+     * Moves the player to the waiting spot, and into spectator mode when asked: nothing they send can move them
+     * anyway, and in spectator mode the others do not see them stand there.
+     */
+    public static void enter(ServerPlayer player, boolean spectator) {
         MinecraftServer server = player.level().getServer();
         LevelData.RespawnData spawn = server.getRespawnData();
         ServerLevel level = Optional.ofNullable(server.getLevel(spawn.dimension())).orElse(server.overworld());
         BlockPos pos = spawn.pos();
         teleport(player, level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);
+        if (spectator) {
+            player.setGameMode(GameType.SPECTATOR);
+        }
     }
 
-    /** Puts the player back where they really were; stays put when that dimension no longer exists. */
-    public static void leave(ServerPlayer player, HeldPosition position) {
-        ServerLevel level = player.level().getServer().getLevel(position.dimension());
+    /** Puts the player back as they really were; stays put when their dimension no longer exists. */
+    public static void leave(ServerPlayer player, HeldState state) {
+        ServerLevel level = player.level().getServer().getLevel(state.dimension());
         if (level != null) {
-            teleport(player, level, position.x(), position.y(), position.z(), position.yaw(), position.pitch());
+            teleport(player, level, state.x(), state.y(), state.z(), state.yaw(), state.pitch());
         }
+        state.gameMode().ifPresent(player::setGameMode);
     }
 
     private static void teleport(ServerPlayer player, ServerLevel level, double x, double y, double z, float yaw,

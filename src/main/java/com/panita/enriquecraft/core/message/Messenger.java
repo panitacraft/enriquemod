@@ -112,8 +112,7 @@ public final class Messenger {
                 formatter.format(Message.plain(raw).prefixed(), ServerPlaceholderContext.of(context)));
     }
 
-    /** Broadcasts a ready-made text, such as one of the game's own announcements. */
-    public void broadcast(MinecraftServer server, Component component) {
+    private void broadcast(MinecraftServer server, Component component) {
         server.getPlayerList().broadcastSystemMessage(component, false);
     }
 

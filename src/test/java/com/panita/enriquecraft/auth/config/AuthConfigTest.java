@@ -29,6 +29,10 @@ class AuthConfigTest {
         assertEquals(3, config.maxAttempts.get());
         assertEquals(24, config.sessionHours.get());
         assertEquals(3, config.kicksBeforeBlock.get());
+        assertEquals(600, config.windowSeconds.get());
+        assertEquals(900, config.blockSeconds.get());
+        assertTrue(config.spectatorWhileWaiting.get());
+        assertEquals(3, config.introSeconds.get());
         assertTrue(manager.reload().isClean());
     }
 

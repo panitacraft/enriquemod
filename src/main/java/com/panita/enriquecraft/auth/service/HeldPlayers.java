@@ -2,14 +2,13 @@ package com.panita.enriquecraft.auth.service;
 
 import com.panita.enriquecraft.auth.config.AuthConfig;
 import com.panita.enriquecraft.auth.data.AuthMode;
-import com.panita.enriquecraft.auth.data.HeldPosition;
+import com.panita.enriquecraft.auth.data.HeldState;
 import com.panita.enriquecraft.auth.message.AuthMessages;
 import com.panita.enriquecraft.auth.message.RefusalView;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.network.ClientFeature;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ServerboundClientInformationPacket;
@@ -35,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * The players who are in the game but have not entered their PIN yet. A held player is moved to the
  * waiting spot, shown the PIN screen, cannot do anything but use it (every other thing their client
- * sends is dropped, and nothing can hurt them), and is not announced to the others. They leave this state
+ * sends is dropped, and nothing can hurt them). They leave this state
  * by entering the right PIN, by being kicked, or by disconnecting; in every case they get back to where
  * they really were.
  */
@@ -144,9 +143,9 @@ public final class HeldPlayers {
         }
         // A leftover position means the server stopped while they waited: that one is the real one.
         if (accounts.heldAt(player.getUUID()).isEmpty()) {
-            accounts.holdAt(player.getUUID(), player.getGameProfile().name(), HeldPosition.of(player));
+            accounts.holdAt(player.getUUID(), player.getGameProfile().name(), HeldState.of(player));
         }
-        Limbo.enter(player);
+        Limbo.enter(player, config.spectatorWhileWaiting.get());
         holder.begun = true;
     }
 
@@ -227,9 +226,6 @@ public final class HeldPlayers {
             holder.screen.close();
         }
         restore(holder.player);
-        // The game's own announcement, held back until now; its key is one every client knows.
-        messenger.broadcast(holder.player.level().getServer(), Component.translatable("multiplayer.player.joined",
-                holder.player.getDisplayName()).withStyle(ChatFormatting.YELLOW));
     }
 
     private void kick(Held holder, Component reason) {
@@ -244,18 +240,13 @@ public final class HeldPlayers {
     }
 
     /**
-     * Called as a player leaves, before their data is saved, so a held player is saved where they really
-     * were. Their leaving is not announced, since their arrival was not either.
-     *
-     * @return whether the player was held
+     * Called as a player leaves, before their data is saved, so a player who was still waiting is saved as they
+     * really were.
      */
-    public boolean leaving(ServerPlayer player) {
-        Held holder = held.remove(player.getUUID());
-        if (holder == null) {
-            return false;
+    public void leaving(ServerPlayer player) {
+        if (held.remove(player.getUUID()) != null) {
+            restore(player);
         }
-        restore(player);
-        return true;
     }
 
     /** Whether a packet from a held player must be dropped: they may only use the screen they are shown. */

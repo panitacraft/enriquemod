@@ -2,7 +2,7 @@ package com.panita.enriquecraft.auth.service;
 
 import com.panita.enriquecraft.auth.data.AuthAccount;
 import com.panita.enriquecraft.auth.data.AuthSession;
-import com.panita.enriquecraft.auth.data.HeldPosition;
+import com.panita.enriquecraft.auth.data.HeldState;
 import com.panita.enriquecraft.auth.data.PinCredential;
 import com.panita.enriquecraft.core.framework.data.SnbtStore;
 import com.panita.enriquecraft.core.framework.data.WorldData;
@@ -86,11 +86,11 @@ public final class AccountService {
     }
 
     /** Notes where a player really was before they were moved to the waiting spot. */
-    public void holdAt(UUID id, String name, HeldPosition position) {
+    public void holdAt(UUID id, String name, HeldState position) {
         upsert(id, name, account -> account.withHeldAt(Optional.of(position)));
     }
 
-    public Optional<HeldPosition> heldAt(UUID id) {
+    public Optional<HeldState> heldAt(UUID id) {
         return find(id).flatMap(AuthAccount::heldAt);
     }
 
