@@ -17,6 +17,12 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Integer> nicknameMinLength;
     public final ConfigValue<Integer> nicknameMaxLength;
     public final ConfigValue<Integer> nicknameCooldownSeconds;
+    public final ConfigValue<Boolean> joinMessage;
+    public final ConfigValue<Boolean> firstJoinMessage;
+    public final ConfigValue<Boolean> leaveMessage;
+    public final ConfigValue<Boolean> deathMessage;
+    public final ConfigValue<Boolean> advancementMessage;
+    public final ConfigValue<Boolean> welcomeMessage;
 
     public ChatConfig(ConfigSectionBuilder builder) {
         channels = builder.custom("channels", DefaultChannels.table(),
@@ -37,5 +43,12 @@ public final class ChatConfig implements ModConfig {
                 "The most characters a nickname can have, not counting its colors and styles.");
         nicknameCooldownSeconds = builder.intRange("nickname.cooldownSeconds", 300, 0, 86_400,
                 "Seconds a player must wait before changing their nickname again. 0 turns the wait off.");
+        joinMessage = builder.bool("events.join.enabled", true, "Shows a message in chat when a player joins.");
+        firstJoinMessage = builder.bool("events.firstJoin.enabled", true,
+                "Shows a message of its own when a player joins for the first time. When it is off that join gets the normal message.");
+        leaveMessage = builder.bool("events.leave.enabled", true, "Shows a message in chat when a player leaves.");
+        deathMessage = builder.bool("events.death.enabled", true, "Shows a message in chat when a player dies.");
+        advancementMessage = builder.bool("events.advancement.enabled", true, "Shows a message in chat when a player makes an advancement.");
+        welcomeMessage = builder.bool("welcome.enabled", true, "Sends the welcome message to a player once they are in.");
     }
 }

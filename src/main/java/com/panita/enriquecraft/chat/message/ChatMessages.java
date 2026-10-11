@@ -23,6 +23,27 @@ public final class ChatMessages {
         }
     }
 
+    /** The lines the game's messages about players turn into. {@code {player}} is the name the player shows. */
+    public static final class Events {
+        public static final String JOIN = "<dark_gray>[<green>+</green>]</dark_gray> <gray>{player} entró al servidor";
+        public static final String JOIN_FIRST = "<dark_gray>[<gold>★</gold>]</dark_gray> <yellow>¡{player} se une al servidor por primera vez!";
+        public static final String JOIN_RENAMED = "<dark_gray>[<green>+</green>]</dark_gray> <gray>{player} entró al servidor <dark_gray>(antes {oldName})";
+        public static final String LEAVE = "<dark_gray>[<red>-</red>]</dark_gray> <gray>{player} salió del servidor";
+        public static final String DEATH = "<dark_gray>[<red>☠</red>]</dark_gray> <gray>{message}";
+        public static final String ADVANCEMENT = "<dark_gray>[<green>✔</green>]</dark_gray> <gray>{message}";
+
+        private Events() {
+        }
+    }
+
+    public static final class Welcome {
+        public static final String TEXT = "<bold>¡Bienvenido, {player}!</bold>\n"
+                + "<gray>Usa <yellow>/chat</yellow> para cambiar de canal y <yellow>/enriquecraft help</yellow> para ver los comandos.";
+
+        private Welcome() {
+        }
+    }
+
     public static final class Nickname {
         public static final String NICK_DESCRIPTION = "Cambia tu apodo en el chat";
         public static final String REAL_NAME_DESCRIPTION = "Muestra quién tiene un apodo";

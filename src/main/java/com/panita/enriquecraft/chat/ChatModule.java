@@ -7,9 +7,13 @@ import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.chat.message.ChatView;
 import com.panita.enriquecraft.chat.message.NicknameView;
+import com.panita.enriquecraft.chat.message.SystemMessageView;
+import com.panita.enriquecraft.chat.message.WelcomeView;
 import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.NicknameService;
+import com.panita.enriquecraft.chat.service.SystemMessageClassifier;
+import com.panita.enriquecraft.chat.service.SystemMessages;
 import com.panita.enriquecraft.chat.service.TabListNames;
 import com.panita.enriquecraft.chat.text.ChatTextParser;
 import com.panita.enriquecraft.chat.text.EmojiCatalog;
@@ -58,6 +62,10 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(NicknameView.class, new NicknameView(services.get(Messenger.class), config));
         services.register(TabListNames.class, new TabListNames());
         new ChatPlaceholders(nicknames, selection).register();
-        ChatHooks.install(nicknames);
+        Messenger messenger = services.get(Messenger.class);
+        SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config,
+                services.get(HeldPlayers.class));
+        services.register(WelcomeView.class, new WelcomeView(messenger));
+        ChatHooks.install(nicknames, systemMessages);
     }
 }
