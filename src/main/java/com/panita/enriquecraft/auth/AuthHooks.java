@@ -83,6 +83,11 @@ public final class AuthHooks {
         held.leaving(player);
     }
 
+    /** Whether the player has not entered their PIN yet. */
+    public boolean isHeld(ServerPlayer player) {
+        return held.isHeld(player);
+    }
+
     /** Whether a packet of this player must be dropped. */
     public boolean blocks(ServerPlayer player, Packet<?> packet) {
         return held.blocks(player, packet);
