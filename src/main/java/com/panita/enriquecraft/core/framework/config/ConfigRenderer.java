@@ -20,6 +20,7 @@ final class ConfigRenderer {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create();
     private static final String INDENT = "  ";
+    private static final int MAX_DEFAULT_COMMENT = 160;
 
     private final String header;
 
@@ -79,7 +80,11 @@ final class ConfigRenderer {
             out.append(prefix).append(line).append('\n');
         }
         value.constraint().ifPresent(constraint -> out.append(prefix).append("Allowed: ").append(constraint).append('\n'));
-        out.append(prefix).append("Default: ").append(value.defaultJson()).append('\n');
+        // A large default (a table of emojis, a set of channels) is already written as the value itself.
+        String defaultText = value.defaultJson().toString();
+        if (defaultText.length() <= MAX_DEFAULT_COMMENT) {
+            out.append(prefix).append("Default: ").append(defaultText).append('\n');
+        }
     }
 
     private Node treeOf(List<ConfigValue<?>> values) {
