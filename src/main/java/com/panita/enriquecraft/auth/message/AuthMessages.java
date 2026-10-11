@@ -51,7 +51,7 @@ public final class AuthMessages {
 
         public static final String ADDED = "<bold>{name}</bold> añadido a la lista blanca como cuenta <green>{mode}</green>.";
         public static final String REPLACED = "<bold>{name}</bold> ahora es una cuenta <green>{mode}</green>. Datos del jugador copiados: <white>{copied}</white> archivo(s).";
-        public static final String REPLACED_KEPT = " Ya existían <white>{kept}</white> del nuevo modo y no se tocaron.";
+        public static final String REPLACED_KEPT = "<bold>{name}</bold> ahora es una cuenta <green>{mode}</green>. Datos del jugador copiados: <white>{copied}</white> archivo(s). Ya existían <white>{kept}</white> del nuevo modo y no se tocaron.";
         public static final String UNCHANGED = "<bold>{name}</bold> ya está en la lista blanca como cuenta <green>{mode}</green>.";
         public static final String NOT_PREMIUM = "No existe ninguna cuenta de Microsoft llamada <bold>{name}</bold>. Usa <white>cracked</white> si no tiene cuenta.";
         public static final String LOOKUP_FAILED = "No se pudo consultar a Mojang sobre <bold>{name}</bold>. Indica el modo: <white>cracked</white> o <white>premium</white>.";
@@ -98,7 +98,7 @@ public final class AuthMessages {
     /** Shown on the disconnect screen, so a vanilla client can read them. */
     public static final class Refusal {
         public static final String NOT_WHITELISTED = "<red>No estás en la lista blanca de este servidor.";
-        public static final String BLOCKED = "<red>Demasiados intentos fallidos.</red>\n<gray>Vuelve a intentarlo en <white>{minutes}</white> minuto(s).";
+        public static final String BLOCKED = "<red>Demasiados intentos fallidos.</red>\n<gray>Vuelve a intentarlo en <white>{time}</white>.";
         public static final String ALREADY_ONLINE = "<red>Ya hay alguien conectado con ese nombre.</red>\n<gray>Si eres tú, espera unos segundos y vuelve a intentarlo.";
         public static final String UNAVAILABLE = "<red>No se pudo verificar tu cuenta con Mojang.</red>\n<gray>Inténtalo de nuevo en un momento.";
         public static final String TOO_MANY_ATTEMPTS = "<red>PIN incorrecto demasiadas veces.</red>\n<gray>Vuelve a entrar para intentarlo de nuevo.";

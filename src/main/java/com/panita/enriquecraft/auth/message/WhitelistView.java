@@ -26,7 +26,7 @@ public final class WhitelistView {
     }
 
     public void replaced(CommandSourceStack source, String name, AuthMode mode, PlayerDataMigration.Result migration) {
-        String template = AuthMessages.Whitelist.REPLACED + (migration.kept() > 0 ? AuthMessages.Whitelist.REPLACED_KEPT : "");
+        String template = migration.kept() > 0 ? AuthMessages.Whitelist.REPLACED_KEPT : AuthMessages.Whitelist.REPLACED;
         messenger.send(source, Message.success(template).with("name", name).with("mode", label(mode))
                 .with("copied", migration.copied()).with("kept", migration.kept()).prefixed());
     }

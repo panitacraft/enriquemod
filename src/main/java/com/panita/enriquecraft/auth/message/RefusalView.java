@@ -1,11 +1,11 @@
 package com.panita.enriquecraft.auth.message;
 
 import com.panita.enriquecraft.auth.service.LoginGate;
+import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import net.minecraft.network.chat.Component;
 
-import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -24,7 +24,7 @@ public final class RefusalView {
         return switch (verdict) {
             case LoginGate.Verdict.Proceed proceed -> Optional.empty();
             case LoginGate.Verdict.Blocked blocked -> Optional.of(formatter.format(
-                    Message.plain(AuthMessages.Refusal.BLOCKED).with("minutes", minutes(blocked.remaining()))));
+                    Message.plain(AuthMessages.Refusal.BLOCKED).with("time", Durations.format(blocked.remaining()))));
             case LoginGate.Verdict.AlreadyOnline alreadyOnline ->
                     Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.ALREADY_ONLINE)));
             case LoginGate.Verdict.NotWhitelisted notWhitelisted ->
@@ -44,9 +44,5 @@ public final class RefusalView {
 
     public Component loggedOut() {
         return formatter.format(Message.plain(AuthMessages.Refusal.LOGGED_OUT));
-    }
-
-    private static int minutes(Duration remaining) {
-        return (int) Math.max(1, (remaining.toSeconds() + 59) / 60);
     }
 }
