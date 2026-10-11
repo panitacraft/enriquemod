@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -25,8 +26,9 @@ import java.util.regex.Pattern;
  * The nicknames: a cosmetic name that chat, the tab list and the game's own messages show instead of the real one. It
  * is never used to tell who someone is, so nothing but display reads it. Used from the server thread only.
  * <p>
- * A nickname is made of letters, digits, spaces and {@code _ . -}, so it cannot pass for a title such as {@code [Staff]}.
- * It cannot be a real name of another player or the nickname of one. Colors and styles are for those who may.
+ * A nickname is made of letters, digits and {@code _}, with no spaces, so it can be written as an argument of a command and
+ * shown as the name of a player in the client. It cannot be the real name of another player, whether they are here or not,
+ * or the nickname of one, and nobody is let off that. Colors and styles are for those who may.
  */
 public final class NicknameService {
 
@@ -42,7 +44,7 @@ public final class NicknameService {
         }
     }
 
-    private static final Pattern ALLOWED = Pattern.compile("[\\p{L}\\p{N}_.\\-]+( [\\p{L}\\p{N}_.\\-]+)*");
+    private static final Pattern ALLOWED = Pattern.compile("[\\p{L}\\p{N}_]+");
     private static final Set<ChatCapability> STYLES = EnumSet.of(ChatCapability.COLOR, ChatCapability.FORMAT, ChatCapability.GRADIENT);
 
     /** A nickname read once: it is shown far more often than it changes. */
@@ -76,6 +78,11 @@ public final class NicknameService {
         return store.get().stream().filter(profile -> profile.id().equals(id)).findFirst();
     }
 
+    /** The nickname of a player without colors or styles, which is what other players' clients know them by. */
+    public Optional<String> plainNicknameOf(UUID id) {
+        return shownOf(id).map(Shown::plain);
+    }
+
     /** The nickname of a player, as it is shown. */
     public Optional<Component> nicknameOf(UUID id) {
         return shownOf(id).map(Shown::component);
@@ -94,9 +101,10 @@ public final class NicknameService {
      *
      * @param written    the nickname as typed
      * @param formatting whether colors and styles in it are read, which only those who may use them are allowed
-     * @param bypass     whether the cooldown and the nickname being taken are ignored
+     * @param bypass     whether the wait between changes is ignored
+     * @param otherNames the real names of the players who may play here besides those the module has seen, which no nickname can be
      */
-    public Outcome set(UUID id, String name, String written, boolean formatting, boolean bypass) {
+    public Outcome set(UUID id, String name, String written, boolean formatting, boolean bypass, Collection<String> otherNames) {
         touch(id, name);
         String plain = formatting ? parser.parse(written, STYLES).getString().strip() : written.strip();
         int length = plain.codePointCount(0, plain.length());
@@ -110,13 +118,13 @@ public final class NicknameService {
             return Outcome.of(Status.BAD_CHARACTERS);
         }
         ChatProfile profile = profile(id).orElseThrow();
+        if (isTaken(plain, id, name, otherNames)) {
+            return Outcome.of(Status.TAKEN);
+        }
         if (!bypass) {
             Duration remaining = cooldownLeft(profile);
             if (!remaining.isZero()) {
                 return new Outcome(Status.COOLDOWN, remaining);
-            }
-            if (isTaken(plain, id)) {
-                return Outcome.of(Status.TAKEN);
             }
         }
         save(profile.withNickname(Optional.of(formatting ? written.strip() : plain), Optional.of(clock.get())));
@@ -141,7 +149,10 @@ public final class NicknameService {
                 .orElse(Duration.ZERO);
     }
 
-    private boolean isTaken(String plain, UUID owner) {
+    private boolean isTaken(String plain, UUID owner, String ownName, Collection<String> otherNames) {
+        if (otherNames.stream().anyMatch(known -> known.equalsIgnoreCase(plain) && !known.equalsIgnoreCase(ownName))) {
+            return true;
+        }
         return store.get().stream()
                 .filter(profile -> !profile.id().equals(owner))
                 .anyMatch(profile -> profile.name().equalsIgnoreCase(plain)

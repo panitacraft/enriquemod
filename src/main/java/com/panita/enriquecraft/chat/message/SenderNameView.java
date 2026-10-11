@@ -9,8 +9,8 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The name of a player as chat lines show it: their nickname, with a tooltip that tells who is behind it, and a click that
- * starts a private message to them.
+ * The name of a player as chat lines show it, with a tooltip that tells who is behind it and a click that starts a private
+ * message to them.
  */
 public final class SenderNameView {
 
@@ -22,14 +22,27 @@ public final class SenderNameView {
         this.nicknames = nicknames;
     }
 
+    /** The nickname of the player, or their name when they have none. */
     public Component of(ServerPlayer player) {
-        String name = player.getGameProfile().name();
-        Component shown = nicknames.nicknameOf(player.getUUID()).orElseGet(() -> Component.literal(name));
+        return decorated(player, nicknames.nicknameOf(player.getUUID()).orElseGet(() -> Component.literal(realName(player))));
+    }
+
+    /** The real name of the player, for someone who addressed them by it. */
+    public Component ofRealName(ServerPlayer player) {
+        return decorated(player, Component.literal(realName(player)));
+    }
+
+    private Component decorated(ServerPlayer player, Component shown) {
+        String name = realName(player);
         Component tooltip = messenger.format(Message.plain(ChatMessages.Format.NAME_HOVER)
-                .with("nickname", shown)
+                .with("nickname", nicknames.nicknameOf(player.getUUID()).orElse(shown))
                 .with("name", name), player);
         return shown.copy().withStyle(style -> style
                 .withHoverEvent(new HoverEvent.ShowText(tooltip))
                 .withClickEvent(new ClickEvent.SuggestCommand("/msg " + name + " ")));
+    }
+
+    private static String realName(ServerPlayer player) {
+        return player.getGameProfile().name();
     }
 }

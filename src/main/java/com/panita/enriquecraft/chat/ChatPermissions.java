@@ -17,7 +17,7 @@ public final class ChatPermissions {
 
     /** Colors and styles in a nickname. */
     public static final String NICK_COLOR = ROOT + ".color";
-    /** A nickname that ignores the wait between changes and may be one another player has. */
+    /** A nickname change that ignores the wait between changes. */
     public static final String NICK_BYPASS = ROOT + ".bypass";
     /** Changing the nickname of another player. */
     public static final String NICK_OTHERS = ROOT + ".others";

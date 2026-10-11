@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,7 +61,7 @@ class NicknameServiceTest {
     }
 
     private Status set(UUID id, String name, String nickname) {
-        return nicknames.set(id, name, nickname, false, false).status();
+        return nicknames.set(id, name, nickname, false, false, List.of()).status();
     }
 
     @Test
@@ -85,16 +86,16 @@ class NicknameServiceTest {
         assertEquals(Status.TOO_SHORT, set(ANA, "Ana", "ab"));
         assertEquals(Status.TOO_SHORT, set(ANA, "Ana", "   "));
         assertEquals(Status.TOO_LONG, set(ANA, "Ana", "a".repeat(17)));
-        assertEquals(Status.CHANGED, nicknames.set(ANA, "Ana", "<red>Ana</red><bold>nita</bold>", true, false).status());
+        assertEquals(Status.CHANGED, nicknames.set(ANA, "Ana", "<red>Ana</red><bold>nita</bold>", true, false, List.of()).status());
         assertEquals("Ananita", nicknames.nicknameOf(ANA).orElseThrow().getString());
     }
 
     @Test
-    void onlyLettersDigitsAndFewSignsAreAllowed() {
-        for (String bad : new String[]{"[Staff]", "Ana<3", "an@", "a  b", "<red>x", "a§b", "Ana!"}) {
+    void onlyLettersDigitsAndUnderscoresAreAllowed() {
+        for (String bad : new String[]{"[Staff]", "Ana<3", "an@", "a  b", "Ana María", "A.B-C", "<red>x", "a§b", "Ana!"}) {
             assertEquals(Status.BAD_CHARACTERS, set(ANA, "Ana", bad), bad);
         }
-        for (String good : new String[]{"Ana María", "pepe_99", "A.B-C", "Ñandú"}) {
+        for (String good : new String[]{"pepe_99", "Ñandú", "ANA123"}) {
             now.updateAndGet(time -> time.plus(Duration.ofDays(1)));
             assertEquals(Status.CHANGED, set(ANA, "Ana", good), good);
         }
@@ -113,10 +114,26 @@ class NicknameServiceTest {
 
     @Test
     void nicknamesOfOthersAreTakenWhateverTheCaseOrStyle() {
-        nicknames.set(BOB, "Bob", "<red>Bobby</red>", true, false);
+        nicknames.set(BOB, "Bob", "<red>Bobby</red>", true, false, List.of());
 
         assertEquals(Status.TAKEN, set(ANA, "Ana", "bobby"));
-        assertEquals(Status.CHANGED, nicknames.set(ANA, "Ana", "bobby", false, true).status());
+        assertEquals(Status.TAKEN, nicknames.set(ANA, "Ana", "bobby", false, true, List.of()).status());
+    }
+
+    @Test
+    void realNamesOfPlayersTheModuleHasNotSeenAreTakenToo() {
+        List<String> whitelisted = List.of("Zoe", "Ana");
+
+        assertEquals(Status.TAKEN, nicknames.set(ANA, "Ana", "zoe", false, false, whitelisted).status());
+        assertEquals(Status.CHANGED, nicknames.set(ANA, "Ana", "ANA", false, false, whitelisted).status());
+    }
+
+    @Test
+    void nobodyIsLetOffTheNicknamesOfOthers() {
+        nicknames.set(BOB, "Bob", "Bobby", false, true, List.of());
+
+        assertEquals(Status.TAKEN, nicknames.set(ANA, "Ana", "bobby", true, true, List.of()).status());
+        assertEquals(Status.TAKEN, nicknames.set(ANA, "Ana", "Bob", true, true, List.of()).status());
     }
 
     @Test
@@ -124,7 +141,7 @@ class NicknameServiceTest {
         set(ANA, "Ana", "Anita");
         now.updateAndGet(time -> time.plusSeconds(100));
 
-        NicknameService.Outcome outcome = nicknames.set(ANA, "Ana", "Anai", false, false);
+        NicknameService.Outcome outcome = nicknames.set(ANA, "Ana", "Anai", false, false, List.of());
 
         assertEquals(Status.COOLDOWN, outcome.status());
         assertEquals(Duration.ofSeconds(200), outcome.remaining());
@@ -137,7 +154,7 @@ class NicknameServiceTest {
     void bypassSkipsTheCooldown() {
         set(ANA, "Ana", "Anita");
 
-        assertEquals(Status.CHANGED, nicknames.set(ANA, "Ana", "Anai", false, true).status());
+        assertEquals(Status.CHANGED, nicknames.set(ANA, "Ana", "Anai", false, true, List.of()).status());
     }
 
     @Test
@@ -152,7 +169,7 @@ class NicknameServiceTest {
 
     @Test
     void nicknameCanBeFoundWhateverItsCaseAndStyle() {
-        nicknames.set(ANA, "Ana", "&6Anita", true, false);
+        nicknames.set(ANA, "Ana", "&6Anita", true, false, List.of());
 
         assertEquals(ANA, nicknames.findByNickname(" aNITA ").orElseThrow().id());
         assertEquals(Optional.empty(), nicknames.findByNickname("Ana"));

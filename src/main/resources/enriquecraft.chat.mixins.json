@@ -5,11 +5,15 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "EmoteCommandsMixin",
+    "ChunkMapAccessor",
+    "EntitySelectorNicknameMixin",
     "MinecraftServerMotdMixin",
     "MsgCommandMixin",
     "PlayerDisplayNameMixin",
+    "PlayerInfoEntryMixin",
     "PlayerListSystemMessageMixin",
-    "ServerPlayerTabNameMixin"
+    "ServerPlayerTabNameMixin",
+    "TrackedEntityInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

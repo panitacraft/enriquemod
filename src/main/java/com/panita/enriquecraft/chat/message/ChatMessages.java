@@ -76,8 +76,8 @@ public final class ChatMessages {
         public static final String NOT_SET_OTHER = "<bold>{player}</bold> no tiene un apodo.";
         public static final String TOO_SHORT = "El apodo debe tener al menos <bold>{min}</bold> caracteres.";
         public static final String TOO_LONG = "El apodo puede tener hasta <bold>{max}</bold> caracteres.";
-        public static final String BAD_CHARACTERS = "El apodo solo puede llevar letras, números, espacios y los signos _ . -";
-        public static final String TAKEN = "Ese nombre ya lo usa otro jugador.";
+        public static final String BAD_CHARACTERS = "El apodo solo puede llevar letras, números y _ , sin espacios.";
+        public static final String TAKEN = "Ese nombre ya es de otro jugador o ya lo usa como apodo.";
         public static final String COOLDOWN = "Debes esperar <bold>{time}</bold> para cambiar el apodo otra vez.";
         public static final String REAL_NAME = "<bold>{nickname}</bold> es <bold>{name}</bold>.";
         public static final String REAL_NAME_NONE = "Nadie tiene el apodo <bold>{nickname}</bold>.";

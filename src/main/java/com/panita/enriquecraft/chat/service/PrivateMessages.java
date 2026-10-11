@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.chat.service;
 
+import com.mojang.brigadier.context.CommandContext;
 import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.ChatPermissions;
 import com.panita.enriquecraft.chat.message.PrivateMessageView;
@@ -34,11 +35,12 @@ public final class PrivateMessages {
     }
 
     /**
-     * @param source the sender: a player, or the console
-     * @param raw    what they typed
+     * @param source      the sender: a player, or the console
+     * @param typedTarget what they wrote to say who the message is for, such as a name or a selector
+     * @param raw         what they typed as the message
      * @return how many players the message reached, as a command reports
      */
-    public int send(CommandSourceStack source, Collection<ServerPlayer> targets, String raw) {
+    public int send(CommandSourceStack source, Collection<ServerPlayer> targets, String typedTarget, String raw) {
         List<ServerPlayer> reachable = targets.stream().filter(target -> !held.isHeld(target)).toList();
         if (reachable.isEmpty()) {
             view.notAvailable(source);
@@ -52,12 +54,21 @@ public final class PrivateMessages {
         }
         for (ServerPlayer target : reachable) {
             view.incoming(source, target, text);
-            view.outgoing(source, target, text);
+            view.outgoing(source, target, text, typedTarget.equalsIgnoreCase(target.getGameProfile().name()));
             if (sender != null) {
                 replies.exchanged(sender.getUUID(), target.getUUID());
             }
         }
         return reachable.size();
+    }
+
+    /** What was written where the command asks for the player or players, such as a name or a selector. */
+    public static String typedTarget(CommandContext<CommandSourceStack> context) {
+        return context.getNodes().stream()
+                .filter(node -> node.getNode().getName().equals("targets"))
+                .map(node -> node.getRange().get(context.getInput()))
+                .findFirst()
+                .orElse("");
     }
 
     /** {@code /r}: answers the last player the sender exchanged a message with, if they are still here. */
@@ -69,6 +80,6 @@ public final class PrivateMessages {
             view.nobodyToReplyTo(source);
             return 0;
         }
-        return send(source, List.of(target), raw);
+        return send(source, List.of(target), "", raw);
     }
 }

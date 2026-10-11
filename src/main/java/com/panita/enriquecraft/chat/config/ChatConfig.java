@@ -40,7 +40,7 @@ public final class ChatConfig implements ModConfig {
                 "must be 1 to 32 characters long, without spaces");
         nicknameMinLength = builder.intRange("nickname.minLength", 3, 1, 32,
                 "The fewest characters a nickname can have, not counting its colors and styles.");
-        nicknameMaxLength = builder.intRange("nickname.maxLength", 16, 1, 32,
+        nicknameMaxLength = builder.intRange("nickname.maxLength", 16, 1, 16,
                 "The most characters a nickname can have, not counting its colors and styles.");
         nicknameCooldownSeconds = builder.intRange("nickname.cooldownSeconds", 300, 0, 86_400,
                 "Seconds a player must wait before changing their nickname again. 0 turns the wait off.");

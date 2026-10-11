@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.chat;
 
+import com.mojang.authlib.GameProfile;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.NicknameService;
@@ -9,6 +10,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.player.Player;
 import org.jspecify.annotations.Nullable;
 
@@ -62,6 +64,18 @@ public final class ChatHooks {
         systemMessages.joinEnds();
     }
 
+    /** The profile a client is told a player has: the nickname as the name when they have one, with the same id and skin. */
+    public GameProfile profileShownToClients(ServerPlayer player, GameProfile real) {
+        return nicknames.plainNicknameOf(player.getUUID())
+                .map(nickname -> new GameProfile(real.id(), nickname, real.properties()))
+                .orElse(real);
+    }
+
+    /** The online player with this nickname, or null. */
+    public @Nullable ServerPlayer playerWithNickname(PlayerList players, String nickname) {
+        return nicknames.findByNickname(nickname).map(profile -> players.getPlayer(profile.id())).orElse(null);
+    }
+
     /** A message the game is about to broadcast to everyone; true when the module took it over and the game must not send it. */
     public boolean systemMessage(MinecraftServer server, Component message) {
         return systemMessages.handle(server, message);
@@ -73,8 +87,8 @@ public final class ChatHooks {
     }
 
     /** {@code /msg}: sends the message the way the module shows private messages. */
-    public int privateMessage(CommandSourceStack source, Collection<ServerPlayer> targets, String text) {
-        return privateMessages.send(source, targets, text);
+    public int privateMessage(CommandSourceStack source, Collection<ServerPlayer> targets, String typedTarget, String text) {
+        return privateMessages.send(source, targets, typedTarget, text);
     }
 
     /** {@code /me}: says what the player does the way the module shows it. */

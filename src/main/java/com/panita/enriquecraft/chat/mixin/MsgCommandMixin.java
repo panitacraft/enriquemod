@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import com.panita.enriquecraft.auth.mixin.CommandNodeAccessor;
 import com.panita.enriquecraft.chat.ChatHooks;
+import com.panita.enriquecraft.chat.service.PrivateMessages;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.MessageArgument;
@@ -27,7 +28,8 @@ public abstract class MsgCommandMixin {
             return;
         }
         CommandNode<CommandSourceStack> message = dispatcher.getRoot().getChild("msg").getChild("targets").getChild("message");
-        ((CommandNodeAccessor) message).<CommandSourceStack>enriquecraft$setCommand(context -> hooks.privateMessage(context.getSource(),
-                EntityArgument.getPlayers(context, "targets"), MessageArgument.getMessage(context, "message").getString()));
+        ((CommandNodeAccessor) message).<CommandSourceStack>enriquecraft$setCommand(context -> hooks.privateMessage(context.getSource(), EntityArgument.getPlayers(context, "targets"),
+                PrivateMessages.typedTarget(context), MessageArgument.getMessage(context, "message").getString()));
     }
+
 }

@@ -9,7 +9,8 @@ import com.panita.enriquecraft.chat.ChatPermissions;
 import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.chat.message.NicknameView;
 import com.panita.enriquecraft.chat.service.NicknameService;
-import com.panita.enriquecraft.chat.service.TabListNames;
+import com.panita.enriquecraft.chat.service.ClientNames;
+import com.panita.enriquecraft.chat.service.KnownPlayers;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.message.PlayerOnly;
@@ -33,13 +34,16 @@ public final class NickCommand implements ModCommand {
     private final PlayerOnly playerOnly;
     private final NicknameService nicknames;
     private final NicknameView view;
-    private final TabListNames tabList;
+    private final ClientNames clientNames;
+    private final KnownPlayers knownPlayers;
 
-    public NickCommand(PlayerOnly playerOnly, NicknameService nicknames, NicknameView view, TabListNames tabList) {
+    public NickCommand(PlayerOnly playerOnly, NicknameService nicknames, NicknameView view, ClientNames clientNames,
+                       KnownPlayers knownPlayers) {
         this.playerOnly = playerOnly;
         this.nicknames = nicknames;
         this.view = view;
-        this.tabList = tabList;
+        this.clientNames = clientNames;
+        this.knownPlayers = knownPlayers;
     }
 
     @Override
@@ -68,12 +72,12 @@ public final class NickCommand implements ModCommand {
         CommandSourceStack source = context.getSource();
         NicknameService.Outcome outcome = nicknames.set(target.getUUID(), target.getGameProfile().name(),
                 StringArgumentType.getString(context, NICKNAME_ARGUMENT), ChatPermissions.canColorNickname(source),
-                ChatPermissions.canBypassNicknameRules(source));
+                ChatPermissions.canBypassNicknameRules(source), knownPlayers.namesOn(source.getServer()));
         if (outcome.status() != NicknameService.Status.CHANGED) {
             view.rejected(source, outcome);
             return 0;
         }
-        tabList.refresh(target);
+        clientNames.refresh(target);
         if (other) {
             view.changedOther(source, target.getGameProfile().name(), nicknames.nicknameOf(target.getUUID()).orElseThrow());
         } else {
@@ -91,7 +95,7 @@ public final class NickCommand implements ModCommand {
             }
             return 0;
         }
-        tabList.refresh(target);
+        clientNames.refresh(target);
         if (other) {
             view.clearedOther(source, target.getGameProfile().name());
         } else {

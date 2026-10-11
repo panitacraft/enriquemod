@@ -28,9 +28,15 @@ public final class PrivateMessageView {
                 Message.plain(ChatMessages.Format.PRIVATE_INCOMING).with("sender", sender).with("message", text), target));
     }
 
-    /** What the one who writes the message sees. */
-    public void outgoing(CommandSourceStack source, ServerPlayer target, Component text) {
-        messenger.send(source, Message.plain(ChatMessages.Format.PRIVATE_OUTGOING).with("target", names.of(target)).with("message", text));
+    /**
+     * What the one who writes the message sees. The name of the player they wrote to is the one they used: the real name when
+     * they addressed them by it, the nickname otherwise.
+     *
+     * @param byRealName whether the sender addressed the player by their real name
+     */
+    public void outgoing(CommandSourceStack source, ServerPlayer target, Component text, boolean byRealName) {
+        Component name = byRealName ? names.ofRealName(target) : names.of(target);
+        messenger.send(source, Message.plain(ChatMessages.Format.PRIVATE_OUTGOING).with("target", name).with("message", text));
     }
 
     public void notAvailable(CommandSourceStack source) {
