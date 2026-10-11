@@ -4,6 +4,7 @@ import com.panita.enriquecraft.auth.commands.WhitelistHandler;
 import com.panita.enriquecraft.auth.config.AuthConfig;
 import com.panita.enriquecraft.auth.gui.PinMenus;
 import com.panita.enriquecraft.auth.message.AdminView;
+import com.panita.enriquecraft.auth.message.AuthMessages;
 import com.panita.enriquecraft.auth.message.PinView;
 import com.panita.enriquecraft.auth.message.RefusalView;
 import com.panita.enriquecraft.auth.message.WhitelistView;
@@ -16,7 +17,6 @@ import com.panita.enriquecraft.auth.service.PinHasher;
 import com.panita.enriquecraft.auth.service.PlayerDataMigration;
 import com.panita.enriquecraft.auth.service.PremiumLookup;
 import com.panita.enriquecraft.auth.service.WhitelistAdmin;
-import com.panita.enriquecraft.core.config.CoreConfig;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -28,6 +28,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -35,6 +36,11 @@ import java.util.function.Supplier;
  * others enter a PIN, and a correct PIN is remembered for a while.
  */
 public final class AuthModule implements EnriquecraftModule {
+
+    @Override
+    public Optional<Class<?>> messages() {
+        return Optional.of(AuthMessages.class);
+    }
 
     private static final String PEPPER_FILE = "enriquecraft-auth.key";
 
@@ -50,7 +56,7 @@ public final class AuthModule implements EnriquecraftModule {
                 () -> Duration.ofSeconds(config.windowSeconds.get()), () -> Duration.ofSeconds(config.blockSeconds.get()));
         PremiumLookup lookup = new PremiumLookup(PremiumLookup.mojang(), clock,
                 () -> Duration.ofMinutes(config.lookupCacheMinutes.get()), config.lookupMaxRequestsPerTenMinutes::get);
-        RefusalView refusals = new RefusalView(new MessageFormatter(services.get(CoreConfig.class)));
+        RefusalView refusals = new RefusalView(services.get(MessageFormatter.class));
         PinMenus screens = new PinMenus(ui, new PinView(ui.factory(), config));
         HeldPlayers held = new HeldPlayers(accounts, limiter, config, refusals, screens,
                 services.get(ClientCapabilities.class), services.get(Messenger.class));

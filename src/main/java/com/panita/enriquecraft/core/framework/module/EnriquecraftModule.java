@@ -2,6 +2,8 @@ package com.panita.enriquecraft.core.framework.module;
 
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 
+import java.util.Optional;
+
 /**
  * A self-contained feature set of the mod, living in its own package. Commands in its
  * {@code commands} subpackage, listeners in its {@code listeners} subpackage and its config class in
@@ -19,6 +21,14 @@ public interface EnriquecraftModule {
     /** The package that holds the module's classes; by default, the package of the module class. */
     default String basePackage() {
         return getClass().getPackageName();
+    }
+
+    /**
+     * The class that holds the module's texts, nested classes of {@code public static final String} constants, so the
+     * administrator can change them in the messages file; none by default.
+     */
+    default Optional<Class<?>> messages() {
+        return Optional.empty();
     }
 
     default String commandPackage() {

@@ -1,6 +1,6 @@
 package com.panita.enriquecraft.core.message;
 
-import com.panita.enriquecraft.core.config.CoreConfig;
+import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.ServerPlaceholderContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
@@ -11,8 +11,9 @@ import net.minecraft.network.chat.Component;
 import java.util.function.Function;
 
 /**
- * Turns a {@link Message} into a vanilla {@link Component}: applies the prefix and level styling,
- * then resolves text tags, legacy color codes, named arguments and, when a context is given,
+ * Turns a {@link Message} into a vanilla {@link Component}: takes the text the administrator configured for it,
+ * applies the prefix and level styling, replaces the words in double braces ({@code {{PREFIX}}}), then resolves
+ * text tags (including gradients and shadows), legacy color codes, named arguments and, when a context is given,
  * server placeholders.
  */
 public final class MessageFormatter {
@@ -22,16 +23,20 @@ public final class MessageFormatter {
 
     private static final TagLikeParser.Format ARGUMENT_FORMAT = TagLikeParser.Format.of('{', '}');
 
+    /** What goes before a message that wants the prefix: the prefix, the separator and a space. */
+    private static final String PREFIX_LEAD = "{{PREFIX}} {{SEPARATOR}} ";
+
     private static final NodeParser TEXT_PARSER = ParserBuilder.of()
             .quickText()
+            .simplifiedTextFormat()
             .legacyAll()
             .placeholders(ARGUMENT_FORMAT, ARGUMENTS)
             .build();
 
-    private final CoreConfig config;
+    private final MessageCatalog catalog;
 
-    public MessageFormatter(CoreConfig config) {
-        this.config = config;
+    public MessageFormatter(MessageCatalog catalog) {
+        this.catalog = catalog;
     }
 
     /**
@@ -54,8 +59,8 @@ public final class MessageFormatter {
     }
 
     private String compose(Message message) {
-        String body = message.level().decorate(message.template());
-        return message.hasPrefix() ? config.prefix.get() + " " + body : body;
+        String body = message.level().decorate(catalog.resolve(message.template()));
+        return catalog.expand(message.hasPrefix() ? PREFIX_LEAD + body : body);
     }
 
     /**
@@ -65,6 +70,7 @@ public final class MessageFormatter {
     private static final class PlaceholderParser {
         private static final NodeParser INSTANCE = ParserBuilder.of()
                 .quickText()
+                .simplifiedTextFormat()
                 .legacyAll()
                 .serverPlaceholders()
                 .placeholders(ARGUMENT_FORMAT, ARGUMENTS)

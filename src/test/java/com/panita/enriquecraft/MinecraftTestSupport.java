@@ -1,10 +1,10 @@
 package com.panita.enriquecraft;
 
 import com.mojang.serialization.DynamicOps;
-import com.panita.enriquecraft.core.config.CoreConfig;
-import com.panita.enriquecraft.core.framework.config.ConfigManager;
+import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.MessageFormatter;
+import com.panita.enriquecraft.core.message.Messages;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.message.channel.BossBarChannel;
 import com.panita.enriquecraft.core.message.channel.TitleChannel;
@@ -58,11 +58,12 @@ public final class MinecraftTestSupport {
         return RegistryOps.create(NbtOps.INSTANCE, registries);
     }
 
-    /** A message formatter backed by a default config stored in the given directory. */
+    /** A message formatter backed by the default texts of the core module, in a messages file in the given directory. */
     public static MessageFormatter formatter(Path configDirectory) {
         bootstrap();
-        CoreConfig config = new ConfigManager(configDirectory).bind("core", CoreConfig.class);
-        return new MessageFormatter(config);
+        MessageCatalog catalog = new MessageCatalog(configDirectory);
+        catalog.register("core", Messages.class);
+        return new MessageFormatter(catalog);
     }
 
     public static MenuFactory menuFactory(Path configDirectory) {

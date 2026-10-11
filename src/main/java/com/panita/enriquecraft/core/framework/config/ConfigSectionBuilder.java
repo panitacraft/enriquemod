@@ -22,6 +22,11 @@ public final class ConfigSectionBuilder {
         return define(path, defaultValue, comment, ValueTypes.bool());
     }
 
+    /** A text that can be anything, even empty, such as a message. */
+    public ConfigValue<String> text(String path, String defaultValue, String comment) {
+        return define(path, defaultValue, comment, ValueTypes.string(value -> true, null));
+    }
+
     public ConfigValue<Integer> intRange(String path, int defaultValue, int min, int max, String comment) {
         return define(path, defaultValue, comment, ValueTypes.intRange(min, max));
     }
