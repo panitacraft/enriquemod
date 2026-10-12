@@ -268,8 +268,13 @@ public final class BridgeConnection implements FrameSink {
                 return;
             }
             state = State.WAITING;
-            Duration wait = Backoff.delay(attempt++, random.getAsDouble());
-            LOGGER.info("The bridge to the Panita Bot is down ({}); trying again in {} s", reason, wait.toSeconds());
+            Duration wait = Backoff.delay(attempt, random.getAsDouble());
+            // Said once when the line first goes down; the retries after it would only repeat it
+            if (attempt++ == 0) {
+                LOGGER.info("The bridge to the Panita Bot is down ({}); it will keep trying with a growing wait", reason);
+            } else {
+                LOGGER.debug("The bridge to the Panita Bot is still down ({}); trying again in {} ms", reason, wait.toMillis());
+            }
             retry = scheduler.schedule(wait, this::retryNow);
         }
     }
