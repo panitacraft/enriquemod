@@ -16,6 +16,8 @@ public final class ChatMessages {
     public static final class Format {
         public static final String GLOBAL = "%luckperms:prefix%{sender}%luckperms:suffix%<dark_gray> » <white>{message}";
         public static final String STAFF = "<dark_red>[Staff]</dark_red> %luckperms:prefix%{sender}<dark_gray> » <aqua>{message}";
+        public static final String EXTERNAL = "{sender}<dark_gray> » <white>{message}";
+        public static final String EXTERNAL_STAFF = "<dark_red>[Staff]</dark_red> {sender}<dark_gray> » <aqua>{message}";
         public static final String NAME_HOVER = "<yellow>{nickname}</yellow>\n<gray>Nombre real: <white>{name}</white>\n\n<gray>Clic para escribirle un mensaje privado";
         public static final String EMOTE = "<light_purple>* {sender} {message}";
         public static final String PRIVATE_INCOMING = "<dark_gray>[<gold>{sender}</gold> <gray>→</gray> <gold>tú</gold>]</dark_gray> <white>{message}";

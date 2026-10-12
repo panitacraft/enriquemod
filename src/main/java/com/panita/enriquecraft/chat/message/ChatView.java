@@ -34,6 +34,15 @@ public final class ChatView {
         return messenger.format(line, sender);
     }
 
+    /**
+     * The line a message from outside the game makes in a channel. The sender is already a finished component and no player
+     * stands behind the line, so no placeholder of a player is resolved.
+     */
+    public Component externalLine(ChannelDefinition channel, Component sender, Component text) {
+        String template = channel.id().equals(ChannelDefinition.STAFF) ? ChatMessages.Format.EXTERNAL_STAFF : ChatMessages.Format.EXTERNAL;
+        return messenger.format(Message.plain(template).with("sender", sender).with("message", text));
+    }
+
     /** The line of a player's {@code /me}. */
     public Component emoteLine(ServerPlayer sender, Component text) {
         return messenger.format(Message.plain(ChatMessages.Format.EMOTE).with("sender", names.of(sender)).with("message", text), sender);

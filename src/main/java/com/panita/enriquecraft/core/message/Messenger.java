@@ -128,6 +128,11 @@ public final class Messenger {
         return formatForPlayer(context, message);
     }
 
+    /** Formats a message without resolving placeholders, for a line that has no player behind it. */
+    public Component format(Message message) {
+        return formatter.format(message);
+    }
+
     /** Sends a finished component to the given players. */
     public void deliver(Collection<ServerPlayer> receivers, Component component) {
         receivers.forEach(receiver -> receiver.sendSystemMessage(component));
