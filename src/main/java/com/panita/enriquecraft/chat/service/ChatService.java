@@ -13,6 +13,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
@@ -52,6 +53,25 @@ public final class ChatService {
             return 0;
         }
         return deliver(sender, selection.current(sender), raw, (text, player) -> view.emoteLine(player, text), true) ? 1 : 0;
+    }
+
+    /**
+     * A line from outside the game, such as the message of a Discord member. It is plain text, it goes to whoever may read the
+     * channel, and it does not fire {@link ChatEvents#MESSAGE}, so it can never be sent back out.
+     *
+     * @param sender how the line names who wrote it, already finished
+     * @return whether anything was said
+     */
+    public boolean deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain) {
+        Component text = parser.parse(plain, Set.of());
+        if (text.getString().isBlank()) {
+            return false;
+        }
+        List<ServerPlayer> readers = server.getPlayerList().getPlayers().stream()
+                .filter(player -> channel.canUse(player) && !held.isHeld(player))
+                .toList();
+        view.deliver(server, readers, view.externalLine(channel, sender, text));
+        return true;
     }
 
     private boolean deliver(ServerPlayer sender, ChannelDefinition channel, String raw,
