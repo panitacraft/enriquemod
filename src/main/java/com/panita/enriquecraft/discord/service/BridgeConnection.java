@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.net.http.WebSocketHandshakeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -16,6 +17,8 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
@@ -227,9 +230,21 @@ public final class BridgeConnection implements FrameSink {
         lastActivity = clock.get();
         transport.connect(uri, secret.get(), new Line(mine, greeting.get())).whenComplete((ok, error) -> {
             if (error != null) {
-                lost(mine, "could not connect (" + error.getClass().getSimpleName() + ")");
+                lost(mine, "could not connect: " + describe(error));
             }
         });
+    }
+
+    /** What went wrong, in a few words: a refused handshake says why, anything else says what kind of failure it was. */
+    static String describe(Throwable error) {
+        Throwable cause = error;
+        while ((cause instanceof CompletionException || cause instanceof ExecutionException) && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        if (cause instanceof WebSocketHandshakeException refused) {
+            return "the bot refused the connection (status " + refused.getResponse().statusCode() + ")";
+        }
+        return cause.getClass().getSimpleName();
     }
 
     private void transmit(String text) {
@@ -415,7 +430,7 @@ public final class BridgeConnection implements FrameSink {
 
         @Override
         public void onError(Throwable error) {
-            lost(mine, "the line failed (" + error.getClass().getSimpleName() + ")");
+            lost(mine, "the line failed: " + describe(error));
         }
     }
 }

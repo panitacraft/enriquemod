@@ -201,6 +201,12 @@ class BridgeConnectionTest {
     }
 
     @Test
+    void sayingWhatWentWrongSeesThroughTheWrappersOfAsyncFailures() {
+        assertEquals("IOException", BridgeConnection.describe(new java.util.concurrent.CompletionException(new IOException("down"))));
+        assertEquals("IllegalStateException", BridgeConnection.describe(new IllegalStateException("x")));
+    }
+
+    @Test
     void goesWaitingWhenTheBotClosesTheLine() {
         connected();
 
