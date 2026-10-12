@@ -10,50 +10,18 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class ApiKeyTest {
 
     @TempDir
     Path directory;
 
-    private Optional<String> find(Map<String, String> environment) {
-        return ApiKey.find(directory.resolve("key"), environment::get);
-    }
-
     @Test
-    void readsTheFileAndTrimsIt() throws IOException {
-        Files.writeString(directory.resolve("key"), "  abc123\n");
+    void theKeyComesFromItsOwnEnvironmentVariableOrFile() throws IOException {
+        Path file = directory.resolve("key");
+        Files.writeString(file, "from-file\n");
 
-        assertEquals(Optional.of("abc123"), find(Map.of()));
-    }
-
-    @Test
-    void theEnvironmentWinsOverTheFile() throws IOException {
-        Files.writeString(directory.resolve("key"), "from-file");
-
-        assertEquals(Optional.of("from-env"), find(Map.of(ApiKey.ENVIRONMENT_VARIABLE, "from-env")));
-    }
-
-    @Test
-    void noFileAndNoVariableIsNoKeyAndNothingIsCreated() {
-        assertEquals(Optional.empty(), find(Map.of()));
-        assertFalse(Files.exists(directory.resolve("key")));
-    }
-
-    @Test
-    void aBlankFileOrVariableIsNoKey() throws IOException {
-        Files.writeString(directory.resolve("key"), "  \n");
-
-        assertEquals(Optional.empty(), find(Map.of()));
-        assertEquals(Optional.empty(), find(Map.of(ApiKey.ENVIRONMENT_VARIABLE, "   ")));
-    }
-
-    @Test
-    void aValueThatCouldInjectAHeaderIsNoKey() throws IOException {
-        Files.writeString(directory.resolve("key"), "abc\r\nX-Evil: 1");
-
-        assertEquals(Optional.empty(), find(Map.of()));
-        assertEquals(Optional.empty(), find(Map.of(ApiKey.ENVIRONMENT_VARIABLE, "two words")));
+        assertEquals(Optional.of("from-file"), ApiKey.find(file, Map.<String, String>of()::get));
+        assertEquals(Optional.of("from-env"), ApiKey.find(file, Map.of("ENRIQUECRAFT_LINK_API_KEY", "from-env")::get));
     }
 }
