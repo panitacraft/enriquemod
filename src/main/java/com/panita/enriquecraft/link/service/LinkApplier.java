@@ -8,7 +8,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.PlayerList;
+import net.minecraft.server.players.UserWhiteListEntry;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -34,6 +36,31 @@ public final class LinkApplier {
         this.view = view;
     }
 
+    /** This applier working on a running server. */
+    public LinkTarget on(MinecraftServer server) {
+        return new LinkTarget() {
+            @Override
+            public void onServerThread(Runnable task) {
+                server.execute(task);
+            }
+
+            @Override
+            public Collection<NameAndId> whitelist() {
+                return server.getPlayerList().getWhiteList().getEntries().stream().map(UserWhiteListEntry::getUser).toList();
+            }
+
+            @Override
+            public List<Resolved> resolve(LinkPlan plan) {
+                return LinkApplier.this.resolve(plan);
+            }
+
+            @Override
+            public LinkReport apply(LinkPlan plan, List<Resolved> resolved) {
+                return LinkApplier.this.apply(server, plan, resolved);
+            }
+        };
+    }
+
     /** Finds the entries the plan needs. Blocks while Mojang answers, so never call it on the server thread. */
     public List<Resolved> resolve(LinkPlan plan) {
         return plan.actions().stream().map(action -> new Resolved(action, switch (action) {
@@ -49,7 +76,7 @@ public final class LinkApplier {
     }
 
     /** Changes the whitelist. Must run on the server thread. */
-    public LinkReport apply(MinecraftServer server, LinkPlan plan, List<Resolved> resolved) {
+    LinkReport apply(MinecraftServer server, LinkPlan plan, List<Resolved> resolved) {
         LinkReport.Builder report = new LinkReport.Builder(plan.unchanged());
         plan.duplicates().forEach(player -> report.problem(player.ign(), LinkReport.Reason.DUPLICATE_NAME));
         for (Resolved item : resolved) {
