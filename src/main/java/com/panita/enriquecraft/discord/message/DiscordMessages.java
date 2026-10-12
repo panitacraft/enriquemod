@@ -35,6 +35,13 @@ public final class DiscordMessages {
         }
     }
 
+    public static final class Delivery {
+        public static final String HOVER = "<gray>Mensaje desde Discord";
+
+        private Delivery() {
+        }
+    }
+
     public static final class Commands {
         public static final String DISCORD_DESCRIPTION = "Administra la conexión del servidor con el bot de Discord";
         public static final String STATUS_DESCRIPTION = "Muestra si el servidor está conectado al bot y qué canales usa";
