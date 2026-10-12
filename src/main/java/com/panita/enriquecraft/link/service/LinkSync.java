@@ -70,6 +70,10 @@ public final class LinkSync {
         return waiting;
     }
 
+    public boolean hasKey() {
+        return key.get().isPresent();
+    }
+
     public int linkedCount() {
         return read.get().players().size();
     }
