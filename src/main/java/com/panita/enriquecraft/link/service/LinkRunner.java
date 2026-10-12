@@ -19,7 +19,7 @@ public final class LinkRunner {
     private final LinkSync sync;
     private final LinkApplier applier;
     private final LinkView view;
-    private volatile boolean lastWentWrong;
+    private volatile Optional<SyncOutcome> lastProblem = Optional.empty();
 
     public LinkRunner(LinkSync sync, LinkApplier applier, LinkView view) {
         this.sync = sync;
@@ -38,25 +38,26 @@ public final class LinkRunner {
     }
 
     private void log(SyncOutcome outcome) {
-        boolean wentWrong = !(outcome instanceof SyncOutcome.Applied || outcome instanceof SyncOutcome.Busy);
         switch (outcome) {
-            case SyncOutcome.Applied applied -> logApplied(applied.report());
-            case SyncOutcome.Refused refused -> warnOnce(wentWrong, "The list of the Panita API would remove {} of {} linked players, over the {}% allowed, so it was not applied",
+            case SyncOutcome.Applied applied -> {
+                lastProblem = Optional.empty();
+                logApplied(applied.report());
+            }
+            case SyncOutcome.Refused refused -> problem(outcome, "The list of the Panita API would remove {} of {} linked players, over the {}% allowed, so it was not applied",
                     refused.leaving(), refused.linked(), refused.maxPercent());
-            case SyncOutcome.Failed failed -> warnOnce(wentWrong, "Could not sync the whitelist with the Panita API: {}", failed.reason());
-            case SyncOutcome.NoKey noKey -> warnOnce(wentWrong, "There is no API key, so the whitelist is not synced with the Panita API. Put it in config/enriquecraft-link.key");
+            case SyncOutcome.Failed failed -> problem(outcome, "Could not sync the whitelist with the Panita API: {}", failed.reason());
+            case SyncOutcome.NoKey noKey -> problem(outcome, "There is no API key, so the whitelist is not synced with the Panita API. Put it in config/enriquecraft-link.key");
             case SyncOutcome.Busy busy -> LOGGER.debug("A link sync was asked for while another was running");
-        }
-        if (!(outcome instanceof SyncOutcome.Busy)) {
-            lastWentWrong = wentWrong;
         }
     }
 
-    private void warnOnce(boolean wentWrong, String message, Object... arguments) {
-        if (wentWrong && !lastWentWrong) {
-            LOGGER.warn(message, arguments);
-        } else {
+    /** Warns the first time a problem shows up, and again only when it is a different one; repeats go to the debug log. */
+    private void problem(SyncOutcome outcome, String message, Object... arguments) {
+        if (lastProblem.equals(Optional.of(outcome))) {
             LOGGER.debug(message, arguments);
+        } else {
+            LOGGER.warn(message, arguments);
+            lastProblem = Optional.of(outcome);
         }
     }
 
