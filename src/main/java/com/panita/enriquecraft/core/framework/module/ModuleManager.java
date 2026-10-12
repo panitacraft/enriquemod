@@ -10,6 +10,7 @@ import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
 import com.panita.enriquecraft.core.framework.message.MessageCatalog;
+import com.panita.enriquecraft.core.framework.reload.ReloadHooks;
 import com.panita.enriquecraft.core.framework.scan.ClassScanner;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public final class ModuleManager {
         services.register(ConfigManager.class, configManager);
         services.register(MessageCatalog.class, messages);
         services.register(WorldData.class, new WorldData());
+        services.register(ReloadHooks.class, new ReloadHooks());
         new CommandRegistry(catalog, new CommandTreeBuilder()).register();
     }
 

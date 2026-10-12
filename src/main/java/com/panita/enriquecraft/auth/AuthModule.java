@@ -63,7 +63,9 @@ public final class AuthModule implements EnriquecraftModule {
                 services.get(ClientCapabilities.class), new LoginView(services.get(Messenger.class)));
 
         LoginGate gate = new LoginGate(limiter, lookup, held::isHeld);
-        WhitelistHandler whitelist = new WhitelistHandler(new WhitelistAdmin(lookup), new PlayerDataMigration(),
+        WhitelistAdmin whitelistAdmin = new WhitelistAdmin(lookup);
+        PlayerDataMigration migration = new PlayerDataMigration();
+        WhitelistHandler whitelist = new WhitelistHandler(whitelistAdmin, migration,
                 new WhitelistView(services.get(Messenger.class)));
 
         services.register(PinHasher.class, hasher);
@@ -74,6 +76,8 @@ public final class AuthModule implements EnriquecraftModule {
         services.register(HeldPlayers.class, held);
         services.register(PinChanges.class, new PinChanges(accounts, limiter, config, screens, services.get(Messenger.class)));
         services.register(WhitelistHandler.class, whitelist);
+        services.register(WhitelistAdmin.class, whitelistAdmin);
+        services.register(PlayerDataMigration.class, migration);
         services.register(AdminView.class, new AdminView(services.get(Messenger.class)));
         AuthHooks.install(gate, refusals, held, whitelist);
     }

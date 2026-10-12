@@ -175,6 +175,12 @@ com.panita.enriquecraft
    ├─ data/                 ChatProfile
    ├─ event/                ChatEvents and SystemEvent: what other modules follow
    └─ message/              ChatMessages (Spanish text) and the views that report outcomes
+└─ link/                    the link module: the whitelist follows the Panita accounts (see Link)
+   ├─ LinkModule.java
+   ├─ config/ commands/ listeners/ service/
+   ├─ client/               PanitaApi, HttpPanitaApi, ApiKey, LinkedPlayer (the Panita API, read only)
+   ├─ data/                 LinkedSnapshot (the last list applied)
+   └─ message/              LinkMessages (Spanish text) and LinkView
 ```
 
 Every module follows the same layout:
@@ -291,6 +297,15 @@ Rules:
 - The server list text is `ChatMessages.Motd.TEXT` (`motd.enabled`). The game rebuilds its status every few seconds and `MinecraftServerMotdMixin` puts a real component in it, so placeholders such as `%server:online%` stay current.
 - Players who have not entered their PIN yet (`HeldPlayers`) neither write nor read chat, private messages and the messages about players; their join is still announced at connect, as auth does. The welcome message (`WelcomeListener`) waits for `AuthEvents.PLAYER_READY`, not for the connection.
 - Other modules follow chat through `ChatEvents` (`MESSAGE`, with the channel, the sender, the plain text and whether it is a `/me`; `SYSTEM`) and never through the game's own events or the mixins.
+
+### Link
+- The link module keeps the whitelist in step with the Panita accounts. It only reads: `GET /v1/mod/players` of `panita-api` with the `mod` service key, through the JDK `HttpClient` (no dependency added). It never sends anything to the API and never contacts Discord; the Discord bridge is a later module.
+- The service key is a secret and never goes in `enriquecraft.json5`. `ApiKey` reads the environment variable `ENRIQUECRAFT_LINK_API_KEY`, then the one-line file `config/enriquecraft-link.key`, at each sync, so a key put in place later is found by the next reload. The file is never created, logged or shown; `/link status` only says whether a key was found. Without a key a sync does nothing and the console says so once.
+- There is no timer. A sync (`LinkSync`, never two at once) runs when the server has started, on `/enriquecraft reload` (through `ReloadHooks` in the framework), on `/whitelist reload` (`AuthEvents.WHITELIST_RELOADED`, fired by `WhitelistCommandMixin`), on `/link sync`, and when a player leaves while another player's change waits for them. Threads: the answer arrives on a network thread, the whitelist is only read and changed on the server thread, and the questions to Mojang that premium names need run on the module's worker (`LinkApplier.resolve`), so the server never waits on the network.
+- `LinkPlan` compares the list with the whitelist itself, so a change that did not happen, or that staff undid by hand, is found again. Entries staff added by hand are never touched: only a player of the previous list (`linked_players.snbt`, the snapshot) who left the list is removed. Four actions: add, replace (the other mode, or another capitalization of an offline name, since that changes the UUID), rename (found by the stable Panita `user_id`) and remove. A switch or rename that changes the UUID waits while the player is online and is applied when they leave, with their data copied by `PlayerDataMigration`; a rename that waits keeps its old name in the snapshot and drops the ETag. A player removed while online is kicked with `LinkMessages.Kick.DEACTIVATED`.
+- A list that is not exactly the documented shape fails as a whole, so half an answer never removes anyone. A list that would remove more than `link.maxRemovalPercent` (default 50) of the previous players is refused and reported. A failed sync changes nothing.
+- Premium and cracked come from `minecraft_status`: cracked is the offline UUID of the exact name; premium asks Mojang through `WhitelistAdmin.resolve`, and is skipped when the whitelist already has a premium entry for the name. A name that Mojang does not know, or cannot answer for, is reported, never guessed.
+- `/link sync` (administrators) and `/link status` (game masters). Reports to staff are Spanish; the reasons of failures are English and go to the console.
 
 ### Messaging
 - All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly. Text built from parts, such as a chat line that carries what a player typed, is formatted with `Messenger.format(Message, player)` (named arguments, placeholders resolved for that player) and sent with `Messenger.deliver` to the players who should read it, and to the console when the other overload is used.

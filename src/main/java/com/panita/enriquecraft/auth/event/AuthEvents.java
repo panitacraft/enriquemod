@@ -2,10 +2,12 @@ package com.panita.enriquecraft.auth.event;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * What happens to a player's login, for the modules that must wait for it, such as the one that welcomes players.
+ * What happens to a player's login and to the whitelist, for the modules that must wait for it, such as the one
+ * that welcomes players.
  */
 public final class AuthEvents {
 
@@ -27,5 +29,19 @@ public final class AuthEvents {
     public interface PlayerReady {
 
         void onReady(ServerPlayer player);
+    }
+
+    /** Staff ran {@code /whitelist reload}, so the whitelist was read again from its file. Called on the server thread. */
+    public static final Event<WhitelistReloaded> WHITELIST_RELOADED = EventFactory.createArrayBacked(WhitelistReloaded.class,
+            listeners -> server -> {
+                for (WhitelistReloaded listener : listeners) {
+                    listener.onReloaded(server);
+                }
+            });
+
+    @FunctionalInterface
+    public interface WhitelistReloaded {
+
+        void onReloaded(MinecraftServer server);
     }
 }
