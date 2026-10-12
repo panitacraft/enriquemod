@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.panita.enriquecraft.core.event.CoreEvents;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.message.Messages;
@@ -51,6 +52,7 @@ public final class BroadcastCommand implements ModCommand {
         } else {
             messenger.broadcast(server, text);
         }
+        CoreEvents.BROADCAST.invoker().onBroadcast(text);
         return Command.SINGLE_SUCCESS;
     }
 }
