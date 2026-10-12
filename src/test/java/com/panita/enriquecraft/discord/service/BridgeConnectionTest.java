@@ -208,8 +208,18 @@ class BridgeConnectionTest {
 
         BridgeConnection.Status status = connection.status();
         assertEquals(BridgeConnection.State.WAITING, status.state());
-        assertTrue(status.channels().isEmpty());
         assertTrue(status.lastError().orElseThrow().contains("1001"));
+    }
+
+    @Test
+    void keepsKnowingWhichChannelsTheBotBridgesWhileTheLineIsDown() {
+        connected();
+
+        transport.listener().onClose(1006, "gone");
+
+        assertTrue(connection.bridges("global"));
+        assertFalse(connection.bridges("staff"));
+        assertFalse(connection.connected());
     }
 
     @Test

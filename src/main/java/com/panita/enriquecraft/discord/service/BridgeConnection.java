@@ -15,6 +15,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -27,7 +29,7 @@ import java.util.function.Supplier;
  * the server and never throws at it: the bridge being down only means the bridge is off. All state lives under one lock;
  * what the bot sends is handed to the consumer outside of it.
  */
-public final class BridgeConnection {
+public final class BridgeConnection implements FrameSink {
 
     public enum State {
         /** Nothing to connect with or to: disabled, no address, no key, or the server has not started. */
@@ -84,6 +86,7 @@ public final class BridgeConnection {
     private Optional<String> lastError = Optional.empty();
     private Scheduler.Handle retry;
     private Scheduler.Handle watchdog;
+    private volatile CompletableFuture<Void> lastSend;
 
     /**
      * @param hello  what to say to the bot, empty while the server has not started
@@ -122,8 +125,16 @@ public final class BridgeConnection {
         }
     }
 
-    /** Closes the line for good. Called when the server stops. */
+    /** Closes the line for good. Called when the server stops, after giving what was just sent a moment to get through. */
     public void stop() {
+        CompletableFuture<Void> pending = lastSend;
+        if (pending != null) {
+            try {
+                pending.get(1, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // A send that fails or takes too long is not worth holding the server back for.
+            }
+        }
         synchronized (lock) {
             reset();
             buffer.clear();
@@ -131,10 +142,14 @@ public final class BridgeConnection {
         }
     }
 
-    /** Whether the bot is there and bridges this chat channel. */
+    /**
+     * Whether the bot bridges this chat channel, as far as it last said. It stays true while the line is down, so lines written
+     * during a short break are held and not lost.
+     */
+    @Override
     public boolean bridges(String channel) {
         synchronized (lock) {
-            return state == State.CONNECTED && channels.contains(channel);
+            return state != State.OFF && state != State.INCOMPATIBLE && channels.contains(channel);
         }
     }
 
@@ -154,6 +169,7 @@ public final class BridgeConnection {
     /**
      * Sends a frame to the bot. Chat lines and events wait for a while if the line is down; anything else is dropped.
      */
+    @Override
     public void send(OutFrame frame) {
         String text = FrameCodec.encode(frame);
         synchronized (lock) {
@@ -217,7 +233,9 @@ public final class BridgeConnection {
     }
 
     private void transmit(String text) {
-        transport.send(text).whenComplete((ok, error) -> (error == null ? sent : dropped).incrementAndGet());
+        CompletableFuture<Void> result = transport.send(text);
+        lastSend = result;
+        result.whenComplete((ok, error) -> (error == null ? sent : dropped).incrementAndGet());
     }
 
     private void lost(int mine, String reason) {
@@ -228,7 +246,6 @@ public final class BridgeConnection {
             cancel(watchdog);
             watchdog = null;
             since = null;
-            channels = List.of();
             if (state != State.INCOMPATIBLE) {
                 lastError = Optional.of(reason);
             }
