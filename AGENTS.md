@@ -181,6 +181,12 @@ com.panita.enriquecraft
    ├─ client/               PanitaApi, HttpPanitaApi, ApiKey, LinkedPlayer (the Panita API, read only)
    ├─ data/                 LinkedSnapshot (the last list applied)
    └─ message/              LinkMessages (Spanish text) and LinkView
+└─ discord/                 the server's side of the Discord integration: one connection to the Panita Bot (see Discord)
+   ├─ DiscordModule.java
+   ├─ config/ commands/ listeners/ service/
+   ├─ protocol/             the frames of the bridge protocol and their codec
+   ├─ transport/            BridgeTransport and its WebSocket implementation
+   └─ message/              DiscordMessages (Spanish text) and DiscordView
 ```
 
 Every module follows the same layout:
@@ -306,6 +312,15 @@ Rules:
 - A list that is not exactly the documented shape fails as a whole, so half an answer never removes anyone. A list that would remove more than `link.maxRemovalPercent` (default 50) of the previous players is refused and reported. A failed sync changes nothing.
 - Premium and cracked come from `minecraft_status`: cracked is the offline UUID of the exact name; premium asks Mojang through `WhitelistAdmin.resolve`, and is skipped when the whitelist already has a premium entry for the name. A name that Mojang does not know, or cannot answer for, is reported, never guessed.
 - `/link sync` (administrators) and `/link status` (game masters). Reports to staff are Spanish; the reasons of failures are English and go to the console.
+
+### Discord
+- **The mod never talks to Discord.** The Panita Bot is the only Discord client (its commands, `/help`, deploy and rate limits stay in one place); the mod keeps one authenticated WebSocket to it and exchanges small JSON frames. No Discord library and no Discord token are in the mod, and no other dependency was added: the connection is the JDK's `java.net.http.WebSocket` and the JSON is Gson. The protocol (version 1) is defined by the bot, in `panita-bot/docs/minecraft-bridge-plan.md`, and mirrored by `protocol/`.
+- The address is `discord.url` (`wss://`, or `ws://` for localhost only; empty keeps the module off). The bridge key is a secret: `config/enriquecraft-discord.key` or the environment variable `ENRIQUECRAFT_BRIDGE_KEY`, read with `SecretFile` at each attempt, never in the config file, never logged or shown; `/discord status` only says whether it was found.
+- `BridgeConnection` opens the line after the server has started, says hello, waits for the welcome (which lists the chat channels the bot bridges) and comes back by itself when the line drops, waiting one second and doubling up to a minute with some randomness. It holds at most 100 chat lines and events for at most 60 seconds while the line is down, drops a line that is silent for 90 seconds (the bot pings every 30) and never blocks or throws at the server: the game does not depend on the bot. A bot with another protocol version leaves the connection `INCOMPATIBLE` until `/discord reconnect` or a reload. The transport is behind `BridgeTransport`, so an API relay could replace the WebSocket without anything else changing.
+- Everything from the bot is untrusted: `FrameCodec` checks the shape and size of each frame, the channel must be one the server has, and a Discord member's text is shown as plain text (no formats, colors, hover or click), with control characters removed. A message from Discord enters the chat module through `ChatService.deliverExternal` and **does not fire `ChatEvents.MESSAGE`**, so it can never be sent back out. Nothing the bot sends can run a command or change any rule of the game.
+- What the mod reports comes from the modules' own events, never the game's: `ChatEvents.MESSAGE` (lines and `/me`), `ChatEvents.SYSTEM` (deaths, advancements, who arrived for the first time), `AuthEvents.PLAYER_READY` (a join is reported when the player is ready, a leave only for players who were), `CoreEvents.BROADCAST` and the server lifecycle. Death and advancement lines go in English with their translation key.
+- The bot may ask `playerlist`, `tps` and `status`; `QueryAnswers` answers on the server thread, without counting players still on the PIN screen. Frames from the network hop to the server thread in `FrameRouter`.
+- `/discord status` (game masters) and `/discord reconnect` (administrators).
 
 ### Messaging
 - All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly. Text built from parts, such as a chat line that carries what a player typed, is formatted with `Messenger.format(Message, player)` (named arguments, placeholders resolved for that player) and sent with `Messenger.deliver` to the players who should read it, and to the console when the other overload is used.
