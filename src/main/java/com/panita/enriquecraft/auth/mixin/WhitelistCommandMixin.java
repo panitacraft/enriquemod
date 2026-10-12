@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import com.panita.enriquecraft.auth.AuthHooks;
 import com.panita.enriquecraft.auth.data.AuthMode;
+import com.panita.enriquecraft.auth.event.AuthEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.GameProfileArgument;
@@ -17,6 +18,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,12 +29,18 @@ import java.util.Optional;
  * the game's own commands cannot tell them apart on a server that is not in online mode, nor keep the
  * capitalization of a name they do not know. {@code add} detects the mode, or takes it as an extra word
  * ({@code cracked} or {@code premium}); {@code remove} finds players by name. The arguments, suggestions
- * and permissions of the commands stay the game's; only what they run changes.
+ * and permissions of the commands stay the game's; only what they run changes. {@code reload} is announced as an
+ * event, for the modules that keep the whitelist up to date.
  */
 @Mixin(WhitelistCommand.class)
 public abstract class WhitelistCommandMixin {
 
     private static final String TARGETS = "targets";
+
+    @Inject(method = "reload", at = @At("RETURN"))
+    private static void enriquecraft$announceTheReload(CommandSourceStack source, CallbackInfoReturnable<Integer> callback) {
+        AuthEvents.WHITELIST_RELOADED.invoker().onReloaded(source.getServer());
+    }
 
     @Inject(method = "register", at = @At("RETURN"))
     private static void enriquecraft$takeOverTheExecutors(CommandDispatcher<CommandSourceStack> dispatcher, CallbackInfo callback) {
