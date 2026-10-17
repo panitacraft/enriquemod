@@ -3,6 +3,11 @@ package com.panita.enriquecraft.discord.service;
 import com.panita.enriquecraft.discord.protocol.Protocol;
 import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -17,6 +22,27 @@ class ServerInfoTest {
         byte[] bytes = new byte[length];
         System.arraycopy(PNG_SIGNATURE, 0, bytes, 0, PNG_SIGNATURE.length);
         return bytes;
+    }
+
+    @Test
+    void readsTheIconOfTheServerFolderBeforeTheOneOfTheWorld(@TempDir Path folder) throws IOException {
+        Path server = Files.write(folder.resolve("server-icon.png"), png(20));
+        Path world = Files.write(folder.resolve("icon.png"), png(30));
+
+        assertArrayEquals(png(20), ServerInfo.readIcon(server, Optional.of(world)).orElseThrow());
+    }
+
+    @Test
+    void fallsBackToTheIconOfTheWorld(@TempDir Path folder) throws IOException {
+        Path world = Files.write(folder.resolve("icon.png"), png(30));
+
+        assertArrayEquals(png(30), ServerInfo.readIcon(folder.resolve("server-icon.png"), Optional.of(world)).orElseThrow());
+    }
+
+    @Test
+    void hasNoIconWhenNeitherFileExists(@TempDir Path folder) {
+        assertTrue(ServerInfo.readIcon(folder.resolve("server-icon.png"), Optional.of(folder.resolve("icon.png"))).isEmpty());
+        assertTrue(ServerInfo.readIcon(folder.resolve("server-icon.png"), Optional.empty()).isEmpty());
     }
 
     @Test

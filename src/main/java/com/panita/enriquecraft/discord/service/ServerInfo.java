@@ -3,11 +3,13 @@ package com.panita.enriquecraft.discord.service;
 import com.panita.enriquecraft.discord.protocol.OutFrame;
 import com.panita.enriquecraft.discord.protocol.Protocol;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.network.protocol.status.ServerStatus;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
@@ -21,6 +23,7 @@ public final class ServerInfo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerInfo.class);
     private static final String MOD_ID = "enriquecraft";
+    private static final String SERVER_ICON = "server-icon.png";
     private static final byte[] PNG_SIGNATURE = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 
     private final Supplier<Instant> clock;
@@ -34,10 +37,22 @@ public final class ServerInfo {
 
     public void started(MinecraftServer started) {
         startedAt = clock.get();
-        // The game has already read the icon, and checked that it is a 64x64 PNG, to answer the server list; its status is built
-        // before this event, so it is there. Read once per run, not at every reconnect.
-        icon = fitIcon(Optional.ofNullable(started.getStatus()).flatMap(ServerStatus::favicon).map(ServerStatus.Favicon::iconBytes));
+        // Read once per run, not at every reconnect. The game's own copy (the status) is not built yet when this event fires.
+        icon = fitIcon(readIcon(started.getFile(SERVER_ICON), started.getWorldScreenshotFile()));
         server = started;
+    }
+
+    /** The file the game shows in the server list: the one in the server folder, else the icon of the world. */
+    static Optional<byte[]> readIcon(Path serverIcon, Optional<Path> worldIcon) {
+        Optional<Path> file = Optional.of(serverIcon).filter(Files::isRegularFile).or(() -> worldIcon.filter(Files::isRegularFile));
+        return file.flatMap(path -> {
+            try {
+                return Optional.of(Files.readAllBytes(path));
+            } catch (IOException e) {
+                LOGGER.warn("Could not read the server icon; it will not be shown in Discord", e);
+                return Optional.empty();
+            }
+        });
     }
 
     /** The icon, if it is a PNG small enough for the hello; one that is not is left out and said once. */
