@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class FrameCodecTest {
 
     private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"),
-            "Javithor360", Optional.empty(), true);
+            "Javithor360", Optional.empty(), true, Optional.empty());
 
     private static JsonObject json(OutFrame frame) {
         return JsonParser.parseString(FrameCodec.encode(frame)).getAsJsonObject();
@@ -84,12 +84,21 @@ class FrameCodecTest {
 
     @Test
     void encodesTheNicknameWhenThereIsOne() {
-        PlayerInfo nicked = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.of("Javi"), false);
+        PlayerInfo nicked = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.of("Javi"), false, Optional.empty());
 
         JsonObject player = json(new OutFrame.Chat("global", nicked, "hola", true)).getAsJsonObject("player");
 
         assertEquals("Javi", player.get("nickname").getAsString());
         assertEquals(false, player.get("premium").getAsBoolean());
+    }
+
+    @Test
+    void encodesTheSkinOfAPlayerOnlyWhenThereIsOne() {
+        String hash = "292009a4925b58f02c77dadc3ecef07ea4c7472f64e0fdc32ce5522489362680";
+        PlayerInfo skinned = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.empty(), false, Optional.of(hash));
+
+        assertEquals(hash, json(new OutFrame.Chat("global", skinned, "hola", false)).getAsJsonObject("player").get("skin").getAsString());
+        assertFalse(json(new OutFrame.Chat("global", JAVI, "hola", false)).getAsJsonObject("player").has("skin"));
     }
 
     @Test

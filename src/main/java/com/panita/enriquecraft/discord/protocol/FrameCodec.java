@@ -87,6 +87,7 @@ public final class FrameCodec {
         json.addProperty("name", player.name());
         json.addProperty("nickname", player.nickname().orElse(null));
         json.addProperty("premium", player.premium());
+        player.skin().ifPresent(skin -> json.addProperty("skin", skin));
         return json;
     }
 

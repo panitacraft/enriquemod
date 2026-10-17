@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GameReporterTest {
 
-    private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360", Optional.empty(), true);
+    private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360", Optional.empty(), true, Optional.empty());
 
     private final List<OutFrame> sent = new ArrayList<>();
     private Set<String> bridged = Set.of("global");
