@@ -125,13 +125,13 @@ class GameReporterTest {
     }
 
     @Test
-    void reportsDeathsAndAdvancementsWithTheGamesTextAndKey() {
+    void reportsDeathsAndAdvancementsWithTheirTextAndKey() {
         reporter.died(JAVI, "Javithor360 was slain by Zombie", Optional.of("death.attack.mob"));
-        reporter.advanced(JAVI, "Javithor360 has made the advancement [Stone Age]", Optional.empty());
+        reporter.advanced(JAVI, "Stone Age", Optional.of("chat.type.advancement.task"));
 
         assertEquals(List.of(
                 event(EventKind.DEATH, Optional.of(JAVI), Optional.of("Javithor360 was slain by Zombie"), Optional.of("death.attack.mob")),
-                event(EventKind.ADVANCEMENT, Optional.of(JAVI), Optional.of("Javithor360 has made the advancement [Stone Age]"), Optional.empty())), sent);
+                event(EventKind.ADVANCEMENT, Optional.of(JAVI), Optional.of("Stone Age"), Optional.of("chat.type.advancement.task"))), sent);
     }
 
     @Test

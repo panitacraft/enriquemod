@@ -28,7 +28,7 @@ public sealed interface OutFrame {
      * Something that happened in the game.
      *
      * @param player the player it is about, for the kinds that are
-     * @param text   the game's own English text of a death or advancement, or the message of a broadcast
+     * @param text   the game's own English text of a death, the title of an advancement, or the message of a broadcast
      * @param key    the game's translation key, so the text can be translated later
      */
     record Event(EventKind kind, Optional<PlayerInfo> player, Optional<String> text, Optional<String> key) implements OutFrame {
