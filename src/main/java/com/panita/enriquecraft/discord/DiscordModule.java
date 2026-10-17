@@ -3,6 +3,7 @@ package com.panita.enriquecraft.discord;
 import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.channel.ChannelRegistry;
 import com.panita.enriquecraft.chat.service.ChatService;
+import com.panita.enriquecraft.chat.service.KnownPlayers;
 import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.io.SecretFile;
@@ -58,7 +59,8 @@ public final class DiscordModule implements EnriquecraftModule {
 
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class),
                 services.get(MessageFormatter.class), config);
-        QueryAnswers answers = new QueryAnswers(connection, info, nicknames, services.get(HeldPlayers.class), Instant::now);
+        QueryAnswers answers = new QueryAnswers(connection, info, nicknames, services.get(HeldPlayers.class),
+                services.get(KnownPlayers.class), Instant::now);
         router.onChat(delivery::deliver);
         router.onQuery(answers::answer);
 
