@@ -26,7 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BridgeConnectionTest {
 
-    private static final OutFrame.Hello HELLO = new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20);
+    private static final OutFrame.Hello HELLO = new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20,
+            Optional.empty());
     private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360", Optional.empty(), true);
     private static final String WELCOME = "{\"type\":\"welcome\",\"protocol\":1,\"channels\":[\"global\"]}";
 
