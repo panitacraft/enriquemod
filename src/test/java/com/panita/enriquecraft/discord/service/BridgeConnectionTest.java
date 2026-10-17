@@ -38,7 +38,9 @@ class BridgeConnectionTest {
         final List<Attempt> attempts = new ArrayList<>();
         final List<String> sent = new ArrayList<>();
         int closed;
+        boolean closedWhileSending;
         CompletableFuture<Void> connectResult = CompletableFuture.completedFuture(null);
+        CompletableFuture<Void> sendResult = CompletableFuture.completedFuture(null);
 
         @Override
         public CompletableFuture<Void> connect(URI uri, String key, Listener listener) {
@@ -49,12 +51,13 @@ class BridgeConnectionTest {
         @Override
         public CompletableFuture<Void> send(String text) {
             sent.add(text);
-            return CompletableFuture.completedFuture(null);
+            return sendResult;
         }
 
         @Override
         public void close() {
             closed++;
+            closedWhileSending |= !sendResult.isDone();
         }
 
         Listener listener() {
@@ -382,6 +385,59 @@ class BridgeConnectionTest {
         assertEquals(0, scheduler.pending());
         assertTrue(transport.closed > 0);
         assertFalse(connection.bridges("global"));
+    }
+
+    @Test
+    void waitsForTheLastFrameToGetThroughBeforeClosingTheLine() throws Exception {
+        connected();
+        CompletableFuture<Void> inFlight = new CompletableFuture<>();
+        transport.sendResult = inFlight;
+        connection.send(new OutFrame.Event(EventKind.STOPPING, Optional.empty(), Optional.empty(), Optional.empty()));
+        Thread late = new Thread(() -> {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            inFlight.complete(null);
+        });
+        late.start();
+
+        connection.stop();
+        late.join();
+
+        assertEquals(List.of("hello", "event"), transport.types());
+        assertEquals("stopping", JsonParser.parseString(transport.sent.get(1)).getAsJsonObject().get("kind").getAsString());
+        assertFalse(transport.closedWhileSending);
+        assertEquals(BridgeConnection.State.OFF, connection.status().state());
+    }
+
+    @Test
+    void anEventReportedBeforeTheConnectionStartsIsSentAfterTheHello() {
+        connection.send(new OutFrame.Event(EventKind.STARTED, Optional.empty(), Optional.empty(), Optional.empty()));
+        assertTrue(transport.sent.isEmpty());
+
+        connection.start();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+
+        assertEquals(List.of("hello", "event"), transport.types());
+        assertEquals("started", JsonParser.parseString(transport.sent.get(1)).getAsJsonObject().get("kind").getAsString());
+    }
+
+    @Test
+    void everyAttemptSaysHelloWithTheSameStartTime() {
+        connected();
+        connection.reconnect();
+        transport.listener().onOpen();
+
+        List<String> startTimes = transport.sent.stream()
+                .map(text -> JsonParser.parseString(text).getAsJsonObject())
+                .filter(frame -> frame.get("type").getAsString().equals("hello"))
+                .map(frame -> frame.get("startedAt").getAsString())
+                .toList();
+
+        assertEquals(List.of("2026-10-12T10:00:00Z", "2026-10-12T10:00:00Z"), startTimes);
     }
 
     @Test
