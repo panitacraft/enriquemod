@@ -25,6 +25,8 @@ public final class DiscordConfig implements ModConfig {
     public final ConfigValue<Integer> mediaCooldownSeconds;
     public final ConfigValue<Boolean> mediaDither;
     public final ConfigValue<Boolean> mediaAnimate;
+    public final ConfigValue<Boolean> shareEnabled;
+    public final ConfigValue<Integer> sharePerMinute;
 
     public DiscordConfig(ConfigSectionBuilder builder) {
         enabled = builder.bool("enabled", true,
@@ -47,6 +49,10 @@ public final class DiscordConfig implements ModConfig {
                 "Whether an animated GIF plays on the map. Off, only its first frame is shown.");
         mediaDither = builder.bool("mediaDither", true,
                 "Whether the colors of a picture on a map are blended to look closer to the original, at the cost of some noise.");
+        shareEnabled = builder.bool("shareEnabled", true,
+                "Whether players with the client companion may share screenshots to the game chat and to Discord. Needs the bot to offer it.");
+        sharePerMinute = builder.intRange("sharePerMinute", 3, 1, 20,
+                "The most screenshots a player may share in a minute.");
     }
 
     /** Whether the address may be the bridge's: secure, or a local one for development. */

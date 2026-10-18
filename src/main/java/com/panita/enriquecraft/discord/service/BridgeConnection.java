@@ -86,6 +86,7 @@ public final class BridgeConnection implements FrameSink {
     private Instant since;
     private Instant lastActivity;
     private List<String> channels = List.of();
+    private List<String> features = List.of();
     private Optional<String> lastError = Optional.empty();
     private Scheduler.Handle retry;
     private Scheduler.Handle watchdog;
@@ -156,6 +157,13 @@ public final class BridgeConnection implements FrameSink {
         }
     }
 
+    /** Whether the bot said, in its welcome, that it offers an optional feature such as {@code media_upload}. */
+    public boolean offers(String feature) {
+        synchronized (lock) {
+            return state == State.CONNECTED && features.contains(feature);
+        }
+    }
+
     public boolean connected() {
         synchronized (lock) {
             return state == State.CONNECTED;
@@ -200,6 +208,7 @@ public final class BridgeConnection implements FrameSink {
         watchdog = null;
         since = null;
         channels = List.of();
+        features = List.of();
         transport.close();
     }
 
@@ -316,6 +325,7 @@ public final class BridgeConnection implements FrameSink {
             state = State.CONNECTED;
             since = clock.get();
             channels = welcome.channels();
+            features = welcome.features();
             attempt = 0;
             lastError = Optional.empty();
             LOGGER.info("Connected to the Panita Bot; it bridges {}", channels);

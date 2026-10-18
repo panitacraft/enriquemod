@@ -2,6 +2,7 @@ package com.panita.enriquecraft.discord;
 
 import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.channel.ChannelRegistry;
+import com.panita.enriquecraft.chat.channel.ChannelSelection;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.KnownPlayers;
 import com.panita.enriquecraft.chat.service.NicknameService;
@@ -16,11 +17,15 @@ import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.DiscordView;
 import com.panita.enriquecraft.discord.message.ImageView;
 import com.panita.enriquecraft.discord.message.MediaView;
+import com.panita.enriquecraft.discord.message.ShareView;
 import com.panita.enriquecraft.discord.protocol.Protocol;
 import com.panita.enriquecraft.discord.service.BridgeConnection;
 import com.panita.enriquecraft.discord.service.DiscordDelivery;
 import com.panita.enriquecraft.discord.service.ExecutorScheduler;
 import com.panita.enriquecraft.discord.service.FrameRouter;
+import com.panita.enriquecraft.discord.service.HttpMediaUploader;
+import com.panita.enriquecraft.discord.service.ScreenshotShares;
+import com.panita.enriquecraft.discord.service.ShareTransfers;
 import com.panita.enriquecraft.discord.service.GameReporter;
 import com.panita.enriquecraft.discord.service.ImageFetcher;
 import com.panita.enriquecraft.discord.service.ImageMaps;
@@ -82,9 +87,15 @@ public final class DiscordModule implements EnriquecraftModule {
         ImageView imageView = new ImageView(services.get(Messenger.class));
         ImageMaps imageMaps = new ImageMaps(new ImageFetcher(worker, (int) Protocol.MAX_MEDIA_BYTES, Duration.ofSeconds(8)), shownMaps,
                 imageView, config, Instant::now, worker);
+        MediaView mediaView = new MediaView(services.get(MessageFormatter.class), tokens);
+        MediaPreviews previews = new MediaPreviews(services.get(ClientCapabilities.class));
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class),
-                services.get(MessageFormatter.class), config, new MediaView(services.get(MessageFormatter.class), tokens),
-                new MediaPreviews(services.get(ClientCapabilities.class)));
+                services.get(MessageFormatter.class), config, mediaView, previews);
+        PlayerInfos playerInfos = new PlayerInfos(nicknames);
+        ScreenshotShares shares = new ScreenshotShares(new ShareTransfers(Instant::now), connection,
+                new HttpMediaUploader(worker, config.url::get, key), worker, services.get(ChatService.class),
+                services.get(ChannelSelection.class), services.get(HeldPlayers.class), playerInfos, mediaView, previews,
+                new ShareView(services.get(Messenger.class)), config, services.get(ClientCapabilities.class), Instant::now);
         QueryAnswers answers = new QueryAnswers(connection, info, nicknames, services.get(HeldPlayers.class),
                 services.get(KnownPlayers.class), Instant::now);
         router.onChat(delivery::deliver);
@@ -97,7 +108,8 @@ public final class DiscordModule implements EnriquecraftModule {
         services.register(ServerInfo.class, info);
         services.register(BridgeConnection.class, connection);
         services.register(GameReporter.class, new GameReporter(connection));
-        services.register(PlayerInfos.class, new PlayerInfos(nicknames));
+        services.register(PlayerInfos.class, playerInfos);
+        services.register(ScreenshotShares.class, shares);
         services.register(DiscordView.class, new DiscordView(services.get(Messenger.class)));
     }
 }

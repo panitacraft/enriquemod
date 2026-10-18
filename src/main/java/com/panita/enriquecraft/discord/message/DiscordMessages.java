@@ -70,6 +70,22 @@ public final class DiscordMessages {
         }
     }
 
+    public static final class Share {
+        public static final String SENDING = "<gray>Enviando la captura...";
+        public static final String SENT_DISCORD = "<green>Captura enviada a Discord.";
+        public static final String SENT_CHAT = "<green>Captura compartida en el chat.";
+        public static final String UNAVAILABLE = "<red>Ahora no se pueden compartir capturas.";
+        public static final String BUSY = "<red>Ya estás enviando una captura, espera un momento.";
+        public static final String TOO_FAST = "<red>Estás compartiendo capturas muy rápido, espera un poco.";
+        public static final String TOO_LARGE = "<red>La captura es demasiado grande.";
+        public static final String INVALID = "<red>No se pudo leer la captura.";
+        public static final String FAILED = "<red>No se pudo compartir la captura.";
+        public static final String CHAT_NAME = "captura.jpg";
+
+        private Share() {
+        }
+    }
+
     public static final class Commands {
         public static final String DISCORD_DESCRIPTION = "Administra la conexión del servidor con el bot de Discord";
         public static final String STATUS_DESCRIPTION = "Muestra si el servidor está conectado al bot y qué canales usa";

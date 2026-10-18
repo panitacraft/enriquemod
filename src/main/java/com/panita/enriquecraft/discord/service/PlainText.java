@@ -12,6 +12,7 @@ public final class PlainText {
     private static final Pattern TAG = Pattern.compile("<[^<>]*>");
     private static final Pattern LEGACY_CODE = Pattern.compile("[&§][0-9a-fk-orA-FK-OR]");
     private static final Pattern CONTROL = Pattern.compile("\\p{Cntrl}");
+    private static final Pattern INVISIBLE = Pattern.compile("[\\p{Cntrl}\\p{Cf}§]");
     private static final int MAX_EVENT_TEXT = 1024;
 
     private PlainText() {
@@ -25,6 +26,11 @@ public final class PlainText {
     /** A line of chat: no control characters, and at most as long as the protocol allows. */
     public static String chat(String text) {
         return limited(CONTROL.matcher(text).replaceAll("").strip(), Protocol.MAX_CHAT_LENGTH);
+    }
+
+    /** What a player wrote to go with a screenshot: no control or invisible formatting characters, and at most {@code max} long. */
+    public static String caption(String text, int max) {
+        return limited(INVISIBLE.matcher(text).replaceAll("").strip(), max);
     }
 
     /** The text of an event: no control characters, and at most as long as the protocol allows. */

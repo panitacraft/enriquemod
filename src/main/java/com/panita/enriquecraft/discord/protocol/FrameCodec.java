@@ -91,7 +91,8 @@ public final class FrameCodec {
         return json.toString();
     }
 
-    private static JsonObject player(PlayerInfo player) {
+    /** A player as the bot reads it, in a frame or in the metadata of an upload. */
+    public static JsonObject player(PlayerInfo player) {
         JsonObject json = new JsonObject();
         json.addProperty("uuid", player.uuid().toString());
         json.addProperty("name", player.name());

@@ -17,6 +17,8 @@ public final class Protocol {
     public static final int MAX_ICON_BYTES = 10_000;
     /** The optional feature of showing the images of Discord messages, announced in the hello and the welcome. */
     public static final String FEATURE_MEDIA = "media";
+    /** Only in the bot's welcome: it has the upload endpoint, so the mod may offer screenshot sharing. */
+    public static final String FEATURE_MEDIA_UPLOAD = "media_upload";
     /** The most images of one message that travel in a frame. */
     public static final int MAX_MEDIA = 4;
     public static final int MAX_MEDIA_URL = 1024;

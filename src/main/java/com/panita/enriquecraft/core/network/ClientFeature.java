@@ -16,7 +16,10 @@ public enum ClientFeature {
     CUSTOM_UI("custom_ui"),
 
     /** Images of the lines the server says come from Discord, drawn inside the chat. */
-    MEDIA_PREVIEW("media_preview");
+    MEDIA_PREVIEW("media_preview"),
+
+    /** Sends a screenshot the player chose to share, in pieces, for the server to check and pass on. */
+    SCREENSHOT_SHARE("screenshot_share");
 
     private final String id;
 
