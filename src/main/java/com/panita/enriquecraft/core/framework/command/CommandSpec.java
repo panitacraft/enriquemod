@@ -31,4 +31,12 @@ public @interface CommandSpec {
 
     /** Vanilla permission level required when no permission manager grants or denies the node. */
     PermissionLevel access() default PermissionLevel.ALL;
+
+    /**
+     * Whether text in the chat runs this command when it is clicked. The game asks the player to confirm a click on a command
+     * that its command tree marks as needing permissions, and a permission manager marks every command that way, even one open to
+     * everyone. A clickable command is therefore always in the tree, and its executor must check
+     * {@link CommandPermissions#canUse} itself.
+     */
+    boolean clickable() default false;
 }

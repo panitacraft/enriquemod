@@ -58,6 +58,7 @@ public final class DiscordMessages {
         public static final String COMMAND_DESCRIPTION = "Muestra en un mapa una imagen que se envió desde Discord";
         public static final String LOADING = "<gray>Cargando la imagen...";
         public static final String SHOWN = "<gray>Imagen en tu mano. Se oculta en cuanto hagas cualquier cosa menos moverte.";
+        public static final String NOT_ALLOWED = "<red>No tienes permiso para ver imágenes.";
         public static final String EXPIRED = "<red>Esa imagen ya no está disponible.";
         public static final String BUSY = "<red>Ya estás cargando una imagen, espera un momento.";
         public static final String COOLDOWN = "<red>Espera unos segundos antes de ver otra imagen.";

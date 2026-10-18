@@ -25,6 +25,10 @@ public final class ImageView {
         send(player, DiscordMessages.Image.SHOWN);
     }
 
+    public void notAllowed(ServerPlayer player) {
+        send(player, DiscordMessages.Image.NOT_ALLOWED);
+    }
+
     public void expired(ServerPlayer player) {
         send(player, DiscordMessages.Image.EXPIRED);
     }

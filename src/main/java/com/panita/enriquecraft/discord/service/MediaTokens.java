@@ -23,6 +23,8 @@ public final class MediaTokens {
     private static final String DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz";
     private static final int LENGTH = 8;
 
+    private static final java.util.regex.Pattern TOKEN = java.util.regex.Pattern.compile("[a-z0-9]{" + LENGTH + "}");
+
     private final Supplier<Instant> clock;
     private final Duration lifetime;
     private final int capacity;
@@ -52,6 +54,11 @@ public final class MediaTokens {
         } while (issued.containsKey(token));
         issued.put(token, new Issued(entry, now.plus(lifetime)));
         return token;
+    }
+
+    /** Whether the text has the shape of a token, which is all a command may take from a player before it looks one up. */
+    public static boolean isToken(String text) {
+        return TOKEN.matcher(text).matches();
     }
 
     /** The image of a token that exists and has not expired. */

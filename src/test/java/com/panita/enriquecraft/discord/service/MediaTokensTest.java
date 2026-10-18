@@ -10,6 +10,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MediaTokensTest {
@@ -45,6 +46,14 @@ class MediaTokensTest {
             distinct.add(one.issue(image("a.png")));
         }
         assertEquals(100, distinct.size());
+    }
+
+    @Test
+    void onlyTheShapeOfATokenIsAToken() {
+        assertTrue(MediaTokens.isToken("x90ygqp5"));
+        for (String text : new String[]{"", "short", "toolong123", "UPPERCAS", "has space", "../../../", "a;b|c&d$", "x90ygqp5 ", "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9", "x90ygqp\n"}) {
+            assertFalse(MediaTokens.isToken(text), text);
+        }
     }
 
     @Test

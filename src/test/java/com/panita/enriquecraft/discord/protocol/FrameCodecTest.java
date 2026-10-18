@@ -298,6 +298,14 @@ class FrameCodecTest {
     }
 
     @Test
+    void theSectionSignAndInvisibleFormattingCharactersOfAnImageNameAreRemoved() {
+        assertEquals("kfoto.png", chatWith("hola", entry("{\"name\":\"\\u00a7kfoto.png\"}")).media().get(0).name());
+        assertEquals("foto.png", chatWith("hola", entry("{\"name\":\"fo\\u202eto.png\"}")).media().get(0).name());
+        assertEquals("foto.png", chatWith("hola", entry("{\"name\":\"fo\\u200bto.png\"}")).media().get(0).name());
+        assertEquals(1, chatWith("hola", entry("{\"name\":\"\\u00a7\\u00a7\"}"), entry("{}")).rejectedMedia(), "nothing is left of the name");
+    }
+
+    @Test
     void aControlCharacterInAnImageNameIsRemoved() {
         assertEquals("foto.png", chatWith("hola", entry("{\"name\":\"fo\\u0007to\\n.png\"}")).media().get(0).name());
     }

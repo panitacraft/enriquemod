@@ -41,7 +41,7 @@ public final class FrameCodec {
     private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_]{1,16}");
     private static final Pattern DISCORD_ID = Pattern.compile("[0-9]{17,20}");
     private static final Pattern FEATURE = Pattern.compile("[a-z0-9_]{1,32}");
-    private static final Pattern CONTROL = Pattern.compile("\\p{Cntrl}");
+    private static final Pattern CONTROL = Pattern.compile("[\\p{Cntrl}\\p{Cf}\u00A7]");
     private static final int MAX_FEATURES = 16;
     private static final long MAX_DIMENSION = 100_000;
     private static final int MAX_ID = 64;
