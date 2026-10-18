@@ -5,6 +5,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.authlib.GameProfile;
 import com.panita.enriquecraft.auth.AuthHooks;
 import com.panita.enriquecraft.auth.data.AuthMode;
+import com.panita.enriquecraft.auth.service.LoginProfiles;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
@@ -48,6 +49,9 @@ public abstract class ServerLoginPacketListenerImplMixin {
     private boolean enriquecraft$deciding;
 
     @Shadow
+    private @Nullable GameProfile authenticatedProfile;
+
+    @Shadow
     public abstract void handleHello(ServerboundHelloPacket packet);
 
     @Shadow
@@ -70,6 +74,15 @@ public abstract class ServerLoginPacketListenerImplMixin {
             enriquecraft$mode = mode;
             handleHello(packet);
         }, this::disconnect);
+    }
+
+    /**
+     * The game builds the player from the profile it authenticated and only sends the client the one the login finishes with,
+     * so a skin that a mod put on that one would show while connecting and be gone once the player is in.
+     */
+    @Inject(method = "finishLoginAndWaitForClient", at = @At("HEAD"))
+    private void enriquecraft$keepTheProfileTheLoginFinishedWith(GameProfile profile, CallbackInfo callback) {
+        authenticatedProfile = LoginProfiles.carry(authenticatedProfile, profile);
     }
 
     @WrapOperation(method = "handleHello",
