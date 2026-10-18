@@ -154,6 +154,14 @@ public final class ShownMaps {
                 player.connection.send(new ClientboundMapItemDataPacket(ID, (byte) 0, true, List.of(), patch)));
     }
 
+    /**
+     * Whether a stack is the map shown by {@link #show}. It exists only on the client, so a client that offers one to the server
+     * (a player in creative mode can move any item of their inventory screen into a slot) is not telling the truth.
+     */
+    public static boolean isShownMap(ItemStack stack) {
+        return stack.is(Items.FILLED_MAP) && ID.equals(stack.get(DataComponents.MAP_ID));
+    }
+
     /** Puts the slot back as it is, if a map is being shown to the player. */
     public void clear(ServerPlayer player) {
         Shown was = shown.remove(player.getUUID());

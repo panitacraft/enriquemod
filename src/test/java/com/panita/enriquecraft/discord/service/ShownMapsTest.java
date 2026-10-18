@@ -17,6 +17,11 @@ import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
+import com.panita.enriquecraft.MinecraftTestSupport;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,5 +94,20 @@ class ShownMapsTest {
         assertEquals(0, patch.startX());
         assertEquals(MapPixels.SIZE, patch.width());
         assertEquals(MapPixels.SIZE, patch.height());
+    }
+
+    @Test
+    void onlyTheMapThatWasShownIsRecognizedAsIt() {
+        MinecraftTestSupport.bootstrap();
+        ItemStack shown = new ItemStack(Items.FILLED_MAP);
+        shown.set(DataComponents.MAP_ID, new MapId(0x7FFFFF00));
+        ItemStack real = new ItemStack(Items.FILLED_MAP);
+        real.set(DataComponents.MAP_ID, new MapId(3));
+
+        assertTrue(ShownMaps.isShownMap(shown));
+        assertFalse(ShownMaps.isShownMap(real));
+        assertFalse(ShownMaps.isShownMap(new ItemStack(Items.FILLED_MAP)));
+        assertFalse(ShownMaps.isShownMap(new ItemStack(Items.MAP)));
+        assertFalse(ShownMaps.isShownMap(ItemStack.EMPTY));
     }
 }
