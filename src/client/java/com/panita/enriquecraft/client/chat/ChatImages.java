@@ -1,12 +1,11 @@
 package com.panita.enriquecraft.client.chat;
 
 import com.panita.enriquecraft.discord.service.ChatImageLayout;
+import com.panita.enriquecraft.discord.service.GifDecoder;
 import com.panita.enriquecraft.discord.service.ImageDecoder;
 import com.panita.enriquecraft.discord.service.ImageFetcher;
 import com.panita.enriquecraft.discord.service.MediaLinks;
-import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -43,21 +42,20 @@ public final class ChatImages {
     private static final int MAX_TEXTURES = 24;
     private static final long MAX_BYTES = 8L * 1024 * 1024;
 
-    /** A texture ready to draw: {@code width} is its width on screen, and it is cut into {@code rows} lines of chat. */
-    record Ready(Identifier id, int width, int textureWidth, int textureHeight, int rows) {
-    }
+    /** Frames of an animation kept for one image, which bounds the memory a GIF may use (about 16 MB of pixels). */
+    private static final int MAX_FRAMES = 60;
 
-    private record Prepared(String url, int width, int height, int rows, int[] pixels) {
+    private record Prepared(String url, int width, int height, int rows, List<int[]> frames, List<Integer> delaysMs) {
     }
 
     /** An empty value is an image still loading, or one that could not be loaded; it is not tried again until the next join. */
-    private static final Map<String, Optional<Ready>> IMAGES = new LinkedHashMap<>(16, 0.75F, true) {
+    private static final Map<String, Optional<ChatImage>> IMAGES = new LinkedHashMap<>(16, 0.75F, true) {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, Optional<Ready>> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, Optional<ChatImage>> eldest) {
             if (size() <= MAX_TEXTURES) {
                 return false;
             }
-            eldest.getValue().ifPresent(ChatImages::release);
+            eldest.getValue().ifPresent(ChatImage::close);
             return true;
         }
     };
@@ -94,7 +92,7 @@ public final class ChatImages {
 
     /** Forgets everything, as the textures belong to the game session that is ending. */
     public static void clear() {
-        IMAGES.values().forEach(image -> image.ifPresent(ChatImages::release));
+        IMAGES.values().forEach(image -> image.ifPresent(ChatImage::close));
         IMAGES.clear();
     }
 
@@ -102,7 +100,7 @@ public final class ChatImages {
     public static List<FormattedCharSequence> linesFor(Component message) {
         List<FormattedCharSequence> lines = new ArrayList<>();
         for (String url : linksOf(message)) {
-            Optional<Ready> image = IMAGES.getOrDefault(url, Optional.empty());
+            Optional<ChatImage> image = IMAGES.getOrDefault(url, Optional.empty());
             image.ifPresent(ready -> {
                 for (int row = 0; row < ready.rows(); row++) {
                     lines.add(new ChatImageLine(ready, row));
@@ -126,44 +124,63 @@ public final class ChatImages {
         return links;
     }
 
-    /** On the worker: decode, fit into the room the chat gives an image and scale once, so drawing is only a copy. */
+    /** On the worker: decode (every frame of a GIF, the first of anything else), fit into the room the chat gives an image and scale once. */
     private static Prepared prepare(String url, byte[] bytes) {
         try {
-            BufferedImage source = ImageDecoder.decode(bytes);
-            ChatImageLayout.Size size = ChatImageLayout.fit(source.getWidth(), source.getHeight());
-            BufferedImage scaled = new BufferedImage(size.width() * SCALE, size.lines() * ChatImageLayout.LINE_HEIGHT * SCALE, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D canvas = scaled.createGraphics();
-            try {
-                canvas.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                canvas.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                canvas.drawImage(source, 0, 0, size.width() * SCALE, size.height() * SCALE, null);
-            } finally {
-                canvas.dispose();
+            List<int[]> frames = new ArrayList<>();
+            List<Integer> delays = new ArrayList<>();
+            ChatImageLayout.Size[] size = new ChatImageLayout.Size[1];
+            if (isGif(bytes)) {
+                try {
+                    GifDecoder.frames(bytes, MAX_FRAMES, (canvas, delay) -> {
+                        if (size[0] == null) {
+                            size[0] = ChatImageLayout.fit(canvas.getWidth(), canvas.getHeight());
+                        }
+                        frames.add(scale(canvas, size[0]));
+                        delays.add(delay);
+                    });
+                } catch (ImageDecoder.DecodeException e) {
+                    frames.clear();
+                    delays.clear();
+                    size[0] = null;
+                }
             }
-            return new Prepared(url, size.width(), scaled.getHeight(), size.lines(),
-                    scaled.getRGB(0, 0, scaled.getWidth(), scaled.getHeight(), null, 0, scaled.getWidth()));
+            if (frames.isEmpty()) {
+                BufferedImage source = ImageDecoder.decode(bytes);
+                size[0] = ChatImageLayout.fit(source.getWidth(), source.getHeight());
+                frames.add(scale(source, size[0]));
+                delays.add(0);
+            }
+            return new Prepared(url, size[0].width(), size[0].lines() * ChatImageLayout.LINE_HEIGHT * SCALE, size[0].lines(), frames, delays);
         } catch (ImageDecoder.DecodeException e) {
             throw new IllegalStateException(e.failure().name(), e);
         }
     }
 
-    /** On the client thread: the texture is made here, as the graphics device belongs to it. */
-    private static void show(Minecraft client, Prepared prepared) {
-        int textureWidth = prepared.width() * SCALE;
-        NativeImage pixels = new NativeImage(textureWidth, prepared.height(), false);
-        for (int y = 0; y < prepared.height(); y++) {
-            for (int x = 0; x < textureWidth; x++) {
-                pixels.setPixel(x, y, prepared.pixels()[y * textureWidth + x]);
-            }
-        }
-        Identifier id = Identifier.fromNamespaceAndPath("enriquecraft", "chat_image/" + counter++);
-        client.getTextureManager().register(id, new DynamicTexture(() -> "enriquecraft chat image", pixels));
-        IMAGES.put(prepared.url(), Optional.of(new Ready(id, prepared.width(), textureWidth, prepared.height(), prepared.rows())));
-        // The line was drawn before its image was ready, so the chat lays its lines out again
-        client.gui.hud.getChat().rescaleChat();
+    private static boolean isGif(byte[] bytes) {
+        return bytes.length > 6 && bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F';
     }
 
-    private static void release(Ready image) {
-        Minecraft.getInstance().getTextureManager().release(image.id());
+    private static int[] scale(BufferedImage source, ChatImageLayout.Size size) {
+        BufferedImage scaled = new BufferedImage(size.width() * SCALE, size.lines() * ChatImageLayout.LINE_HEIGHT * SCALE, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D canvas = scaled.createGraphics();
+        try {
+            canvas.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            canvas.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            canvas.drawImage(source, 0, 0, size.width() * SCALE, size.height() * SCALE, null);
+        } finally {
+            canvas.dispose();
+        }
+        return scaled.getRGB(0, 0, scaled.getWidth(), scaled.getHeight(), null, 0, scaled.getWidth());
+    }
+
+    /** On the client thread: the texture is made here, as the graphics device belongs to it. */
+    private static void show(Minecraft client, Prepared prepared) {
+        Identifier id = Identifier.fromNamespaceAndPath("enriquecraft", "chat_image/" + counter++);
+        ChatImage image = new ChatImage(client.getTextureManager(), id, prepared.width(), prepared.height(), prepared.rows(),
+                prepared.frames(), prepared.delaysMs());
+        IMAGES.put(prepared.url(), Optional.of(image));
+        // The line was drawn before its image was ready, so the chat lays its lines out again
+        client.gui.hud.getChat().rescaleChat();
     }
 }

@@ -17,7 +17,8 @@ public final class ChatImageRenderer {
         if (!(line instanceof ChatImageLine slice)) {
             return false;
         }
-        ChatImages.Ready image = slice.image();
+        ChatImage image = slice.image();
+        image.advance(System.currentTimeMillis());
         int sliceHeight = ChatImageLayout.LINE_HEIGHT * ChatImages.SCALE;
         graphics.blit(RenderPipelines.GUI_TEXTURED, image.id(), 0, textTop, 0.0F, slice.row() * sliceHeight,
                 image.width(), ChatImageLayout.LINE_HEIGHT, image.textureWidth(), sliceHeight,
