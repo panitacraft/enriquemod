@@ -15,8 +15,6 @@
   "enriquecraft.share.missing": "No se encontró esa captura.",
   "enriquecraft.share.send": "Compartir",
   "enriquecraft.share.copy": "Copiar imagen",
-  "enriquecraft.share.copy.button": "[Copiar]",
-  "enriquecraft.share.copy.hover": "Copiar esta captura al portapapeles",
   "enriquecraft.share.copied": "Captura copiada al portapapeles.",
   "enriquecraft.share.copy_failed": "No se pudo copiar la captura.",
   "enriquecraft.share.none": "No hay capturas guardadas.",

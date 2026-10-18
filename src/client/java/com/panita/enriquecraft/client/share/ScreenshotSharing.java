@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 public final class ScreenshotSharing {
 
     static final String COMMAND = "enriquecraft_share";
-    static final String COPY_COMMAND = "enriquecraft_copy";
     private static final String SUCCESS_KEY = "screenshot.success";
     private static final Pattern FILE_NAME = Pattern.compile("[A-Za-z0-9_.\\-]{1,100}\\.png");
     private static final long MAX_FILE_BYTES = 40L * 1024 * 1024;
@@ -46,11 +45,6 @@ public final class ScreenshotSharing {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommands.literal(COMMAND).then(ClientCommands.argument("file", StringArgumentType.string())
                     .executes(context -> run(context.getSource().getClient(), StringArgumentType.getString(context, "file"), ShareScreen::new))));
-            dispatcher.register(ClientCommands.literal(COPY_COMMAND).then(ClientCommands.argument("file", StringArgumentType.string())
-                    .executes(context -> run(context.getSource().getClient(), StringArgumentType.getString(context, "file"), file -> {
-                        ScreenshotClipboard.copy(file);
-                        return null;
-                    }))));
         });
     }
 
@@ -81,13 +75,12 @@ public final class ScreenshotSharing {
                 || !FILE_NAME.matcher(name.getString()).matches()) {
             return Optional.empty();
         }
-        MutableComponent line = Component.empty().append(message).append(Component.literal(" "))
-                .append(button("enriquecraft.share.copy.button", "enriquecraft.share.copy.hover", COPY_COMMAND, name.getString()));
-        // Copying the picture needs nothing from the server; sharing it does
-        if (ClientPlayNetworking.canSend(ShareBeginC2S.TYPE)) {
-            line.append(Component.literal(" ")).append(button("enriquecraft.share.button", "enriquecraft.share.button.hover", COMMAND, name.getString()));
+        // Only on a server that takes uploads; copying the picture is on the share screen
+        if (!ClientPlayNetworking.canSend(ShareBeginC2S.TYPE)) {
+            return Optional.empty();
         }
-        return Optional.of(line);
+        return Optional.of(Component.empty().append(message).append(Component.literal(" "))
+                .append(button("enriquecraft.share.button", "enriquecraft.share.button.hover", COMMAND, name.getString())));
     }
 
     private static MutableComponent button(String label, String hover, String command, String file) {
