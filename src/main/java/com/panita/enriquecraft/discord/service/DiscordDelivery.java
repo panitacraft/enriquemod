@@ -14,6 +14,7 @@ import com.panita.enriquecraft.discord.protocol.MediaEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -57,22 +58,20 @@ public final class DiscordDelivery {
         if (channel.isEmpty() || (text.isEmpty() && images.isEmpty())) {
             return;
         }
-        Component sender = sender(frame.ign());
-        // What it answers goes first, as a line of its own, so the reply reads as the answer
-        if (config.showReplies.get()) {
-            frame.reply().ifPresent(reply -> chat.deliverLine(server, channel.get(), replies.line(reply)));
-        }
+        // Whose message it answers goes between the name and the text, so the reply reads in one line
+        Component sender = sender(frame.ign(), config.showReplies.get() ? frame.reply() : Optional.empty());
         List<ServerPlayer> readers = chat.deliverExternal(server, channel.get(), sender, text, images);
         // The client companion draws the image itself, but only one from a host it trusts on its own
         previews.send(readers, allowed.stream().filter(MediaLinks::isTrusted).toList());
     }
 
-    private Component sender(String ign) {
+    private Component sender(String ign, Optional<InFrame.Reply> reply) {
         Component hover = formatter.format(Message.plain(DiscordMessages.Delivery.HOVER));
-        return Component.empty()
+        MutableComponent sender = Component.empty()
                 .append(formatter.format(Message.plain(config.deliveryPrefix.get())))
                 .append(Component.literal(" "))
-                .append(Component.literal(ign).withStyle(ChatFormatting.WHITE))
-                .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover)));
+                .append(Component.literal(ign).withStyle(ChatFormatting.WHITE));
+        reply.ifPresent(answered -> sender.append(Component.literal(" ")).append(replies.line(answered)));
+        return sender.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover)));
     }
 }

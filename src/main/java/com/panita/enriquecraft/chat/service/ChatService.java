@@ -82,13 +82,6 @@ public final class ChatService {
         return readers;
     }
 
-    /** A finished line for whoever may read the channel, such as the context of a reply; it fires no event. */
-    public List<ServerPlayer> deliverLine(MinecraftServer server, ChannelDefinition channel, Component line) {
-        List<ServerPlayer> readers = readersOf(server, channel);
-        view.deliver(server, readers, line);
-        return readers;
-    }
-
     private List<ServerPlayer> readersOf(MinecraftServer server, ChannelDefinition channel) {
         return server.getPlayerList().getPlayers().stream()
                 .filter(player -> channel.canUse(player) && !held.isHeld(player))

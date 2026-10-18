@@ -6,8 +6,8 @@ import com.panita.enriquecraft.discord.protocol.InFrame;
 import net.minecraft.network.chat.Component;
 
 /**
- * The line shown before a Discord reply, which says whose message it answers. The name is plain text (inserted as a finished
- * component, so nothing in it is read as formatting).
+ * The note a Discord reply carries after the name of whoever replies, which says whose message it answers. The name is plain
+ * text (inserted as a finished component, so nothing in it is read as formatting).
  */
 public final class ReplyView {
 
