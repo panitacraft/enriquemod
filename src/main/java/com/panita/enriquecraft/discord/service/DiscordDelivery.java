@@ -9,10 +9,12 @@ import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.MediaView;
 import com.panita.enriquecraft.discord.protocol.InFrame;
+import com.panita.enriquecraft.discord.protocol.MediaEntry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,13 +31,16 @@ public final class DiscordDelivery {
     private final MessageFormatter formatter;
     private final DiscordConfig config;
     private final MediaView media;
+    private final MediaPreviews previews;
 
-    public DiscordDelivery(ChatService chat, ChannelRegistry channels, MessageFormatter formatter, DiscordConfig config, MediaView media) {
+    public DiscordDelivery(ChatService chat, ChannelRegistry channels, MessageFormatter formatter, DiscordConfig config, MediaView media,
+                           MediaPreviews previews) {
         this.chat = chat;
         this.channels = channels;
         this.formatter = formatter;
         this.config = config;
         this.media = media;
+        this.previews = previews;
     }
 
     /** Called on the server thread. A message for a channel this server does not have, or with nothing to say, is dropped. */
@@ -44,11 +49,14 @@ public final class DiscordDelivery {
         String text = PlainText.chat(frame.text());
         List<String> hosts = MediaLinks.hostsOf(config.mediaHosts.get());
         // The bot checks the addresses too, but the administrator decides where a link in the game may lead
-        List<Component> images = frame.media().stream().filter(entry -> MediaLinks.allows(entry, hosts)).map(media::link).toList();
+        List<MediaEntry> allowed = frame.media().stream().filter(entry -> MediaLinks.allows(entry, hosts)).toList();
+        List<Component> images = allowed.stream().map(media::link).toList();
         if (channel.isEmpty() || (text.isEmpty() && images.isEmpty())) {
             return;
         }
-        chat.deliverExternal(server, channel.get(), sender(frame.ign()), text, images);
+        List<ServerPlayer> readers = chat.deliverExternal(server, channel.get(), sender(frame.ign()), text, images);
+        // The client companion draws the image itself, but only one from a host it trusts on its own
+        previews.send(readers, allowed.stream().filter(MediaLinks::isTrusted).toList());
     }
 
     private Component sender(String ign) {

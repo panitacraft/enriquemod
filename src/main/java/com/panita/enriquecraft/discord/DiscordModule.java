@@ -9,6 +9,7 @@ import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.io.SecretFile;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
 import com.panita.enriquecraft.core.message.MessageFormatter;
+import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
@@ -23,6 +24,7 @@ import com.panita.enriquecraft.discord.service.FrameRouter;
 import com.panita.enriquecraft.discord.service.GameReporter;
 import com.panita.enriquecraft.discord.service.ImageFetcher;
 import com.panita.enriquecraft.discord.service.ImageMaps;
+import com.panita.enriquecraft.discord.service.MediaPreviews;
 import com.panita.enriquecraft.discord.service.MediaTokens;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
 import com.panita.enriquecraft.discord.service.QueryAnswers;
@@ -81,7 +83,8 @@ public final class DiscordModule implements EnriquecraftModule {
         ImageMaps imageMaps = new ImageMaps(new ImageFetcher(worker, (int) Protocol.MAX_MEDIA_BYTES, Duration.ofSeconds(8)), shownMaps,
                 imageView, config, Instant::now, worker);
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class),
-                services.get(MessageFormatter.class), config, new MediaView(services.get(MessageFormatter.class), tokens));
+                services.get(MessageFormatter.class), config, new MediaView(services.get(MessageFormatter.class), tokens),
+                new MediaPreviews(services.get(ClientCapabilities.class)));
         QueryAnswers answers = new QueryAnswers(connection, info, nicknames, services.get(HeldPlayers.class),
                 services.get(KnownPlayers.class), Instant::now);
         router.onChat(delivery::deliver);

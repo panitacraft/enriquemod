@@ -47,6 +47,29 @@ public final class MediaLinks {
         }
     }
 
+    /**
+     * Hosts a client companion fetches images from on its own. Fixed in the code, not a setting: the player's address goes to
+     * them, so neither the administrator nor the bot may widen the list, and a local host is never one of them.
+     */
+    private static final List<String> TRUSTED = List.of("cdn.discordapp.com", "media.discordapp.net", "*.klipy.com", "*.tenor.com", "*.giphy.com");
+
+    /** Whether a client companion may fetch the image: {@code https} and on a fixed host. */
+    public static boolean isTrusted(MediaEntry entry) {
+        return isTrusted(entry.url());
+    }
+
+    /** The same check for an address, which the client makes again on what it was told. */
+    public static boolean isTrusted(String url) {
+        try {
+            URI address = URI.create(url);
+            String host = address.getHost();
+            return "https".equalsIgnoreCase(address.getScheme()) && host != null
+                    && TRUSTED.stream().anyMatch(allowed -> matches(allowed, host.toLowerCase(Locale.ROOT)));
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     private static boolean matches(String allowed, String host) {
         if (!allowed.startsWith("*.")) {
             return allowed.equals(host);

@@ -62,13 +62,13 @@ public final class ChatService {
      *
      * @param sender   how the line names who wrote it, already finished
      * @param attached finished parts shown after the text, such as links to images; the line may have only these
-     * @return whether anything was said
+     * @return the players who read the line; empty when nothing was said
      */
-    public boolean deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain,
-                                   List<Component> attached) {
+    public List<ServerPlayer> deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain,
+                                              List<Component> attached) {
         Component typed = parser.parse(plain, Set.of());
         if (typed.getString().isBlank() && attached.isEmpty()) {
-            return false;
+            return List.of();
         }
         MutableComponent text = Component.empty();
         if (!typed.getString().isBlank()) {
@@ -81,7 +81,7 @@ public final class ChatService {
                 .filter(player -> channel.canUse(player) && !held.isHeld(player))
                 .toList();
         view.deliver(server, readers, view.externalLine(channel, sender, text));
-        return true;
+        return readers;
     }
 
     private boolean deliver(ServerPlayer sender, ChannelDefinition channel, String raw,

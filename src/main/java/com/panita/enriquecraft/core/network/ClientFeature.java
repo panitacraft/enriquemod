@@ -13,7 +13,10 @@ import java.util.Optional;
 public enum ClientFeature {
 
     /** Server-described screens with buttons and inputs, instead of the vanilla chest. */
-    CUSTOM_UI("custom_ui");
+    CUSTOM_UI("custom_ui"),
+
+    /** Images of the lines the server says come from Discord, drawn inside the chat. */
+    MEDIA_PREVIEW("media_preview");
 
     private final String id;
 
