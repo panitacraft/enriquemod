@@ -20,7 +20,11 @@
   "mixins": [
     "enriquecraft.auth.mixins.json",
     "enriquecraft.chat.mixins.json",
-    "enriquecraft.discord.mixins.json"
+    "enriquecraft.discord.mixins.json",
+    {
+      "config": "enriquecraft.client.mixins.json",
+      "environment": "client"
+    }
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
