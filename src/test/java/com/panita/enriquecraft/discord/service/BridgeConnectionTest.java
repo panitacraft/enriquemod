@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BridgeConnectionTest {
 
     private static final OutFrame.Hello HELLO = new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20,
-            Optional.empty());
+            Optional.empty(), List.of());
     private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360", Optional.empty(), true, Optional.empty());
     private static final String WELCOME = "{\"type\":\"welcome\",\"protocol\":1,\"channels\":[\"global\"]}";
 
@@ -333,7 +333,20 @@ class BridgeConnectionTest {
         transport.listener().onText("{\"type\":\"query\",\"id\":\"q\",\"what\":\"status\"}");
         transport.listener().onText("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"hi\"}");
 
-        assertEquals(List.of(new InFrame.Query("q", QueryKind.STATUS), new InFrame.Chat("global", "123456789012345678", "Tez", "hi")), frames);
+        assertEquals(List.of(new InFrame.Query("q", QueryKind.STATUS, java.util.Optional.empty()), new InFrame.Chat("global", "123456789012345678", "Tez", "hi", List.of(), 0, java.util.Optional.empty())), frames);
+    }
+
+    @Test
+    void handsOverAChatLineWithItsImagesAndCountsTheImagesThatWereLeftOut() {
+        connected();
+        String valid = "{\"url\":\"https://cdn.discordapp.com/a.png\",\"name\":\"a.png\",\"type\":\"image/png\",\"size\":10,\"width\":null,\"height\":null,\"spoiler\":false}";
+        String invalid = "{\"url\":\"http://cdn.discordapp.com/a.png\",\"name\":\"a.png\",\"type\":\"image/png\",\"size\":10,\"width\":null,\"height\":null,\"spoiler\":false}";
+
+        transport.listener().onText("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"\",\"media\":[" + valid + "," + invalid + "]}");
+
+        InFrame.Chat chat = (InFrame.Chat) frames.get(0);
+        assertEquals(1, chat.media().size());
+        assertEquals(1, connection.status().dropped());
     }
 
     @Test

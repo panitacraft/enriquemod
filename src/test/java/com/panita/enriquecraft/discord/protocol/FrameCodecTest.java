@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -36,7 +37,7 @@ class FrameCodecTest {
 
     @Test
     void encodesAHello() {
-        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.empty()));
+        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.empty(), List.of()));
 
         assertEquals("hello", hello.get("type").getAsString());
         assertEquals(1, hello.get("protocol").getAsInt());
@@ -51,7 +52,7 @@ class FrameCodecTest {
     void encodesTheServerIconAsBase64() {
         byte[] icon = {(byte) 0x89, 'P', 'N', 'G', 1, 2, 3};
 
-        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.of(icon)));
+        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.of(icon), List.of()));
 
         assertArrayEquals(icon, Base64.getDecoder().decode(hello.get("icon").getAsString()));
     }
@@ -61,7 +62,7 @@ class FrameCodecTest {
         byte[] icon = new byte[Protocol.MAX_ICON_BYTES];
 
         String text = FrameCodec.encode(new OutFrame.Hello(1, "0.0.1-beta.12+build.3", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 200,
-                Optional.of(icon)));
+                Optional.of(icon), List.of("media")));
 
         assertTrue(text.getBytes(StandardCharsets.UTF_8).length < Protocol.MAX_FRAME_BYTES);
         assertFalse(text.contains("\n"));
@@ -140,21 +141,38 @@ class FrameCodecTest {
 
     @Test
     void decodesAWelcome() {
-        assertEquals(new InFrame.Welcome(1, List.of("global", "staff")),
+        assertEquals(new InFrame.Welcome(1, List.of("global", "staff"), List.of()),
                 frame("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[\"global\",\"staff\"]}"));
     }
 
     @Test
     void decodesAChatLineOfALinkedMember() {
-        assertEquals(new InFrame.Chat("global", "123456789012345678", "Javithor360", "hola"),
+        assertEquals(new InFrame.Chat("global", "123456789012345678", "Javithor360", "hola", List.of(), 0, Optional.empty()),
                 frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Javithor360\"},\"text\":\"hola\"}"));
     }
 
     @Test
+    void aChatLineMayCarryWhoseMessageItAnswers() {
+        InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\"," + "\"reply\":{\"author\":\" Javi\\u0007 \"}" + "}");
+        assertEquals(Optional.of(new InFrame.Reply("Javi")), chat.reply());
+    }
+
+    @Test
+    void aReplyThatIsNotValidIsLeftOutAndTheMessageIsStillShown() {
+        String tooLong = "\"reply\":{\"author\":\"" + "x".repeat(81) + "\"}";
+        for (String reply : new String[]{"\"reply\":{\"author\":\"\"}", "\"reply\":{}", "\"reply\":\"Javi\"", "\"reply\":{\"author\":5}", tooLong}) {
+            InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\"," + reply + "}");
+            assertEquals(Optional.empty(), chat.reply(), reply);
+            assertEquals("si", chat.text());
+        }
+    }
+    @Test
     void decodesAQuery() {
-        assertEquals(new InFrame.Query("abc", QueryKind.PLAYERLIST), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerlist\"}"));
-        assertEquals(new InFrame.Query("abc", QueryKind.TPS), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"tps\"}"));
-        assertEquals(new InFrame.Query("abc", QueryKind.STATUS), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"status\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.PLAYERLIST, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerlist\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.TPS, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"tps\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.STATUS, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"status\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.PLAYERINFO, Optional.of("Javithor360")),
+                frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerinfo\",\"player\":\"Javithor360\"}"));
     }
 
     @Test
@@ -165,7 +183,7 @@ class FrameCodecTest {
     @Test
     void skipsAFrameOfAnUnknownTypeAndIgnoresExtraFields() {
         assertInstanceOf(FrameCodec.Decoded.Ignored.class, FrameCodec.decode("{\"type\":\"telemetry\",\"x\":1}"));
-        assertEquals(new InFrame.Welcome(1, List.of()), frame("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[],\"later\":true}"));
+        assertEquals(new InFrame.Welcome(1, List.of(), List.of()), frame("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[],\"later\":true}"));
     }
 
     @Test
@@ -178,6 +196,8 @@ class FrameCodecTest {
         invalid("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[\"Bad Channel\"]}");
         invalid("{\"type\":\"query\",\"id\":\"a\",\"what\":\"everything\"}");
         invalid("{\"type\":\"query\",\"id\":\"\",\"what\":\"tps\"}");
+        invalid("{\"type\":\"query\",\"id\":\"a\",\"what\":\"playerinfo\"}");
+        invalid("{\"type\":\"query\",\"id\":\"a\",\"what\":\"playerinfo\",\"player\":\"not a name\"}");
     }
 
     @Test
@@ -193,5 +213,119 @@ class FrameCodecTest {
     @Test
     void rejectsAFrameOverTheSizeLimit() {
         invalid("{\"type\":\"error\",\"code\":\"x\",\"message\":\"" + "x".repeat(Protocol.MAX_FRAME_BYTES) + "\"}");
+    }
+
+    @Test
+    void encodesTheFeaturesOfTheHelloAsAnArray() {
+        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.empty(), List.of("media")));
+
+        assertEquals("media", hello.getAsJsonArray("features").get(0).getAsString());
+        assertEquals(0, json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.empty(), List.of()))
+                .getAsJsonArray("features").size());
+    }
+
+    @Test
+    void readsTheFeaturesOfAWelcomeAndIgnoresWhatIsNotAFeatureName() {
+        assertEquals(new InFrame.Welcome(1, List.of("global"), List.of("media", "later_one")),
+                frame("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[\"global\"],\"features\":[\"media\",\"Bad Name\",5,\"\",\"later_one\"]}"));
+        assertEquals(List.of(), ((InFrame.Welcome) frame("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[],\"features\":\"media\"}")).features());
+    }
+
+    private static final String CDN = "https://cdn.discordapp.com/attachments/1/2/foto.png?ex=68f1&is=68f0&hm=abc";
+
+    private static String entry(String overrides) {
+        JsonObject media = JsonParser.parseString("{\"url\":\"" + CDN + "\",\"name\":\"foto.png\",\"type\":\"image/png\",\"size\":1000,\"width\":800,\"height\":600,\"spoiler\":false}").getAsJsonObject();
+        JsonObject changes = JsonParser.parseString(overrides).getAsJsonObject();
+        changes.entrySet().forEach(change -> media.add(change.getKey(), change.getValue()));
+        return media.toString();
+    }
+
+    private static InFrame.Chat chatWith(String text, String... media) {
+        return (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\""
+                + text + "\",\"media\":[" + String.join(",", media) + "]}");
+    }
+
+    @Test
+    void readsTheImagesOfAChatLine() {
+        InFrame.Chat chat = chatWith("mira", entry("{}"));
+
+        assertEquals(List.of(new MediaEntry(CDN, "foto.png", "image/png", 1000, OptionalInt.of(800), OptionalInt.of(600), false)), chat.media());
+        assertEquals(0, chat.rejectedMedia());
+    }
+
+    @Test
+    void aChatLineOfOnlyImagesHasNoText() {
+        assertEquals("", chatWith("", entry("{}")).text());
+        invalid("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"\",\"media\":[]}");
+        invalid("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"\"}");
+    }
+
+    @Test
+    void aLineWithOnlyInvalidImagesAndNoTextIsInvalid() {
+        invalid("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"\",\"media\":["
+                + entry("{\"type\":\"video/mp4\"}") + "]}");
+    }
+
+    @Test
+    void anInvalidImageIsLeftOutAndCountedWithoutSpoilingTheOthers() {
+        for (String bad : List.of("{\"url\":\"http://cdn.discordapp.com/a.png\"}", "{\"url\":\"not a url\"}", "{\"url\":\"/relative.png\"}",
+                "{\"type\":\"image/svg+xml\"}", "{\"type\":\"video/mp4\"}", "{\"size\":8388609}", "{\"size\":-1}", "{\"name\":\"\"}",
+                "{\"name\":\"" + "x".repeat(101) + "\"}", "{\"spoiler\":\"yes\"}", "{\"url\":5}", "{\"size\":\"big\"}",
+                "{\"url\":\"" + CDN + "x".repeat(1100) + "\"}")) {
+            InFrame.Chat chat = chatWith("hola", entry(bad), entry("{}"));
+
+            assertEquals(1, chat.media().size(), bad);
+            assertEquals(1, chat.rejectedMedia(), bad);
+        }
+    }
+
+    @Test
+    void readsPlainHttpOnlyOnALocalHost() {
+        assertEquals(1, chatWith("hola", entry("{\"url\":\"http://localhost:8080/a.png\"}")).media().size());
+        assertEquals(1, chatWith("hola", entry("{\"url\":\"http://127.0.0.1:8080/a.png\"}")).media().size());
+        assertEquals(1, chatWith("hola", entry("{\"url\":\"http://evil.example/a.png\"}"), entry("{}")).rejectedMedia());
+    }
+
+    @Test
+    void anImageThatIsNotAnObjectIsLeftOutToo() {
+        InFrame.Chat chat = chatWith("hola", "5", "null", "\"x\"", entry("{}"));
+
+        assertEquals(1, chat.media().size());
+        assertEquals(3, chat.rejectedMedia());
+    }
+
+    @Test
+    void keepsTheFirstFourImagesAndCountsTheRest() {
+        InFrame.Chat chat = chatWith("hola", entry("{\"name\":\"1.png\"}"), entry("{\"name\":\"2.png\"}"), entry("{\"name\":\"3.png\"}"),
+                entry("{\"name\":\"4.png\"}"), entry("{\"name\":\"5.png\"}"), entry("{\"name\":\"6.png\"}"));
+
+        assertEquals(List.of("1.png", "2.png", "3.png", "4.png"), chat.media().stream().map(MediaEntry::name).toList());
+        assertEquals(2, chat.rejectedMedia());
+    }
+
+    @Test
+    void dimensionsAreOptionalAndOnlyWholePositiveNumbers() {
+        MediaEntry unknown = chatWith("hola", entry("{\"width\":null,\"height\":0}")).media().get(0);
+        assertTrue(unknown.width().isEmpty());
+        assertTrue(unknown.height().isEmpty());
+
+        JsonObject without = JsonParser.parseString(entry("{}")).getAsJsonObject();
+        without.remove("width");
+        without.remove("height");
+        MediaEntry missing = chatWith("hola", without.toString()).media().get(0);
+        assertTrue(missing.width().isEmpty() && missing.height().isEmpty());
+    }
+
+    @Test
+    void theSectionSignAndInvisibleFormattingCharactersOfAnImageNameAreRemoved() {
+        assertEquals("kfoto.png", chatWith("hola", entry("{\"name\":\"\\u00a7kfoto.png\"}")).media().get(0).name());
+        assertEquals("foto.png", chatWith("hola", entry("{\"name\":\"fo\\u202eto.png\"}")).media().get(0).name());
+        assertEquals("foto.png", chatWith("hola", entry("{\"name\":\"fo\\u200bto.png\"}")).media().get(0).name());
+        assertEquals(1, chatWith("hola", entry("{\"name\":\"\\u00a7\\u00a7\"}"), entry("{}")).rejectedMedia(), "nothing is left of the name");
+    }
+
+    @Test
+    void aControlCharacterInAnImageNameIsRemoved() {
+        assertEquals("foto.png", chatWith("hola", entry("{\"name\":\"fo\\u0007to\\n.png\"}")).media().get(0).name());
     }
 }

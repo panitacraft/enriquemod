@@ -37,8 +37,60 @@ public final class DiscordMessages {
 
     public static final class Delivery {
         public static final String HOVER = "<gray>Mensaje desde Discord";
+        /** What a reply adds after the name of the member, before the text: whose message it answers. */
+        public static final String REPLY_TO = "<gray><i>(responde a {author})";
 
         private Delivery() {
+        }
+    }
+
+    public static final class Media {
+        public static final String LABEL = "<aqua>[{name}]";
+        public static final String LABEL_SPOILER = "<aqua>[spoiler]";
+        public static final String HOVER = "<gray>Haz clic para verla en un mapa\n<dark_gray>{details}";
+        public static final String HOVER_SPOILER = "<gray>Marcada como spoiler\nHaz clic para verla en un mapa";
+        public static final String LINK = " <green>(Link)";
+        public static final String LINK_HOVER = "<gray>Abrir la imagen original";
+
+        private Media() {
+        }
+    }
+
+    public static final class Image {
+        public static final String COMMAND_DESCRIPTION = "Muestra en un mapa una imagen que se envió desde Discord";
+        public static final String SHOWING = "<gray>La imagen se mostrará en un mapa.";
+        public static final String NOT_ALLOWED = "<red>No tienes permiso para ver imágenes.";
+        public static final String EXPIRED = "<red>Esa imagen ya no está disponible.";
+        public static final String BUSY = "<red>Ya estás cargando una imagen, espera un momento.";
+        public static final String COOLDOWN = "<red>Espera unos segundos antes de ver otra imagen.";
+        public static final String UNAVAILABLE = "<red>No se pudo descargar la imagen.";
+        public static final String TOO_LARGE = "<red>La imagen es demasiado grande para mostrarla.";
+        public static final String UNSUPPORTED = "<red>Ese formato de imagen no se puede mostrar en un mapa.";
+        public static final String FAILED = "<red>No se pudo preparar la imagen.";
+
+        private Image() {
+        }
+    }
+
+    public static final class Players {
+        /** The line the server shows for a player in the list the bot draws: their rank before the name, and what follows it. */
+        public static final String ENTRY = "%luckperms:prefix%%player:displayname%%luckperms:suffix%";
+
+        private Players() {
+        }
+    }
+
+    public static final class Share {
+        public static final String SENDING = "<gray>Enviando la captura...";
+        public static final String UNAVAILABLE = "<red>Ahora no se pueden compartir capturas.";
+        public static final String BUSY = "<red>Ya estás enviando una captura, espera un momento.";
+        public static final String TOO_FAST = "<red>Estás compartiendo capturas muy rápido, espera un poco.";
+        public static final String TOO_LARGE = "<red>La captura es demasiado grande.";
+        public static final String INVALID = "<red>No se pudo leer la captura.";
+        public static final String FAILED = "<red>No se pudo compartir la captura.";
+        public static final String CHAT_NAME = "captura.jpg";
+
+        private Share() {
         }
     }
 

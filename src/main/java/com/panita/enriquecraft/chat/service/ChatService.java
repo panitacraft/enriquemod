@@ -9,6 +9,7 @@ import com.panita.enriquecraft.chat.message.ChatView;
 import com.panita.enriquecraft.chat.text.ChatTextParser;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -59,19 +60,32 @@ public final class ChatService {
      * A line from outside the game, such as the message of a Discord member. It is plain text, it goes to whoever may read the
      * channel, and it does not fire {@link ChatEvents#MESSAGE}, so it can never be sent back out.
      *
-     * @param sender how the line names who wrote it, already finished
-     * @return whether anything was said
+     * @param sender   how the line names who wrote it, already finished
+     * @param attached finished parts shown after the text, such as links to images; the line may have only these
+     * @return the players who read the line; empty when nothing was said
      */
-    public boolean deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain) {
-        Component text = parser.parse(plain, Set.of());
-        if (text.getString().isBlank()) {
-            return false;
+    public List<ServerPlayer> deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain,
+                                              List<Component> attached) {
+        Component typed = parser.parse(plain, Set.of());
+        if (typed.getString().isBlank() && attached.isEmpty()) {
+            return List.of();
         }
-        List<ServerPlayer> readers = server.getPlayerList().getPlayers().stream()
+        MutableComponent text = Component.empty();
+        if (!typed.getString().isBlank()) {
+            text.append(typed);
+        }
+        for (Component part : attached) {
+            text.append(text.getSiblings().isEmpty() ? part : Component.literal(" ").append(part));
+        }
+        List<ServerPlayer> readers = readersOf(server, channel);
+        view.deliver(server, readers, view.externalLine(channel, sender, text));
+        return readers;
+    }
+
+    private List<ServerPlayer> readersOf(MinecraftServer server, ChannelDefinition channel) {
+        return server.getPlayerList().getPlayers().stream()
                 .filter(player -> channel.canUse(player) && !held.isHeld(player))
                 .toList();
-        view.deliver(server, readers, view.externalLine(channel, sender, text));
-        return true;
     }
 
     private boolean deliver(ServerPlayer sender, ChannelDefinition channel, String raw,
@@ -88,9 +102,7 @@ public final class ChatService {
             return false;
         }
         MinecraftServer server = sender.level().getServer();
-        List<ServerPlayer> readers = server.getPlayerList().getPlayers().stream()
-                .filter(player -> channel.canUse(player) && !held.isHeld(player))
-                .toList();
+        List<ServerPlayer> readers = readersOf(server, channel);
         view.deliver(server, readers, lineOf.apply(text, sender));
         ChatEvents.MESSAGE.invoker().onMessage(new ChatEvents.ChatMessage(channel, sender, text.getString(), emote));
         return true;

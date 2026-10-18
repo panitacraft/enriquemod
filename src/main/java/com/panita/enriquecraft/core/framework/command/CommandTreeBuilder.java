@@ -27,7 +27,7 @@ public final class CommandTreeBuilder {
     private List<LiteralCommandNode<CommandSourceStack>> build(CommandEntry entry) {
         CommandSpec spec = entry.spec();
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(spec.name())
-                .requires(CommandPermissions.requirement(entry.path(), spec.access()));
+                .requires(spec.clickable() ? source -> true : CommandPermissions.requirement(entry.path(), spec.access()));
         entry.command().configure(builder);
         for (CommandEntry child : entry.children()) {
             build(child).forEach(builder::then);

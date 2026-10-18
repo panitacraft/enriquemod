@@ -4,5 +4,20 @@
   "enriquecraft.ui.copy": "Clic para copiar",
   "enriquecraft.ui.copied": "¡Copiado!",
   "enriquecraft.ui.edit": "Clic para editar",
-  "enriquecraft.ui.save": "Guardar"
+  "enriquecraft.ui.save": "Guardar",
+  "enriquecraft.share.button": "[Compartir]",
+  "enriquecraft.share.button.hover": "Compartir esta captura en el chat y en Discord",
+  "enriquecraft.share.title": "Compartir captura",
+  "enriquecraft.share.caption": "Escribe un mensaje (opcional)",
+  "enriquecraft.share.warning": "La captura puede mostrar coordenadas, el chat y otros jugadores.",
+  "enriquecraft.share.cancel": "Cancelar",
+  "enriquecraft.share.failed": "No se pudo preparar la captura para compartirla.",
+  "enriquecraft.share.missing": "No se encontró esa captura.",
+  "enriquecraft.share.send": "Compartir",
+  "enriquecraft.share.copy": "Copiar imagen",
+  "enriquecraft.share.copied": "Captura copiada al portapapeles.",
+  "enriquecraft.share.copy_failed": "No se pudo copiar la captura.",
+  "enriquecraft.share.none": "No hay capturas guardadas.",
+  "enriquecraft.share.unsupported": "Este servidor no permite compartir capturas.",
+  "key.enriquecraft.share_last_screenshot": "Compartir la última captura"
 }
