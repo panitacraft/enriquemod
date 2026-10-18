@@ -8,6 +8,7 @@ import com.google.gson.JsonPrimitive;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -52,6 +53,8 @@ public final class FrameCodec {
                 json.addProperty("minecraftVersion", hello.minecraftVersion());
                 json.addProperty("startedAt", hello.startedAt().toString());
                 json.addProperty("maxPlayers", hello.maxPlayers());
+                // The basic encoder writes no line breaks
+                hello.icon().ifPresent(icon -> json.addProperty("icon", Base64.getEncoder().encodeToString(icon)));
             }
             case OutFrame.Chat chat -> {
                 json.addProperty("type", "chat");
@@ -84,6 +87,7 @@ public final class FrameCodec {
         json.addProperty("name", player.name());
         json.addProperty("nickname", player.nickname().orElse(null));
         json.addProperty("premium", player.premium());
+        player.skin().ifPresent(skin -> json.addProperty("skin", skin));
         return json;
     }
 

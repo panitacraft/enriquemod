@@ -11,6 +11,8 @@ public final class Protocol {
     public static final int MAX_FRAME_BYTES = 16 * 1024;
     /** The longest line of chat that travels over the bridge, in characters. */
     public static final int MAX_CHAT_LENGTH = 256;
+    /** The largest server icon the hello carries, in bytes before encoding, so that the frame stays under {@link #MAX_FRAME_BYTES}. */
+    public static final int MAX_ICON_BYTES = 10_000;
     /** Close code of the bot for a mod it does not speak the same protocol with. */
     public static final int CLOSE_PROTOCOL = 4002;
 

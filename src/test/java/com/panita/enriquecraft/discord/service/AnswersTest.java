@@ -52,13 +52,25 @@ class AnswersTest {
 
     @Test
     void theStatusCarriesEverythingTheBotShows() {
-        JsonObject data = Answers.status(3, 20, 12.5, 20.0, 3600, "26.3");
+        JsonObject data = Answers.status(3, 20, 57, 12.5, 20.0, 3600, "26.3");
 
         assertEquals(3, data.get("online").getAsInt());
         assertEquals(20, data.get("max").getAsInt());
+        assertEquals(57, data.get("totalPlayers").getAsInt());
         assertEquals(20.0, data.get("tps").getAsDouble());
         assertEquals(12.5, data.get("mspt").getAsDouble());
         assertEquals(3600, data.get("uptimeSeconds").getAsLong());
         assertEquals("26.3", data.get("version").getAsString());
+    }
+
+    @Test
+    void aPlayerKnownTwiceIsCountedOnceWhateverTheCapitalization() {
+        // Online and on the whitelist at once, as a PIN player who is connected is
+        assertEquals(3, Answers.distinctPlayers(List.of("Javithor360", "Tezzlar", "javithor360", "Panita", "TEZZLAR")));
+    }
+
+    @Test
+    void noKnownPlayersCountsZero() {
+        assertEquals(0, Answers.distinctPlayers(List.of()));
     }
 }

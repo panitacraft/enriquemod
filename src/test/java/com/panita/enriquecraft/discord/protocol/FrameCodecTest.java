@@ -4,19 +4,23 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FrameCodecTest {
 
     private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"),
-            "Javithor360", Optional.empty(), true);
+            "Javithor360", Optional.empty(), true, Optional.empty());
 
     private static JsonObject json(OutFrame frame) {
         return JsonParser.parseString(FrameCodec.encode(frame)).getAsJsonObject();
@@ -32,7 +36,7 @@ class FrameCodecTest {
 
     @Test
     void encodesAHello() {
-        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20));
+        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.empty()));
 
         assertEquals("hello", hello.get("type").getAsString());
         assertEquals(1, hello.get("protocol").getAsInt());
@@ -40,6 +44,27 @@ class FrameCodecTest {
         assertEquals("26.3", hello.get("minecraftVersion").getAsString());
         assertEquals("2026-10-12T10:00:00Z", hello.get("startedAt").getAsString());
         assertEquals(20, hello.get("maxPlayers").getAsInt());
+        assertFalse(hello.has("icon"));
+    }
+
+    @Test
+    void encodesTheServerIconAsBase64() {
+        byte[] icon = {(byte) 0x89, 'P', 'N', 'G', 1, 2, 3};
+
+        JsonObject hello = json(new OutFrame.Hello(1, "0.0.1", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 20, Optional.of(icon)));
+
+        assertArrayEquals(icon, Base64.getDecoder().decode(hello.get("icon").getAsString()));
+    }
+
+    @Test
+    void aHelloWithTheLargestIconStaysUnderTheFrameLimit() {
+        byte[] icon = new byte[Protocol.MAX_ICON_BYTES];
+
+        String text = FrameCodec.encode(new OutFrame.Hello(1, "0.0.1-beta.12+build.3", "26.3", Instant.parse("2026-10-12T10:00:00Z"), 200,
+                Optional.of(icon)));
+
+        assertTrue(text.getBytes(StandardCharsets.UTF_8).length < Protocol.MAX_FRAME_BYTES);
+        assertFalse(text.contains("\n"));
     }
 
     @Test
@@ -59,12 +84,21 @@ class FrameCodecTest {
 
     @Test
     void encodesTheNicknameWhenThereIsOne() {
-        PlayerInfo nicked = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.of("Javi"), false);
+        PlayerInfo nicked = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.of("Javi"), false, Optional.empty());
 
         JsonObject player = json(new OutFrame.Chat("global", nicked, "hola", true)).getAsJsonObject("player");
 
         assertEquals("Javi", player.get("nickname").getAsString());
         assertEquals(false, player.get("premium").getAsBoolean());
+    }
+
+    @Test
+    void encodesTheSkinOfAPlayerOnlyWhenThereIsOne() {
+        String hash = "292009a4925b58f02c77dadc3ecef07ea4c7472f64e0fdc32ce5522489362680";
+        PlayerInfo skinned = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.empty(), false, Optional.of(hash));
+
+        assertEquals(hash, json(new OutFrame.Chat("global", skinned, "hola", false)).getAsJsonObject("player").get("skin").getAsString());
+        assertFalse(json(new OutFrame.Chat("global", JAVI, "hola", false)).getAsJsonObject("player").has("skin"));
     }
 
     @Test

@@ -41,8 +41,21 @@ public final class GameEventsListener implements ModListener {
             case SystemEvent.Left left -> reporter.left(infos.of(left.player()));
             case SystemEvent.Died died -> reporter.died(infos.of(died.player()), died.message().getString(), keyOf(died.message()));
             case SystemEvent.Advanced advanced ->
-                    reporter.advanced(infos.of(advanced.player()), advanced.message().getString(), keyOf(advanced.message()));
+                    reporter.advanced(infos.of(advanced.player()), advancementTitle(advanced.message()), keyOf(advanced.message()));
         }
+    }
+
+    /**
+     * The title of the advancement alone. The game's sentence names the player, which the bot already shows, and carries the
+     * title in square brackets as its second argument; a message of another shape is sent whole.
+     */
+    static String advancementTitle(Component message) {
+        if (message.getContents() instanceof TranslatableContents translatable && translatable.getArgs().length >= 2
+                && translatable.getArgs()[1] instanceof Component title) {
+            String text = title.getString();
+            return text.length() > 2 && text.startsWith("[") && text.endsWith("]") ? text.substring(1, text.length() - 1) : text;
+        }
+        return message.getString();
     }
 
     private static Optional<String> keyOf(Component message) {

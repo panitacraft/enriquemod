@@ -2,6 +2,7 @@ package com.panita.enriquecraft.discord.service;
 
 import com.google.gson.JsonObject;
 import com.panita.enriquecraft.auth.service.HeldPlayers;
+import com.panita.enriquecraft.chat.service.KnownPlayers;
 import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.discord.protocol.InFrame;
 import com.panita.enriquecraft.discord.protocol.OutFrame;
@@ -27,13 +28,16 @@ public final class QueryAnswers {
     private final ServerInfo info;
     private final NicknameService nicknames;
     private final HeldPlayers held;
+    private final KnownPlayers known;
     private final Supplier<Instant> clock;
 
-    public QueryAnswers(FrameSink sink, ServerInfo info, NicknameService nicknames, HeldPlayers held, Supplier<Instant> clock) {
+    public QueryAnswers(FrameSink sink, ServerInfo info, NicknameService nicknames, HeldPlayers held, KnownPlayers known,
+                        Supplier<Instant> clock) {
         this.sink = sink;
         this.info = info;
         this.nicknames = nicknames;
         this.held = held;
+        this.known = known;
         this.clock = clock;
     }
 
@@ -50,8 +54,9 @@ public final class QueryAnswers {
         return switch (query.what()) {
             case PLAYERLIST -> Answers.playerlist(online(server), server.getMaxPlayers());
             case TPS -> Answers.performance(mspt(server), tickRate(server));
-            case STATUS -> Answers.status(online(server).size(), server.getMaxPlayers(), mspt(server), tickRate(server),
-                    uptimeSeconds(), server.getServerVersion());
+            case STATUS -> Answers.status(online(server).size(), server.getMaxPlayers(),
+                    Answers.distinctPlayers(known.namesOn(server)), mspt(server), tickRate(server), uptimeSeconds(),
+                    server.getServerVersion());
         };
     }
 

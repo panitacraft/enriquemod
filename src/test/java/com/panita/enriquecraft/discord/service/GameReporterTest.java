@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GameReporterTest {
 
-    private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360", Optional.empty(), true);
+    private static final PlayerInfo JAVI = new PlayerInfo(UUID.fromString("dd12be42-52a9-4a91-a8a1-11c01849e498"), "Javithor360", Optional.empty(), true, Optional.empty());
 
     private final List<OutFrame> sent = new ArrayList<>();
     private Set<String> bridged = Set.of("global");
@@ -125,13 +125,13 @@ class GameReporterTest {
     }
 
     @Test
-    void reportsDeathsAndAdvancementsWithTheGamesTextAndKey() {
+    void reportsDeathsAndAdvancementsWithTheirTextAndKey() {
         reporter.died(JAVI, "Javithor360 was slain by Zombie", Optional.of("death.attack.mob"));
-        reporter.advanced(JAVI, "Javithor360 has made the advancement [Stone Age]", Optional.empty());
+        reporter.advanced(JAVI, "Stone Age", Optional.of("chat.type.advancement.task"));
 
         assertEquals(List.of(
                 event(EventKind.DEATH, Optional.of(JAVI), Optional.of("Javithor360 was slain by Zombie"), Optional.of("death.attack.mob")),
-                event(EventKind.ADVANCEMENT, Optional.of(JAVI), Optional.of("Javithor360 has made the advancement [Stone Age]"), Optional.empty())), sent);
+                event(EventKind.ADVANCEMENT, Optional.of(JAVI), Optional.of("Stone Age"), Optional.of("chat.type.advancement.task"))), sent);
     }
 
     @Test

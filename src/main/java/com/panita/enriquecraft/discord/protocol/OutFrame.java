@@ -14,8 +14,10 @@ public sealed interface OutFrame {
      * The first frame of a connection.
      *
      * @param startedAt when the server started
+     * @param icon      the server's icon as PNG bytes, when it has one that fits in the frame
      */
-    record Hello(int protocol, String modVersion, String minecraftVersion, Instant startedAt, int maxPlayers) implements OutFrame {
+    record Hello(int protocol, String modVersion, String minecraftVersion, Instant startedAt, int maxPlayers,
+                 Optional<byte[]> icon) implements OutFrame {
     }
 
     /** A line a player wrote in a chat channel; {@code emote} is what they did with {@code /me}. */
@@ -26,7 +28,7 @@ public sealed interface OutFrame {
      * Something that happened in the game.
      *
      * @param player the player it is about, for the kinds that are
-     * @param text   the game's own English text of a death or advancement, or the message of a broadcast
+     * @param text   the game's own English text of a death, the title of an advancement, or the message of a broadcast
      * @param key    the game's translation key, so the text can be translated later
      */
     record Event(EventKind kind, Optional<PlayerInfo> player, Optional<String> text, Optional<String> key) implements OutFrame {
