@@ -19,6 +19,7 @@ import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,5 +51,43 @@ class ShownMapsTest {
         assertFalse(ShownMaps.isResting(ServerboundInteractPacket.class), "interacting with an entity");
         assertFalse(ShownMaps.isResting(ServerboundPunchPacket.class), "swinging");
         assertFalse(ShownMaps.isResting(ServerboundAttackPacket.class), "attacking");
+    }
+
+    @Test
+    void anAnimationSendsOnlyTheRectangleThatChanged() {
+        byte[] before = new byte[MapPixels.SIZE * MapPixels.SIZE];
+        byte[] after = before.clone();
+        after[10 * MapPixels.SIZE + 20] = 5;
+        after[12 * MapPixels.SIZE + 23] = 7;
+
+        var patch = ShownMaps.changes(before, after).orElseThrow();
+
+        assertEquals(20, patch.startX());
+        assertEquals(10, patch.startY());
+        assertEquals(4, patch.width());
+        assertEquals(3, patch.height());
+        assertEquals(12, patch.mapColors().length);
+        assertEquals(5, patch.mapColors()[0]);
+        assertEquals(7, patch.mapColors()[2 * 4 + 3]);
+    }
+
+    @Test
+    void twoEqualFramesSendNothing() {
+        byte[] frame = new byte[MapPixels.SIZE * MapPixels.SIZE];
+
+        assertTrue(ShownMaps.changes(frame, frame.clone()).isEmpty());
+    }
+
+    @Test
+    void aFullyDifferentFrameIsTheWholeMap() {
+        byte[] before = new byte[MapPixels.SIZE * MapPixels.SIZE];
+        byte[] after = new byte[MapPixels.SIZE * MapPixels.SIZE];
+        java.util.Arrays.fill(after, (byte) 9);
+
+        var patch = ShownMaps.changes(before, after).orElseThrow();
+
+        assertEquals(0, patch.startX());
+        assertEquals(MapPixels.SIZE, patch.width());
+        assertEquals(MapPixels.SIZE, patch.height());
     }
 }

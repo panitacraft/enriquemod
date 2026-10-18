@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -72,7 +73,19 @@ public final class ShownMaps {
             ServerboundCommandSuggestionPacket.class,
             ServerboundCustomPayloadPacket.class);
 
-    private record Shown(int slot, Instant expires) {
+    private static final class Shown {
+        private final int slot;
+        private final Instant expires;
+        private final MapAnimation animation;
+        private int frame;
+        private Instant nextFrame;
+
+        private Shown(int slot, Instant expires, MapAnimation animation, Instant nextFrame) {
+            this.slot = slot;
+            this.expires = expires;
+            this.animation = animation;
+            this.nextFrame = nextFrame;
+        }
     }
 
     private final Supplier<Instant> clock;
@@ -88,26 +101,64 @@ public final class ShownMaps {
     }
 
     /**
-     * Shows the colors on a map in the slot the player holds, for at most {@code lifetime}.
-     *
-     * @param colors {@link MapPixels#SIZE} squared bytes, as {@link MapPixels#fit} makes them
+     * Shows a picture on a map in the slot the player holds, for at most {@code lifetime}. An animation repeats and, after its
+     * first frame, only what changes from one frame to the next is sent.
      */
-    public void show(ServerPlayer player, String name, byte[] colors, Duration lifetime) {
+    public void show(ServerPlayer player, String name, MapAnimation animation, Duration lifetime) {
         int slot = player.getInventory().getSelectedSlot();
         ItemStack map = new ItemStack(Items.FILLED_MAP);
         map.set(DataComponents.MAP_ID, ID);
         map.set(DataComponents.CUSTOM_NAME, Component.literal(name));
         player.connection.send(new ClientboundMapItemDataPacket(ID, (byte) 0, true, List.of(),
-                new MapItemSavedData.MapPatch(0, 0, MapPixels.SIZE, MapPixels.SIZE, colors)));
+                new MapItemSavedData.MapPatch(0, 0, MapPixels.SIZE, MapPixels.SIZE, animation.frames().get(0))));
         player.connection.send(new ClientboundSetPlayerInventoryPacket(slot, map));
-        shown.put(player.getUUID(), new Shown(slot, clock.get().plus(lifetime)));
+        Instant now = clock.get();
+        shown.put(player.getUUID(), new Shown(slot, now.plus(lifetime), animation, now.plusMillis(animation.delaysMs().get(0))));
+    }
+
+    /** The smallest rectangle that holds every byte that differs, or nothing when the two are the same. */
+    static Optional<MapItemSavedData.MapPatch> changes(byte[] before, byte[] after) {
+        int minX = MapPixels.SIZE;
+        int minY = MapPixels.SIZE;
+        int maxX = -1;
+        int maxY = -1;
+        for (int y = 0; y < MapPixels.SIZE; y++) {
+            for (int x = 0; x < MapPixels.SIZE; x++) {
+                if (before[y * MapPixels.SIZE + x] != after[y * MapPixels.SIZE + x]) {
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        if (maxX < 0) {
+            return Optional.empty();
+        }
+        int width = maxX - minX + 1;
+        int height = maxY - minY + 1;
+        byte[] colors = new byte[width * height];
+        for (int row = 0; row < height; row++) {
+            System.arraycopy(after, (minY + row) * MapPixels.SIZE + minX, colors, row * width, width);
+        }
+        return Optional.of(new MapItemSavedData.MapPatch(minX, minY, width, height, colors));
+    }
+
+    private void advance(ServerPlayer player, Shown state, Instant now) {
+        MapAnimation animation = state.animation;
+        byte[] before = animation.frames().get(state.frame);
+        state.frame = (state.frame + 1) % animation.frames().size();
+        // A server that fell behind does not play the missed frames in a burst
+        state.nextFrame = now.plusMillis(animation.delaysMs().get(state.frame));
+        changes(before, animation.frames().get(state.frame)).ifPresent(patch ->
+                player.connection.send(new ClientboundMapItemDataPacket(ID, (byte) 0, true, List.of(), patch)));
     }
 
     /** Puts the slot back as it is, if a map is being shown to the player. */
     public void clear(ServerPlayer player) {
         Shown was = shown.remove(player.getUUID());
         if (was != null) {
-            player.connection.send(new ClientboundSetPlayerInventoryPacket(was.slot(), player.getInventory().getItem(was.slot()).copy()));
+            player.connection.send(new ClientboundSetPlayerInventoryPacket(was.slot, player.getInventory().getItem(was.slot).copy()));
         }
     }
 
@@ -133,9 +184,11 @@ public final class ShownMaps {
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
             if (player == null) {
                 shown.remove(entry.getKey());
-            } else if (entry.getValue().expires().isBefore(now) || player.getInventory().getSelectedSlot() != entry.getValue().slot()
+            } else if (entry.getValue().expires.isBefore(now) || player.getInventory().getSelectedSlot() != entry.getValue().slot
                     || player.containerMenu != player.inventoryMenu) {
                 clear(player);
+            } else if (entry.getValue().animation.animated() && !now.isBefore(entry.getValue().nextFrame)) {
+                advance(player, entry.getValue(), now);
             }
         }
     }

@@ -24,6 +24,7 @@ public final class DiscordConfig implements ModConfig {
     public final ConfigValue<Integer> mediaMapSeconds;
     public final ConfigValue<Integer> mediaCooldownSeconds;
     public final ConfigValue<Boolean> mediaDither;
+    public final ConfigValue<Boolean> mediaAnimate;
 
     public DiscordConfig(ConfigSectionBuilder builder) {
         enabled = builder.bool("enabled", true,
@@ -42,6 +43,8 @@ public final class DiscordConfig implements ModConfig {
                 "The most seconds an image stays on a map in the hand of a player who clicked it. It also ends as soon as they do anything but move or chat.");
         mediaCooldownSeconds = builder.intRange("mediaCooldownSeconds", 5, 0, 60,
                 "The seconds a player waits between two requests to see an image.");
+        mediaAnimate = builder.bool("mediaAnimate", true,
+                "Whether an animated GIF plays on the map. Off, only its first frame is shown.");
         mediaDither = builder.bool("mediaDither", true,
                 "Whether the colors of a picture on a map are blended to look closer to the original, at the cost of some noise.");
     }

@@ -6,12 +6,13 @@ import com.panita.enriquecraft.discord.protocol.MediaEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -65,9 +66,10 @@ public final class ImageMaps {
         loading.add(id);
         view.showing(player);
         boolean dither = config.mediaDither.get();
+        boolean animate = config.mediaAnimate.get();
         Duration lifetime = Duration.ofSeconds(config.mediaMapSeconds.get());
         fetcher.fetch(URI.create(entry.url()))
-                .thenApplyAsync(bytes -> pixels(bytes, dither), worker)
+                .thenApplyAsync(bytes -> animation(bytes, dither, animate), worker)
                 .whenComplete((colors, error) -> server.execute(() -> {
                     loading.remove(id);
                     if (error != null) {
@@ -78,12 +80,31 @@ public final class ImageMaps {
                 }));
     }
 
-    private static byte[] pixels(byte[] bytes, boolean dither) {
+    private static final int MIN_FRAME_MS = 50;
+    /** A GIF that asks for no delay, or one too short to see, is played at the pace browsers use. */
+    private static final int DEFAULT_FRAME_MS = 100;
+
+    private static MapAnimation animation(byte[] bytes, boolean dither, boolean animate) {
         try {
-            BufferedImage image = ImageDecoder.decode(bytes);
-            return MapPixels.fit(image, dither);
+            if (animate && isGif(bytes)) {
+                List<byte[]> frames = new ArrayList<>();
+                List<Integer> delays = new ArrayList<>();
+                // The picture changes from frame to frame, so blending the error would make it shimmer: no dithering here
+                GifDecoder.frames(bytes, GifDecoder.MAX_FRAMES, (canvas, delay) -> {
+                    frames.add(MapPixels.fit(canvas, false));
+                    delays.add(delay <= 10 ? DEFAULT_FRAME_MS : Math.max(delay, MIN_FRAME_MS));
+                });
+                if (frames.size() > 1) {
+                    return new MapAnimation(frames, delays);
+                }
+            }
+            return MapAnimation.still(MapPixels.fit(ImageDecoder.decode(bytes), dither));
         } catch (ImageDecoder.DecodeException e) {
             throw new CompletionException(e);
         }
+    }
+
+    private static boolean isGif(byte[] bytes) {
+        return bytes.length > 6 && bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == '8';
     }
 }
