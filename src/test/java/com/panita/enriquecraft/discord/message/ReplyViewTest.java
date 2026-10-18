@@ -32,20 +32,21 @@ class ReplyViewTest {
         view = new ReplyView(formatter);
     }
 
-    @Test
-    void theLineNamesTheReplierAndWhatTheyAnswer() {
-        Component line = view.line(Component.literal("[Discord] Tez"), new InFrame.Reply("Javi", "nos vemos en la base"));
-
-        assertEquals("[Discord] Tez (respondiendo a) \u00bb Javi: nos vemos en la base", line.getString());
+    private static boolean anyItalic(Component line) {
+        return line.getStyle().isItalic() || line.getSiblings().stream().anyMatch(ReplyViewTest::anyItalic);
     }
 
     @Test
-    void whatTheAnsweredMessageSaysIsPlainTextAndIsCutShort() {
-        Component tags = view.line(Component.literal("Tez"), new InFrame.Reply("<red>Javi", "<bold>hola &c&lmundo"));
-        assertEquals("Tez (respondiendo a) \u00bb <red>Javi: <bold>hola &c&lmundo", tags.getString());
+    void theLineSaysWhoseMessageIsAnsweredAndNothingElse() {
+        assertEquals("(responde a Javi)", view.line(new InFrame.Reply("Javi")).getString());
+    }
 
-        Component longer = view.line(Component.literal("Tez"), new InFrame.Reply("Javi", "x".repeat(150)));
-        assertTrue(longer.getString().endsWith("x".repeat(99) + "\u2026"));
+    @Test
+    void theLineIsItalicAndTheNameIsPlainText() {
+        Component line = view.line(new InFrame.Reply("<red>Javi &c"));
+
+        assertEquals("(responde a <red>Javi &c)", line.getString());
+        assertTrue(anyItalic(line));
     }
 
     @Test

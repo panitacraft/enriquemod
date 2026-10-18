@@ -60,7 +60,7 @@ public final class DiscordDelivery {
         Component sender = sender(frame.ign());
         // What it answers goes first, as a line of its own, so the reply reads as the answer
         if (config.showReplies.get()) {
-            frame.reply().ifPresent(reply -> chat.deliverLine(server, channel.get(), replies.line(sender, reply)));
+            frame.reply().ifPresent(reply -> chat.deliverLine(server, channel.get(), replies.line(reply)));
         }
         List<ServerPlayer> readers = chat.deliverExternal(server, channel.get(), sender, text, images);
         // The client companion draws the image itself, but only one from a host it trusts on its own

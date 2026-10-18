@@ -152,23 +152,20 @@ class FrameCodecTest {
     }
 
     @Test
-    void aChatLineMayCarryTheMessageItAnswers() {
-        InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\","
-                + "\"reply\":{\"author\":\" Javi \",\"text\":\"vamos?\u0007\"}}");
-        assertEquals(Optional.of(new InFrame.Reply("Javi", "vamos?")), chat.reply());
+    void aChatLineMayCarryWhoseMessageItAnswers() {
+        InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\"," + "\"reply\":{\"author\":\" Javi\\u0007 \"}" + "}");
+        assertEquals(Optional.of(new InFrame.Reply("Javi")), chat.reply());
     }
 
     @Test
     void aReplyThatIsNotValidIsLeftOutAndTheMessageIsStillShown() {
-        for (String reply : new String[]{"\"reply\":{\"author\":\"\",\"text\":\"x\"}", "\"reply\":{\"author\":\"Javi\",\"text\":\"\"}",
-                "\"reply\":{\"author\":\"Javi\"}", "\"reply\":\"Javi\"", "\"reply\":{\"author\":5,\"text\":\"x\"}",
-                "\"reply\":{\"author\":\"Javi\",\"text\":\"" + "x".repeat(201) + "\"}"}) {
+        String tooLong = "\"reply\":{\"author\":\"" + "x".repeat(81) + "\"}";
+        for (String reply : new String[]{"\"reply\":{\"author\":\"\"}", "\"reply\":{}", "\"reply\":\"Javi\"", "\"reply\":{\"author\":5}", tooLong}) {
             InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\"," + reply + "}");
             assertEquals(Optional.empty(), chat.reply(), reply);
             assertEquals("si", chat.text());
         }
     }
-
     @Test
     void decodesAQuery() {
         assertEquals(new InFrame.Query("abc", QueryKind.PLAYERLIST, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerlist\"}"));

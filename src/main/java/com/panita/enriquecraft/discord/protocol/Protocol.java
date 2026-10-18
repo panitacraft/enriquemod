@@ -21,9 +21,8 @@ public final class Protocol {
     public static final String FEATURE_MEDIA_UPLOAD = "media_upload";
     /** The optional feature of showing what a Discord reply answers, announced in the hello. */
     public static final String FEATURE_REPLY = "reply";
-    /** The longest name and text of the message a reply answers; longer is cut by the bot and refused here. */
+    /** The longest name of the author of the message a reply answers; longer is cut by the bot and refused here. */
     public static final int MAX_REPLY_AUTHOR = 80;
-    public static final int MAX_REPLY_TEXT = 200;
     /** The most images of one message that travel in a frame. */
     public static final int MAX_MEDIA = 4;
     public static final int MAX_MEDIA_URL = 1024;

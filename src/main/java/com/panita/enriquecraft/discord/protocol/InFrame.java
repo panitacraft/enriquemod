@@ -41,10 +41,10 @@ public sealed interface InFrame {
     }
 
     /**
-     * The message a Discord reply answers: who wrote it and what it said, as plain text. Cosmetic, so a reply that is not valid
-     * is left out and the message is still shown.
+     * Whose message a Discord reply answers, as plain text. Cosmetic, so a reply that is not valid is left out and the message is
+     * still shown.
      */
-    record Reply(String author, String text) {
+    record Reply(String author) {
     }
 
     /** A question about the server, to be answered with a reply of the same id. {@code player} is the name asked about, for {@code playerinfo}. */

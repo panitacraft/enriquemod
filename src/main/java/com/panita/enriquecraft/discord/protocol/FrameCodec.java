@@ -168,16 +168,15 @@ public final class FrameCodec {
         return new Decoded.Frame(new InFrame.Chat(channel, discordId, ign, text, media, rejected, reply(json.get("reply"))));
     }
 
-    /** The message a reply answers; anything that is not the documented shape is left out, since it only adds context. */
+    /** Whose message a reply answers; anything that is not the documented shape is left out, since it only adds context. */
     private static Optional<InFrame.Reply> reply(JsonElement element) {
         try {
             JsonObject json = element.getAsJsonObject();
             String author = withoutControlCharacters(strictString(json.get("author"))).strip();
-            String text = withoutControlCharacters(strictString(json.get("text"))).strip();
-            if (author.isEmpty() || author.length() > Protocol.MAX_REPLY_AUTHOR || text.isEmpty() || text.length() > Protocol.MAX_REPLY_TEXT) {
+            if (author.isEmpty() || author.length() > Protocol.MAX_REPLY_AUTHOR) {
                 return Optional.empty();
             }
-            return Optional.of(new InFrame.Reply(author, text));
+            return Optional.of(new InFrame.Reply(author));
         } catch (RuntimeException e) {
             return Optional.empty();
         }
