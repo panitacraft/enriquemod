@@ -153,9 +153,11 @@ class FrameCodecTest {
 
     @Test
     void decodesAQuery() {
-        assertEquals(new InFrame.Query("abc", QueryKind.PLAYERLIST), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerlist\"}"));
-        assertEquals(new InFrame.Query("abc", QueryKind.TPS), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"tps\"}"));
-        assertEquals(new InFrame.Query("abc", QueryKind.STATUS), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"status\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.PLAYERLIST, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerlist\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.TPS, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"tps\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.STATUS, Optional.empty()), frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"status\"}"));
+        assertEquals(new InFrame.Query("abc", QueryKind.PLAYERINFO, Optional.of("Javithor360")),
+                frame("{\"type\":\"query\",\"id\":\"abc\",\"what\":\"playerinfo\",\"player\":\"Javithor360\"}"));
     }
 
     @Test
@@ -179,6 +181,8 @@ class FrameCodecTest {
         invalid("{\"type\":\"welcome\",\"protocol\":1,\"channels\":[\"Bad Channel\"]}");
         invalid("{\"type\":\"query\",\"id\":\"a\",\"what\":\"everything\"}");
         invalid("{\"type\":\"query\",\"id\":\"\",\"what\":\"tps\"}");
+        invalid("{\"type\":\"query\",\"id\":\"a\",\"what\":\"playerinfo\"}");
+        invalid("{\"type\":\"query\",\"id\":\"a\",\"what\":\"playerinfo\",\"player\":\"not a name\"}");
     }
 
     @Test

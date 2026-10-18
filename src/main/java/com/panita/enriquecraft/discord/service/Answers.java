@@ -2,12 +2,15 @@ package com.panita.enriquecraft.discord.service;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.panita.enriquecraft.discord.protocol.PlayerInfo;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 
 /**
@@ -15,24 +18,59 @@ import java.util.Set;
  */
 public final class Answers {
 
-    /** A player who is online, with the nickname they have in chat, if any. */
-    public record Online(String name, Optional<String> nickname) {
+    /**
+     * A player who is online: who they are, their latency in milliseconds and the line the server shows for them, as
+     * {@link DisplayRuns}.
+     */
+    public record Online(PlayerInfo player, int ping, JsonArray display) {
+    }
+
+    /**
+     * What the server knows about one player, for {@code playerinfo}. A player who is not online has no ping, and their line is
+     * only their name, since their rank is only known to the server while they are connected.
+     */
+    public record Info(PlayerInfo player, boolean online, OptionalInt ping, JsonArray display, OptionalLong playtimeSeconds) {
     }
 
     private Answers() {
     }
 
+    private static JsonObject describe(PlayerInfo player, JsonArray display) {
+        JsonObject entry = new JsonObject();
+        entry.addProperty("name", player.name());
+        entry.addProperty("nickname", player.nickname().orElse(null));
+        entry.addProperty("uuid", player.uuid().toString());
+        entry.addProperty("premium", player.premium());
+        player.skin().ifPresent(skin -> entry.addProperty("skin", skin));
+        entry.add("display", display);
+        return entry;
+    }
+
     public static JsonObject playerlist(List<Online> online, int max) {
         JsonArray players = new JsonArray();
         for (Online player : online) {
-            JsonObject entry = new JsonObject();
-            entry.addProperty("name", player.name());
-            entry.addProperty("nickname", player.nickname().orElse(null));
+            JsonObject entry = describe(player.player(), player.display());
+            entry.addProperty("ping", player.ping());
             players.add(entry);
         }
         JsonObject data = new JsonObject();
         data.add("online", players);
         data.addProperty("max", max);
+        return data;
+    }
+
+    /** The answer to {@code playerinfo}: {@code {found: false}} for a name the server does not know. */
+    public static JsonObject playerinfo(Optional<Info> info) {
+        if (info.isEmpty()) {
+            JsonObject none = new JsonObject();
+            none.addProperty("found", false);
+            return none;
+        }
+        JsonObject data = describe(info.get().player(), info.get().display());
+        data.addProperty("found", true);
+        data.addProperty("online", info.get().online());
+        info.get().ping().ifPresent(ping -> data.addProperty("ping", ping));
+        info.get().playtimeSeconds().ifPresent(seconds -> data.addProperty("playtimeSeconds", seconds));
         return data;
     }
 

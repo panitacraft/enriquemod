@@ -1,15 +1,28 @@
 package com.panita.enriquecraft.discord.service;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.panita.enriquecraft.discord.protocol.PlayerInfo;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AnswersTest {
+
+    private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final String SKIN = "a".repeat(64);
+
+    private static PlayerInfo player(String name, Optional<String> nickname, Optional<String> skin) {
+        return new PlayerInfo(ID, name, nickname, true, skin);
+    }
 
     @Test
     void theTpsIsTheRateWhileTheServerKeepsUp() {
@@ -34,13 +47,47 @@ class AnswersTest {
 
     @Test
     void thePlayerListHasANameAndANicknameOrNull() {
-        JsonObject data = Answers.playerlist(List.of(new Answers.Online("Javithor360", Optional.of("Javi")),
-                new Answers.Online("Tezzlar", Optional.empty())), 20);
+        JsonObject data = Answers.playerlist(List.of(new Answers.Online(player("Javithor360", Optional.of("Javi"), Optional.of(SKIN)), 42, new JsonArray()),
+                new Answers.Online(player("Tezzlar", Optional.empty(), Optional.empty()), 7, new JsonArray())), 20);
 
         assertEquals(20, data.get("max").getAsInt());
         assertEquals(2, data.getAsJsonArray("online").size());
-        assertEquals("Javi", data.getAsJsonArray("online").get(0).getAsJsonObject().get("nickname").getAsString());
+        JsonObject first = data.getAsJsonArray("online").get(0).getAsJsonObject();
+        assertEquals("Javi", first.get("nickname").getAsString());
+        assertEquals(42, first.get("ping").getAsInt());
+        assertEquals(SKIN, first.get("skin").getAsString());
+        assertEquals(ID.toString(), first.get("uuid").getAsString());
         assertTrue(data.getAsJsonArray("online").get(1).getAsJsonObject().get("nickname").isJsonNull());
+        assertFalse(data.getAsJsonArray("online").get(1).getAsJsonObject().has("skin"));
+    }
+
+    @Test
+    void theInfoOfAnOnlinePlayerHasTheirPingAndPlayTime() {
+        JsonObject data = Answers.playerinfo(Optional.of(new Answers.Info(player("Javithor360", Optional.empty(), Optional.empty()), true,
+                OptionalInt.of(30), new JsonArray(), OptionalLong.of(3600))));
+
+        assertTrue(data.get("found").getAsBoolean());
+        assertTrue(data.get("online").getAsBoolean());
+        assertEquals(30, data.get("ping").getAsInt());
+        assertEquals(3600, data.get("playtimeSeconds").getAsLong());
+    }
+
+    @Test
+    void theInfoOfAPlayerWhoIsAwayHasNeitherPingNorPlayTimeWhenUnknown() {
+        JsonObject data = Answers.playerinfo(Optional.of(new Answers.Info(player("Tezzlar", Optional.empty(), Optional.empty()), false,
+                OptionalInt.empty(), new JsonArray(), OptionalLong.empty())));
+
+        assertFalse(data.get("online").getAsBoolean());
+        assertFalse(data.has("ping"));
+        assertFalse(data.has("playtimeSeconds"));
+    }
+
+    @Test
+    void aNameTheServerDoesNotKnowIsNotFound() {
+        JsonObject data = Answers.playerinfo(Optional.empty());
+
+        assertFalse(data.get("found").getAsBoolean());
+        assertEquals(1, data.size());
     }
 
     @Test

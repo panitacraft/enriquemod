@@ -5,6 +5,7 @@ import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.discord.protocol.PlayerInfo;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -17,6 +18,11 @@ public final class PlayerInfos {
 
     public PlayerInfos(NicknameService nicknames) {
         this.nicknames = nicknames;
+    }
+
+    /** A player who is not online: no skin is known, so the bot draws the head of their account. */
+    public PlayerInfo offline(UUID id, String name) {
+        return new PlayerInfo(id, name, nicknames.plainNicknameOf(id), AuthMode.of(id, name) == AuthMode.PREMIUM, Optional.empty());
     }
 
     public PlayerInfo of(ServerPlayer player) {

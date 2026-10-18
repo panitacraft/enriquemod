@@ -9,7 +9,8 @@ import java.util.Optional;
 public enum QueryKind {
     PLAYERLIST("playerlist"),
     TPS("tps"),
-    STATUS("status");
+    STATUS("status"),
+    PLAYERINFO("playerinfo");
 
     private final String id;
 

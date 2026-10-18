@@ -70,6 +70,14 @@ public final class DiscordMessages {
         }
     }
 
+    public static final class Players {
+        /** The line the server shows for a player in the list the bot draws: their rank before the name, and what follows it. */
+        public static final String ENTRY = "%luckperms:prefix%%player:displayname%%luckperms:suffix%";
+
+        private Players() {
+        }
+    }
+
     public static final class Share {
         public static final String SENDING = "<gray>Enviando la captura...";
         public static final String UNAVAILABLE = "<red>Ahora no se pueden compartir capturas.";

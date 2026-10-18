@@ -247,7 +247,18 @@ public final class FrameCodec {
         if (id.isEmpty() || what.isEmpty()) {
             return new Decoded.Invalid("bad query");
         }
-        return new Decoded.Frame(new InFrame.Query(id, what.get()));
+        Optional<String> player = Optional.empty();
+        if (json.has("player")) {
+            String name = json.get("player").getAsString();
+            if (!PLAYER_NAME.matcher(name).matches()) {
+                return new Decoded.Invalid("bad query");
+            }
+            player = Optional.of(name);
+        }
+        if (what.get() == QueryKind.PLAYERINFO && player.isEmpty()) {
+            return new Decoded.Invalid("bad query");
+        }
+        return new Decoded.Frame(new InFrame.Query(id, what.get(), player));
     }
 
     private static String string(JsonObject json, String field, int max) {

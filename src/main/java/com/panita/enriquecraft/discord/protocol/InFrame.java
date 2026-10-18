@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.discord.protocol;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A frame the bot sends to the server. Whatever it says has been through {@link FrameCodec}, which checked its shape.
@@ -37,8 +38,8 @@ public sealed interface InFrame {
         }
     }
 
-    /** A question about the server, to be answered with a reply of the same id. */
-    record Query(String id, QueryKind what) implements InFrame {
+    /** A question about the server, to be answered with a reply of the same id. {@code player} is the name asked about, for {@code playerinfo}. */
+    record Query(String id, QueryKind what, Optional<String> player) implements InFrame {
     }
 
     /** The bot is unhappy about something it received; it closes the connection right after. */

@@ -1,9 +1,7 @@
 package com.panita.enriquecraft.discord.service;
 
 import com.google.gson.JsonObject;
-import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.service.KnownPlayers;
-import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.discord.protocol.InFrame;
 import com.panita.enriquecraft.discord.protocol.OutFrame;
 import net.minecraft.server.MinecraftServer;
@@ -12,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -26,17 +23,14 @@ public final class QueryAnswers {
 
     private final FrameSink sink;
     private final ServerInfo info;
-    private final NicknameService nicknames;
-    private final HeldPlayers held;
+    private final PlayerRoster roster;
     private final KnownPlayers known;
     private final Supplier<Instant> clock;
 
-    public QueryAnswers(FrameSink sink, ServerInfo info, NicknameService nicknames, HeldPlayers held, KnownPlayers known,
-                        Supplier<Instant> clock) {
+    public QueryAnswers(FrameSink sink, ServerInfo info, PlayerRoster roster, KnownPlayers known, Supplier<Instant> clock) {
         this.sink = sink;
         this.info = info;
-        this.nicknames = nicknames;
-        this.held = held;
+        this.roster = roster;
         this.known = known;
         this.clock = clock;
     }
@@ -52,19 +46,13 @@ public final class QueryAnswers {
 
     private JsonObject data(MinecraftServer server, InFrame.Query query) {
         return switch (query.what()) {
-            case PLAYERLIST -> Answers.playerlist(online(server), server.getMaxPlayers());
+            case PLAYERLIST -> Answers.playerlist(roster.online(server), server.getMaxPlayers());
+            case PLAYERINFO -> Answers.playerinfo(query.player().flatMap(name -> roster.info(server, name)));
             case TPS -> Answers.performance(mspt(server), tickRate(server));
-            case STATUS -> Answers.status(online(server).size(), server.getMaxPlayers(),
+            case STATUS -> Answers.status(roster.online(server).size(), server.getMaxPlayers(),
                     Answers.distinctPlayers(known.namesOn(server)), mspt(server), tickRate(server), uptimeSeconds(),
                     server.getServerVersion());
         };
-    }
-
-    private List<Answers.Online> online(MinecraftServer server) {
-        return server.getPlayerList().getPlayers().stream()
-                .filter(player -> !held.isHeld(player))
-                .map(player -> new Answers.Online(player.getGameProfile().name(), nicknames.plainNicknameOf(player.getUUID())))
-                .toList();
     }
 
     private static double mspt(MinecraftServer server) {
