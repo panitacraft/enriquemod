@@ -156,7 +156,6 @@ public final class ScreenshotShares {
         }
         List<ServerPlayer> readers = chat.deliverExternal(server, channel, player.getDisplayName(), completed.caption(), List.of(media.link(entry)));
         previews.send(readers, MediaLinks.isTrusted(entry) ? List.of(entry) : List.of());
-        view.shared(player);
     }
 
     /** Counts this share against the player's minute; false when they have used up what the setting allows. */

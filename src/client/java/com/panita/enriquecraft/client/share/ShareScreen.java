@@ -18,7 +18,7 @@ import java.nio.file.Path;
 
 /**
  * Shows the screenshot the player picked, lets them add a message, and says once what it may show. Nothing is sent until the
- * share button is pressed; Escape and Cancel send nothing.
+ * share button is pressed; Escape and Cancel send nothing. The copy button only puts the picture on the clipboard.
  */
 final class ShareScreen extends Screen {
 
@@ -54,15 +54,17 @@ final class ShareScreen extends Screen {
         addRenderableWidget(caption);
         setInitialFocus(caption);
 
-        int total = 2 * BUTTON_WIDTH + GAP;
+        int total = 3 * BUTTON_WIDTH + 2 * GAP;
         int left = (width - total) / 2;
         int top = height - 36;
         addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.send"), button -> {
             ScreenshotSender.send(file, caption.getValue());
             onClose();
         }).bounds(left, top, BUTTON_WIDTH, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.cancel"), button -> onClose())
+        addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.copy"), button -> ScreenshotClipboard.copy(file))
                 .bounds(left + BUTTON_WIDTH + GAP, top, BUTTON_WIDTH, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.cancel"), button -> onClose())
+                .bounds(left + 2 * (BUTTON_WIDTH + GAP), top, BUTTON_WIDTH, 20).build());
     }
 
     @Override

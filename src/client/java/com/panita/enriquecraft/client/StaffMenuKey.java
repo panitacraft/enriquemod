@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.Identifier;
 
 /**
  * The key that opens the staff menu, "U" unless the player rebinds it in the controls. It only runs the
@@ -15,10 +14,8 @@ import net.minecraft.resources.Identifier;
  */
 final class StaffMenuKey {
 
-    private static final KeyMapping.Category CATEGORY =
-            KeyMapping.Category.register(Identifier.fromNamespaceAndPath("enriquecraft", "main"));
     private static final KeyMapping OPEN_STAFF_MENU = KeyMappingHelper.registerKeyMapping(
-            new KeyMapping("key.enriquecraft.staff_menu", InputConstants.KEY_U, CATEGORY));
+            new KeyMapping("key.enriquecraft.staff_menu", InputConstants.KEY_U, ModKeys.CATEGORY));
 
     private StaffMenuKey() {
     }

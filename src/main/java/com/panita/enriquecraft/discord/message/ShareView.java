@@ -19,10 +19,6 @@ public final class ShareView {
         send(player, DiscordMessages.Share.SENDING);
     }
 
-    public void shared(ServerPlayer player) {
-        send(player, DiscordMessages.Share.SHARED);
-    }
-
     public void unavailable(ServerPlayer player) {
         send(player, DiscordMessages.Share.UNAVAILABLE);
     }
