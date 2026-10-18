@@ -2,7 +2,6 @@ package com.panita.enriquecraft.client.share;
 
 import com.panita.enriquecraft.discord.network.ShareBeginC2S;
 import com.panita.enriquecraft.discord.network.ShareChunkC2S;
-import com.panita.enriquecraft.discord.network.ShareDestination;
 import com.panita.enriquecraft.discord.network.ShareEndC2S;
 import com.panita.enriquecraft.discord.service.ScreenshotEncoder;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -53,24 +52,24 @@ final class ScreenshotSender {
     }
 
     /** Called on the client thread. */
-    static void send(Path file, ShareDestination destination, String caption) {
+    static void send(Path file, String caption) {
         Minecraft client = Minecraft.getInstance();
         WORKER.execute(() -> {
             try {
                 ScreenshotEncoder.Encoded encoded = ScreenshotEncoder.reencode(Files.readAllBytes(file));
-                client.execute(() -> enqueue(encoded.bytes(), destination, caption));
+                client.execute(() -> enqueue(encoded.bytes(), caption));
             } catch (IOException | com.panita.enriquecraft.discord.service.ImageDecoder.DecodeException e) {
                 client.execute(() -> client.gui.hud.getChat().addClientSystemMessage(Component.translatable("enriquecraft.share.failed")));
             }
         });
     }
 
-    private static void enqueue(byte[] bytes, ShareDestination destination, String caption) {
+    private static void enqueue(byte[] bytes, String caption) {
         if (!ClientPlayNetworking.canSend(ShareBeginC2S.TYPE)) {
             return;
         }
         int id = nextId++;
-        QUEUE.add(new ShareBeginC2S(id, bytes.length, destination.ordinal(), caption));
+        QUEUE.add(new ShareBeginC2S(id, bytes.length, caption));
         for (int offset = 0, index = 0; offset < bytes.length; offset += ShareChunkC2S.MAX_BYTES, index++) {
             QUEUE.add(new ShareChunkC2S(id, index, Arrays.copyOfRange(bytes, offset, Math.min(bytes.length, offset + ShareChunkC2S.MAX_BYTES))));
         }

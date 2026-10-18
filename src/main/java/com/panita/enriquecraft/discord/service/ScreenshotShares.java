@@ -12,7 +12,6 @@ import com.panita.enriquecraft.discord.message.MediaView;
 import com.panita.enriquecraft.discord.message.ShareView;
 import com.panita.enriquecraft.discord.network.ShareBeginC2S;
 import com.panita.enriquecraft.discord.network.ShareChunkC2S;
-import com.panita.enriquecraft.discord.network.ShareDestination;
 import com.panita.enriquecraft.discord.network.ShareEndC2S;
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
 import com.panita.enriquecraft.discord.protocol.PlayerInfo;
@@ -34,8 +33,8 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
- * Takes a screenshot a player chose to share from the client companion to where they asked: checks that the player and the bot
- * can do it, re-encodes the picture (on a worker), has the bot post it, and then says so in the game chat and to the player. A
+ * Takes a screenshot a player chose to share from the client companion to Discord and the game chat: checks that the player and
+ * the bot can do it, re-encodes the picture (on a worker), has the bot post it, and then shows it in the game chat. A
  * client sends nothing that decides where an image goes or what its address is: the address in the chat line is the one the bot
  * answered, and it must be on an allowed host like any other image. The request methods run on the server thread.
  */
@@ -127,9 +126,6 @@ public final class ScreenshotShares {
         }
         view.sending(player);
         MinecraftServer server = player.level().getServer();
-        // A share that is only for the game chat is posted in the bot's private channel, just to get an address
-        MediaUploader.Destination destination = completed.destination() == ShareDestination.CHAT
-                ? MediaUploader.Destination.MEDIA : MediaUploader.Destination.DISCORD;
         PlayerInfo info = infos.of(player);
         worker.execute(() -> {
             ScreenshotEncoder.Encoded encoded;
@@ -139,7 +135,7 @@ public final class ScreenshotShares {
                 server.execute(() -> view.failed(player, e));
                 return;
             }
-            uploader.upload(new MediaUploader.Request(info, channel.id(), completed.caption(), destination, encoded.bytes()))
+            uploader.upload(new MediaUploader.Request(info, channel.id(), completed.caption(), encoded.bytes()))
                     .whenComplete((uploaded, failure) -> server.execute(() -> {
                         if (failure != null) {
                             view.failed(player, failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure);
@@ -152,10 +148,6 @@ public final class ScreenshotShares {
 
     private void finish(MinecraftServer server, ServerPlayer player, ChannelDefinition channel, ShareTransfers.Completed completed,
                         MediaUploader.Uploaded uploaded) {
-        if (!completed.destination().toChat()) {
-            view.sentToDiscord(player);
-            return;
-        }
         MediaEntry entry = new MediaEntry(uploaded.url(), DiscordMessages.Share.CHAT_NAME, uploaded.type(), uploaded.size(),
                 OptionalInt.of(uploaded.width()), OptionalInt.of(uploaded.height()), false);
         if (!MediaLinks.allows(entry, MediaLinks.hostsOf(config.mediaHosts.get()))) {
@@ -164,10 +156,7 @@ public final class ScreenshotShares {
         }
         List<ServerPlayer> readers = chat.deliverExternal(server, channel, player.getDisplayName(), completed.caption(), List.of(media.link(entry)));
         previews.send(readers, MediaLinks.isTrusted(entry) ? List.of(entry) : List.of());
-        if (completed.destination() == ShareDestination.BOTH) {
-            view.sentToDiscord(player);
-        }
-        view.sentToChat(player);
+        view.shared(player);
     }
 
     /** Counts this share against the player's minute; false when they have used up what the setting allows. */

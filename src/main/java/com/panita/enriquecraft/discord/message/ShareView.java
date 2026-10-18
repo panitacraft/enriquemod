@@ -19,12 +19,8 @@ public final class ShareView {
         send(player, DiscordMessages.Share.SENDING);
     }
 
-    public void sentToDiscord(ServerPlayer player) {
-        send(player, DiscordMessages.Share.SENT_DISCORD);
-    }
-
-    public void sentToChat(ServerPlayer player) {
-        send(player, DiscordMessages.Share.SENT_CHAT);
+    public void shared(ServerPlayer player) {
+        send(player, DiscordMessages.Share.SHARED);
     }
 
     public void unavailable(ServerPlayer player) {

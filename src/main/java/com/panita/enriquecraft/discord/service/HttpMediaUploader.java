@@ -116,7 +116,6 @@ public final class HttpMediaUploader implements MediaUploader {
         meta.add("player", FrameCodec.player(request.player()));
         meta.addProperty("channel", request.channel());
         meta.addProperty("caption", request.caption());
-        meta.addProperty("destination", request.destination().id());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         write(out, "--" + boundary + "\r\nContent-Disposition: form-data; name=\"meta\"\r\nContent-Type: application/json\r\n\r\n");
         write(out, meta.toString());

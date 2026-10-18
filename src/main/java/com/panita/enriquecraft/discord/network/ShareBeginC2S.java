@@ -7,15 +7,14 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /**
- * A client says it is about to send a screenshot, in pieces. Everything in it is untrusted: the server checks the size, the
- * destination and the caption before it accepts a single byte.
+ * A client says it is about to send a screenshot, in pieces. Everything in it is untrusted: the server checks the size and
+ * the caption before it accepts a single byte.
  *
- * @param id          chosen by the client to tell the pieces of this transfer; only matched against the transfer in progress
- * @param size        the bytes that will follow, in all
- * @param destination the {@link ShareDestination} as its ordinal
- * @param caption     what the player wrote, as it was typed
+ * @param id      chosen by the client to tell the pieces of this transfer; only matched against the transfer in progress
+ * @param size    the bytes that will follow, in all
+ * @param caption what the player wrote, as it was typed
  */
-public record ShareBeginC2S(int id, int size, int destination, String caption) implements CustomPacketPayload {
+public record ShareBeginC2S(int id, int size, String caption) implements CustomPacketPayload {
 
     public static final int MAX_CAPTION = 400;
 
@@ -24,7 +23,6 @@ public record ShareBeginC2S(int id, int size, int destination, String caption) i
     public static final StreamCodec<ByteBuf, ShareBeginC2S> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, ShareBeginC2S::id,
             ByteBufCodecs.VAR_INT, ShareBeginC2S::size,
-            ByteBufCodecs.VAR_INT, ShareBeginC2S::destination,
             ByteBufCodecs.stringUtf8(MAX_CAPTION), ShareBeginC2S::caption,
             ShareBeginC2S::new);
 

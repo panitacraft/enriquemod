@@ -1,7 +1,6 @@
 package com.panita.enriquecraft.client.share;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.panita.enriquecraft.discord.network.ShareDestination;
 import com.panita.enriquecraft.discord.service.ChatImageLayout;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -18,13 +17,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Shows the screenshot the player picked, lets them add a message and choose where it goes, and says once what it may show.
- * Nothing is sent until one of the destination buttons is pressed; Escape and Cancel send nothing.
+ * Shows the screenshot the player picked, lets them add a message, and says once what it may show. Nothing is sent until the
+ * share button is pressed; Escape and Cancel send nothing.
  */
 final class ShareScreen extends Screen {
 
     private static final Identifier PREVIEW = Identifier.fromNamespaceAndPath("enriquecraft", "share_preview");
-    private static final int BUTTON_WIDTH = 74;
+    private static final int BUTTON_WIDTH = 90;
     private static final int GAP = 6;
     private static final int WARNING_COLOR = 0xFFF2B134;
 
@@ -55,21 +54,15 @@ final class ShareScreen extends Screen {
         addRenderableWidget(caption);
         setInitialFocus(caption);
 
-        int total = 4 * BUTTON_WIDTH + 3 * GAP;
+        int total = 2 * BUTTON_WIDTH + GAP;
         int left = (width - total) / 2;
         int top = height - 36;
-        addRenderableWidget(destination("enriquecraft.share.chat", ShareDestination.CHAT, left, top));
-        addRenderableWidget(destination("enriquecraft.share.discord", ShareDestination.DISCORD, left + BUTTON_WIDTH + GAP, top));
-        addRenderableWidget(destination("enriquecraft.share.both", ShareDestination.BOTH, left + 2 * (BUTTON_WIDTH + GAP), top));
-        addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.cancel"), button -> onClose())
-                .bounds(left + 3 * (BUTTON_WIDTH + GAP), top, BUTTON_WIDTH, 20).build());
-    }
-
-    private Button destination(String key, ShareDestination destination, int x, int y) {
-        return Button.builder(Component.translatable(key), button -> {
-            ScreenshotSender.send(file, destination, caption.getValue());
+        addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.send"), button -> {
+            ScreenshotSender.send(file, caption.getValue());
             onClose();
-        }).bounds(x, y, BUTTON_WIDTH, 20).build();
+        }).bounds(left, top, BUTTON_WIDTH, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("enriquecraft.share.cancel"), button -> onClose())
+                .bounds(left + BUTTON_WIDTH + GAP, top, BUTTON_WIDTH, 20).build());
     }
 
     @Override

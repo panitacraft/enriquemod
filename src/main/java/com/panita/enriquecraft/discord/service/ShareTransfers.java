@@ -2,7 +2,6 @@ package com.panita.enriquecraft.discord.service;
 
 import com.panita.enriquecraft.discord.network.ShareBeginC2S;
 import com.panita.enriquecraft.discord.network.ShareChunkC2S;
-import com.panita.enriquecraft.discord.network.ShareDestination;
 import com.panita.enriquecraft.discord.network.ShareEndC2S;
 
 import java.time.Duration;
@@ -26,7 +25,7 @@ public final class ShareTransfers {
     public static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     /** A transfer that arrived whole. */
-    public record Completed(byte[] bytes, ShareDestination destination, String caption) {
+    public record Completed(byte[] bytes, String caption) {
     }
 
     public enum Rejection {
@@ -38,16 +37,14 @@ public final class ShareTransfers {
     private static final class Transfer {
         private final int id;
         private final byte[] bytes;
-        private final ShareDestination destination;
         private final String caption;
         private final Instant started;
         private int received;
         private int nextIndex;
 
-        private Transfer(int id, int size, ShareDestination destination, String caption, Instant started) {
+        private Transfer(int id, int size, String caption, Instant started) {
             this.id = id;
             this.bytes = new byte[size];
-            this.destination = destination;
             this.caption = caption;
             this.started = started;
         }
@@ -67,14 +64,13 @@ public final class ShareTransfers {
             return Optional.of(Rejection.BUSY);
         }
         transfers.remove(player);
-        Optional<ShareDestination> destination = ShareDestination.byOrdinal(begin.destination());
-        if (begin.size() <= 0 || destination.isEmpty()) {
+        if (begin.size() <= 0) {
             return Optional.of(Rejection.INVALID);
         }
         if (begin.size() > MAX_BYTES) {
             return Optional.of(Rejection.TOO_LARGE);
         }
-        transfers.put(player, new Transfer(begin.id(), begin.size(), destination.get(), PlainText.caption(begin.caption(), MAX_CAPTION), clock.get()));
+        transfers.put(player, new Transfer(begin.id(), begin.size(), PlainText.caption(begin.caption(), MAX_CAPTION), clock.get()));
         return Optional.empty();
     }
 
@@ -105,7 +101,7 @@ public final class ShareTransfers {
         if (expired(transfer) || transfer.received != transfer.bytes.length) {
             return Optional.empty();
         }
-        return Optional.of(new Completed(transfer.bytes, transfer.destination, transfer.caption));
+        return Optional.of(new Completed(transfer.bytes, transfer.caption));
     }
 
     public void forget(UUID player) {

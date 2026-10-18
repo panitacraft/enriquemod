@@ -2,7 +2,6 @@ package com.panita.enriquecraft.discord.service;
 
 import com.panita.enriquecraft.discord.network.ShareBeginC2S;
 import com.panita.enriquecraft.discord.network.ShareChunkC2S;
-import com.panita.enriquecraft.discord.network.ShareDestination;
 import com.panita.enriquecraft.discord.network.ShareEndC2S;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,7 +24,7 @@ class ShareTransfersTest {
     private final ShareTransfers transfers = new ShareTransfers(() -> now);
 
     private static ShareBeginC2S begin(int size) {
-        return new ShareBeginC2S(7, size, ShareDestination.BOTH.ordinal(), "  mi base\u0007​ ");
+        return new ShareBeginC2S(7, size, "  mi base\u0007​ ");
     }
 
     @Test
@@ -35,7 +34,6 @@ class ShareTransfersTest {
         transfers.chunk(PLAYER, new ShareChunkC2S(7, 1, new byte[]{4, 5}));
         ShareTransfers.Completed completed = transfers.end(PLAYER, new ShareEndC2S(7)).orElseThrow();
         assertArrayEquals(new byte[]{1, 2, 3, 4, 5}, completed.bytes());
-        assertEquals(ShareDestination.BOTH, completed.destination());
         assertEquals("mi base", completed.caption());
     }
 
@@ -69,10 +67,9 @@ class ShareTransfersTest {
     }
 
     @Test
-    void sizesAndDestinationsAreChecked() {
+    void sizesAreChecked() {
         assertEquals(Optional.of(ShareTransfers.Rejection.INVALID), transfers.begin(PLAYER, begin(0)));
         assertEquals(Optional.of(ShareTransfers.Rejection.TOO_LARGE), transfers.begin(PLAYER, begin(ShareTransfers.MAX_BYTES + 1)));
-        assertEquals(Optional.of(ShareTransfers.Rejection.INVALID), transfers.begin(PLAYER, new ShareBeginC2S(1, 5, 9, "")));
         assertEquals(Optional.empty(), transfers.begin(PLAYER, begin(ShareTransfers.MAX_BYTES)));
     }
 

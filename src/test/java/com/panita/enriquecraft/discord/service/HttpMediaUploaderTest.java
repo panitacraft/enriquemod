@@ -62,7 +62,7 @@ class HttpMediaUploaderTest {
 
     private static MediaUploader.Request request() {
         PlayerInfo player = new PlayerInfo(UUID.fromString("00000000-0000-0000-0000-000000000001"), "Tez", Optional.empty(), true, Optional.empty());
-        return new MediaUploader.Request(player, "global", "mi base", MediaUploader.Destination.DISCORD, new byte[]{(byte) 0xFF, (byte) 0xD8, 1, 2});
+        return new MediaUploader.Request(player, "global", "mi base", new byte[]{(byte) 0xFF, (byte) 0xD8, 1, 2});
     }
 
     @Test
@@ -70,7 +70,6 @@ class HttpMediaUploaderTest {
         MediaUploader.Uploaded uploaded = uploader(Optional.of("secret")).upload(request()).get();
         assertEquals("Bearer secret", authorization.get());
         assertTrue(body.get().contains("name=\"meta\""));
-        assertTrue(body.get().contains("\"destination\":\"discord\""));
         assertTrue(body.get().contains("\"channel\":\"global\""));
         assertTrue(body.get().contains("\"caption\":\"mi base\""));
         assertTrue(body.get().contains("\"name\":\"Tez\""));
