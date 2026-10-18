@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.client;
 
 import com.panita.enriquecraft.client.chat.ChatImages;
+import com.panita.enriquecraft.client.share.ScreenshotSharing;
 import com.panita.enriquecraft.client.ui.ServerUiNetworking;
 import com.panita.enriquecraft.discord.network.MediaPreviewS2C;
 import com.panita.enriquecraft.core.network.ClientFeature;
@@ -19,12 +20,13 @@ import java.util.Set;
 public final class EnriquecraftClient implements ClientModInitializer {
 
     /** The enhancements this client implements; grows as each one is added. */
-    private static final Set<ClientFeature> SUPPORTED = EnumSet.of(ClientFeature.CUSTOM_UI, ClientFeature.MEDIA_PREVIEW);
+    private static final Set<ClientFeature> SUPPORTED = EnumSet.of(ClientFeature.CUSTOM_UI, ClientFeature.MEDIA_PREVIEW, ClientFeature.SCREENSHOT_SHARE);
 
     @Override
     public void onInitializeClient() {
         ServerUiNetworking.register();
         StaffMenuKey.register();
+        ScreenshotSharing.register();
         ClientPlayNetworking.registerGlobalReceiver(MediaPreviewS2C.TYPE, (payload, context) -> ChatImages.expect(payload.url()));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ChatImages::clear));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> announce());
