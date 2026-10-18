@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public final class MediaLinks {
 
-    private static final Pattern HOST = Pattern.compile("[a-z0-9]([a-z0-9.-]*[a-z0-9])?");
+    private static final Pattern HOST = Pattern.compile("(\\*\\.)?[a-z0-9]([a-z0-9.-]*[a-z0-9])?");
     private static final long KIB = 1024;
 
     private MediaLinks() {
@@ -32,15 +32,27 @@ public final class MediaLinks {
         return !hosts.isEmpty() && hosts.stream().allMatch(host -> HOST.matcher(host).matches());
     }
 
-    /** Whether the image is on {@code https} (or a local host) and exactly on one of the hosts, which is not the same as the host starting with one. */
+    /**
+     * Whether the image is on {@code https} (or a local host) and on one of the hosts: exactly, or for an entry written
+     * {@code *.example.com}, on a subdomain of it (never on {@code example.com} itself, and never on a host that merely ends in the same
+     * letters). Starting with a listed name is not enough either.
+     */
     public static boolean allows(MediaEntry entry, List<String> hosts) {
         try {
             URI address = URI.create(entry.url());
             String host = address.getHost();
-            return Protocol.isSecureOrLocal(address) && host != null && hosts.contains(host.toLowerCase(Locale.ROOT));
+            return Protocol.isSecureOrLocal(address) && host != null && hosts.stream().anyMatch(allowed -> matches(allowed, host.toLowerCase(Locale.ROOT)));
         } catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    private static boolean matches(String allowed, String host) {
+        if (!allowed.startsWith("*.")) {
+            return allowed.equals(host);
+        }
+        String suffix = allowed.substring(1);
+        return host.length() > suffix.length() && host.endsWith(suffix);
     }
 
     /** The dimensions and size of an image for a tooltip, such as {@code 800x600, 245 KB}. */

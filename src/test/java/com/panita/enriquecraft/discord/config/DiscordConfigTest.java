@@ -27,7 +27,7 @@ class DiscordConfigTest {
         assertEquals("", config.url.get());
         assertEquals("Discord", config.deliveryTag.get());
         assertTrue(config.mediaEnabled.get());
-        assertEquals("cdn.discordapp.com,media.discordapp.net", config.mediaHosts.get());
+        assertEquals("cdn.discordapp.com,media.discordapp.net,*.klipy.com,*.tenor.com,*.giphy.com", config.mediaHosts.get());
         assertTrue(manager.reload().isClean());
     }
 
@@ -38,7 +38,7 @@ class DiscordConfigTest {
 
         DiscordConfig config = manager.bind("discord", DiscordConfig.class);
 
-        assertEquals("cdn.discordapp.com,media.discordapp.net", config.mediaHosts.get());
+        assertEquals("cdn.discordapp.com,media.discordapp.net,*.klipy.com,*.tenor.com,*.giphy.com", config.mediaHosts.get());
         assertFalse(manager.reload().isClean());
     }
 

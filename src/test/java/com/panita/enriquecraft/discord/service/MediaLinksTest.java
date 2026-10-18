@@ -21,6 +21,7 @@ class MediaLinksTest {
     @Test
     void readsTheHostsOfASettingInLowerCaseWithoutBlanks() {
         assertEquals(List.of("cdn.discordapp.com", "media.discordapp.net"), MediaLinks.hostsOf(" CDN.discordapp.com , media.discordapp.net,, "));
+        assertEquals(List.of("*.klipy.com"), MediaLinks.hostsOf(" *.Klipy.com "));
         assertEquals(List.of(), MediaLinks.hostsOf(" , "));
     }
 
@@ -33,7 +34,10 @@ class MediaLinksTest {
         assertFalse(MediaLinks.isHostList("https://cdn.discordapp.com"));
         assertFalse(MediaLinks.isHostList("cdn.discordapp.com/path"));
         assertFalse(MediaLinks.isHostList("cdn discordapp com"));
-        assertFalse(MediaLinks.isHostList("cdn.discordapp.com,*.example.com"));
+        assertTrue(MediaLinks.isHostList("cdn.discordapp.com,*.example.com"));
+        assertFalse(MediaLinks.isHostList("*.*.example.com"));
+        assertFalse(MediaLinks.isHostList("*example.com"));
+        assertFalse(MediaLinks.isHostList("*."));
     }
 
     @Test
@@ -67,6 +71,20 @@ class MediaLinksTest {
         assertTrue(MediaLinks.allows(at("http://127.0.0.1:8080/a.png"), local));
         assertFalse(MediaLinks.allows(at("http://localhost:8080/a.png"), HOSTS), "not in the list");
         assertFalse(MediaLinks.allows(at("http://cdn.discordapp.com/a.png"), local), "plain http on a real host");
+    }
+
+    @Test
+    void aWildcardEntryAllowsItsSubdomainsButNotTheDomainOrALookalike() {
+        List<String> hosts = List.of("*.klipy.com");
+
+        assertTrue(MediaLinks.allows(at("https://static2.klipy.com/a.gif"), hosts));
+        assertTrue(MediaLinks.allows(at("https://a.b.klipy.com/a.gif"), hosts));
+        assertTrue(MediaLinks.allows(at("https://STATIC2.KLIPY.COM/a.gif"), hosts));
+        assertFalse(MediaLinks.allows(at("https://klipy.com/a.gif"), hosts));
+        assertFalse(MediaLinks.allows(at("https://evilklipy.com/a.gif"), hosts));
+        assertFalse(MediaLinks.allows(at("https://klipy.com.evil.example/a.gif"), hosts));
+        assertFalse(MediaLinks.allows(at("https://static2.klipy.com@evil.example/a.gif"), hosts));
+        assertFalse(MediaLinks.allows(at("http://static2.klipy.com/a.gif"), hosts));
     }
 
     @Test

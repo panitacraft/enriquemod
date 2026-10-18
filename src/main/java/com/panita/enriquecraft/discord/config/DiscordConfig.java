@@ -36,8 +36,8 @@ public final class DiscordConfig implements ModConfig {
                 "The tag shown before the name of a Discord member in the game chat.");
         mediaEnabled = builder.bool("mediaEnabled", true,
                 "Whether the images that Discord members send are shown in the game chat as links. Off, they are written as [adjunto]. Applies at the next connection to the bot.");
-        mediaHosts = builder.string("mediaHosts", "cdn.discordapp.com,media.discordapp.net",
-                "The hosts a link to an image may point to, separated by commas. Anything else is not shown.",
+        mediaHosts = builder.string("mediaHosts", "cdn.discordapp.com,media.discordapp.net,*.klipy.com,*.tenor.com,*.giphy.com",
+                "The hosts a link to an image may point to, separated by commas; *.example.com allows the subdomains of example.com. Anything else is not shown.",
                 MediaLinks::isHostList, "must be one or more host names separated by commas");
         mediaMapSeconds = builder.intRange("mediaMapSeconds", 60, 5, 300,
                 "The most seconds an image stays on a map in the hand of a player who clicked it. It also ends as soon as they do anything but move or chat.");
