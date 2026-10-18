@@ -63,7 +63,7 @@ public final class ImageMaps {
         }
         lastRequest.put(id, now);
         loading.add(id);
-        view.loading(player);
+        view.showing(player);
         boolean dither = config.mediaDither.get();
         Duration lifetime = Duration.ofSeconds(config.mediaMapSeconds.get());
         fetcher.fetch(URI.create(entry.url()))
@@ -74,7 +74,6 @@ public final class ImageMaps {
                         view.failed(player, error instanceof CompletionException && error.getCause() != null ? error.getCause() : error);
                     } else if (!player.hasDisconnected()) {
                         maps.show(player, entry.name(), colors, lifetime);
-                        view.shown(player);
                     }
                 }));
     }

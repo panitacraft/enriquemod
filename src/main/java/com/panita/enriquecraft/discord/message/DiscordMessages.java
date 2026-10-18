@@ -45,8 +45,8 @@ public final class DiscordMessages {
     public static final class Media {
         public static final String LABEL = "<aqua>[{name}]";
         public static final String LABEL_SPOILER = "<aqua>[spoiler]";
-        public static final String HOVER = "<gray>Haz clic para verla en un mapa<newline><dark_gray>{details}";
-        public static final String HOVER_SPOILER = "<gray>Marcada como spoiler<newline>Haz clic para verla en un mapa";
+        public static final String HOVER = "<gray>Haz clic para verla en un mapa\n<dark_gray>{details}";
+        public static final String HOVER_SPOILER = "<gray>Marcada como spoiler\nHaz clic para verla en un mapa";
         public static final String LINK = " <green>(Link)";
         public static final String LINK_HOVER = "<gray>Abrir la imagen original";
 
@@ -56,8 +56,7 @@ public final class DiscordMessages {
 
     public static final class Image {
         public static final String COMMAND_DESCRIPTION = "Muestra en un mapa una imagen que se envió desde Discord";
-        public static final String LOADING = "<gray>Cargando la imagen...";
-        public static final String SHOWN = "<gray>Imagen en tu mano. Se oculta en cuanto hagas cualquier cosa menos moverte.";
+        public static final String SHOWING = "<gray>La imagen se mostrará en un mapa.";
         public static final String NOT_ALLOWED = "<red>No tienes permiso para ver imágenes.";
         public static final String EXPIRED = "<red>Esa imagen ya no está disponible.";
         public static final String BUSY = "<red>Ya estás cargando una imagen, espera un momento.";

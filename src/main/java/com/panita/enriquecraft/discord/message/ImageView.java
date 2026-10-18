@@ -17,12 +17,9 @@ public final class ImageView {
         this.messenger = messenger;
     }
 
-    public void loading(ServerPlayer player) {
-        send(player, DiscordMessages.Image.LOADING);
-    }
-
-    public void shown(ServerPlayer player) {
-        send(player, DiscordMessages.Image.SHOWN);
+    /** The one thing a player is told when they click: the picture is coming, and where. */
+    public void showing(ServerPlayer player) {
+        send(player, DiscordMessages.Image.SHOWING);
     }
 
     public void notAllowed(ServerPlayer player) {

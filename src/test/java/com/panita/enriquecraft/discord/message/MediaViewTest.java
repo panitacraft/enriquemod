@@ -63,6 +63,8 @@ class MediaViewTest {
         assertEquals("foto.png", tokens.find(command.substring("/imagen ".length())).orElseThrow().name());
         assertTrue(hoverOf(label).contains("Haz clic para verla en un mapa"));
         assertTrue(hoverOf(label).contains("800x600, 245 KB"));
+        assertEquals(2, hoverOf(label).split("\n").length, "the details are on a line of their own");
+        assertFalse(hoverOf(label).contains("newline"));
         assertEquals(URI.create(URL), assertInstanceOf(ClickEvent.OpenUrl.class, original.getStyle().getClickEvent()).uri());
         assertTrue(hoverOf(original).contains("original"));
     }
@@ -82,6 +84,8 @@ class MediaViewTest {
         assertEquals("[spoiler] (Link)", line.getString());
         assertFalse(hoverOf(label).contains("secreto"));
         assertTrue(hoverOf(label).contains("spoiler"));
+        assertEquals(2, hoverOf(label).split("\n").length);
+        assertFalse(hoverOf(label).contains("newline"));
         assertInstanceOf(ClickEvent.RunCommand.class, label.getStyle().getClickEvent());
     }
 
