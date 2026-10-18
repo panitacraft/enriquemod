@@ -4,6 +4,7 @@ import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
+import com.panita.enriquecraft.discord.service.MediaTokens;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,13 +31,15 @@ class MediaViewTest {
     Path directory;
 
     private MediaView view;
+    private MediaTokens tokens;
 
     @BeforeEach
     void create() {
         MinecraftTestSupport.bootstrap();
         MessageCatalog catalog = new MessageCatalog(directory);
         catalog.register("discord", DiscordMessages.class);
-        view = new MediaView(new MessageFormatter(catalog));
+        tokens = new MediaTokens(Instant::now, Duration.ofMinutes(10), 10);
+        view = new MediaView(new MessageFormatter(catalog), tokens);
     }
 
     private static MediaEntry image(String name, boolean spoiler) {
@@ -47,30 +52,51 @@ class MediaViewTest {
     }
 
     @Test
-    void anImageIsALabelWithItsNameThatOpensTheAddressAndTellsWhatItIsWhenHovered() {
-        Component link = view.link(image("foto.png", false));
+    void anImageIsTheNameInBracketsThatShowsItOnAMapAndALinkToTheOriginal() {
+        Component line = view.link(image("foto.png", false));
+        Component label = line.getSiblings().get(0);
+        Component original = line.getSiblings().get(1);
 
-        assertEquals("[Imagen: foto.png]", link.getString());
-        assertEquals(URI.create(URL), assertInstanceOf(ClickEvent.OpenUrl.class, link.getStyle().getClickEvent()).uri());
-        String hover = hoverOf(link);
-        assertTrue(hover.contains("Haz clic para abrir la imagen"));
-        assertTrue(hover.contains("800x600, 245 KB"));
+        assertEquals("[foto.png] (Link)", line.getString());
+        String command = assertInstanceOf(ClickEvent.RunCommand.class, label.getStyle().getClickEvent()).command();
+        assertTrue(command.startsWith("/imagen "), command);
+        assertEquals("foto.png", tokens.find(command.substring("/imagen ".length())).orElseThrow().name());
+        assertTrue(hoverOf(label).contains("Haz clic para verla en un mapa"));
+        assertTrue(hoverOf(label).contains("800x600, 245 KB"));
+        assertEquals(URI.create(URL), assertInstanceOf(ClickEvent.OpenUrl.class, original.getStyle().getClickEvent()).uri());
+        assertTrue(hoverOf(original).contains("original"));
     }
 
     @Test
-    void aSpoilerDoesNotSayItsNameButStillOpens() {
-        Component link = view.link(image("secreto.png", true));
+    void theCommandNeverCarriesTheAddress() {
+        Component label = view.link(image("foto.png", false)).getSiblings().get(0);
 
-        assertEquals("[Imagen oculta]", link.getString());
-        assertFalse(hoverOf(link).contains("secreto"));
-        assertTrue(hoverOf(link).contains("spoiler"));
-        assertInstanceOf(ClickEvent.OpenUrl.class, link.getStyle().getClickEvent());
+        assertFalse(assertInstanceOf(ClickEvent.RunCommand.class, label.getStyle().getClickEvent()).command().contains("discordapp"));
+    }
+
+    @Test
+    void aSpoilerDoesNotSayItsNameButStillShowsOnAMap() {
+        Component line = view.link(image("secreto.png", true));
+        Component label = line.getSiblings().get(0);
+
+        assertEquals("[spoiler] (Link)", line.getString());
+        assertFalse(hoverOf(label).contains("secreto"));
+        assertTrue(hoverOf(label).contains("spoiler"));
+        assertInstanceOf(ClickEvent.RunCommand.class, label.getStyle().getClickEvent());
     }
 
     @Test
     void theNameOfTheFileIsNeverReadAsFormatting() {
-        Component link = view.link(image("<red>hola</red>&c.png", false));
+        Component line = view.link(image("<red>hola</red>&c.png", false));
 
-        assertEquals("[Imagen: <red>hola</red>&c.png]", link.getString());
+        assertEquals("[<red>hola</red>&c.png] (Link)", line.getString());
+    }
+
+    @Test
+    void eachImageGetsItsOwnToken() {
+        String first = ((ClickEvent.RunCommand) view.link(image("a.png", false)).getSiblings().get(0).getStyle().getClickEvent()).command();
+        String second = ((ClickEvent.RunCommand) view.link(image("a.png", false)).getSiblings().get(0).getStyle().getClickEvent()).command();
+
+        assertFalse(first.equals(second));
     }
 }

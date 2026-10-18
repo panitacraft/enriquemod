@@ -13,6 +13,7 @@ import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.DiscordView;
+import com.panita.enriquecraft.discord.message.ImageView;
 import com.panita.enriquecraft.discord.message.MediaView;
 import com.panita.enriquecraft.discord.protocol.Protocol;
 import com.panita.enriquecraft.discord.service.BridgeConnection;
@@ -20,16 +21,23 @@ import com.panita.enriquecraft.discord.service.DiscordDelivery;
 import com.panita.enriquecraft.discord.service.ExecutorScheduler;
 import com.panita.enriquecraft.discord.service.FrameRouter;
 import com.panita.enriquecraft.discord.service.GameReporter;
+import com.panita.enriquecraft.discord.service.ImageFetcher;
+import com.panita.enriquecraft.discord.service.ImageMaps;
+import com.panita.enriquecraft.discord.service.MediaTokens;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
 import com.panita.enriquecraft.discord.service.QueryAnswers;
 import com.panita.enriquecraft.discord.service.ServerInfo;
+import com.panita.enriquecraft.discord.service.ShownMaps;
 import com.panita.enriquecraft.discord.transport.WebSocketTransport;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
@@ -61,13 +69,28 @@ public final class DiscordModule implements EnriquecraftModule {
         BridgeConnection connection = new BridgeConnection(new WebSocketTransport(), new ExecutorScheduler(), Instant::now,
                 () -> ThreadLocalRandom.current().nextDouble(), config.enabled::get, config.url::get, key, info::hello, router::route);
 
+        MediaTokens tokens = new MediaTokens(Instant::now, Duration.ofMinutes(10), 500);
+        ExecutorService worker = Executors.newFixedThreadPool(2, task -> {
+            Thread thread = new Thread(task, "enriquecraft-images");
+            thread.setDaemon(true);
+            return thread;
+        });
+        ShownMaps shownMaps = new ShownMaps(Instant::now);
+        DiscordHooks.install(shownMaps);
+        ImageView imageView = new ImageView(services.get(Messenger.class));
+        ImageMaps imageMaps = new ImageMaps(new ImageFetcher(worker, (int) Protocol.MAX_MEDIA_BYTES, Duration.ofSeconds(8)), shownMaps,
+                imageView, config, Instant::now, worker);
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class),
-                services.get(MessageFormatter.class), config, new MediaView(services.get(MessageFormatter.class)));
+                services.get(MessageFormatter.class), config, new MediaView(services.get(MessageFormatter.class), tokens));
         QueryAnswers answers = new QueryAnswers(connection, info, nicknames, services.get(HeldPlayers.class),
                 services.get(KnownPlayers.class), Instant::now);
         router.onChat(delivery::deliver);
         router.onQuery(answers::answer);
 
+        services.register(MediaTokens.class, tokens);
+        services.register(ShownMaps.class, shownMaps);
+        services.register(ImageView.class, imageView);
+        services.register(ImageMaps.class, imageMaps);
         services.register(ServerInfo.class, info);
         services.register(BridgeConnection.class, connection);
         services.register(GameReporter.class, new GameReporter(connection));

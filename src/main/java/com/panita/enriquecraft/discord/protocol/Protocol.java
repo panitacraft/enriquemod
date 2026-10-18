@@ -24,6 +24,13 @@ public final class Protocol {
     /** The largest image the bot offers, in bytes. */
     public static final long MAX_MEDIA_BYTES = 8L * 1024 * 1024;
     public static final Set<String> MEDIA_TYPES = Set.of("image/png", "image/jpeg", "image/webp", "image/gif");
+    /** Whether an image may be linked at this address: always {@code https}, and plain {@code http} only for a local host, for development. */
+    public static boolean isSecureOrLocal(java.net.URI address) {
+        String host = address.getHost();
+        boolean local = "localhost".equals(host) || "127.0.0.1".equals(host);
+        return "https".equals(address.getScheme()) || ("http".equals(address.getScheme()) && local);
+    }
+
     /** Close code of the bot for a mod it does not speak the same protocol with. */
     public static final int CLOSE_PROTOCOL = 4002;
 

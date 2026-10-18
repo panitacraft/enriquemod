@@ -60,6 +60,16 @@ class MediaLinksTest {
     }
 
     @Test
+    void plainHttpIsAllowedOnlyOnALocalHostThatIsListed() {
+        List<String> local = List.of("localhost", "127.0.0.1", "cdn.discordapp.com");
+
+        assertTrue(MediaLinks.allows(at("http://localhost:8080/a.png"), local));
+        assertTrue(MediaLinks.allows(at("http://127.0.0.1:8080/a.png"), local));
+        assertFalse(MediaLinks.allows(at("http://localhost:8080/a.png"), HOSTS), "not in the list");
+        assertFalse(MediaLinks.allows(at("http://cdn.discordapp.com/a.png"), local), "plain http on a real host");
+    }
+
+    @Test
     void anEmptyListAllowsNothing() {
         assertFalse(MediaLinks.allows(at("https://cdn.discordapp.com/a.png"), List.of()));
     }

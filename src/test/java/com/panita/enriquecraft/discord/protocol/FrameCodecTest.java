@@ -261,6 +261,13 @@ class FrameCodecTest {
     }
 
     @Test
+    void readsPlainHttpOnlyOnALocalHost() {
+        assertEquals(1, chatWith("hola", entry("{\"url\":\"http://localhost:8080/a.png\"}")).media().size());
+        assertEquals(1, chatWith("hola", entry("{\"url\":\"http://127.0.0.1:8080/a.png\"}")).media().size());
+        assertEquals(1, chatWith("hola", entry("{\"url\":\"http://evil.example/a.png\"}"), entry("{}")).rejectedMedia());
+    }
+
+    @Test
     void anImageThatIsNotAnObjectIsLeftOutToo() {
         InFrame.Chat chat = chatWith("hola", "5", "null", "\"x\"", entry("{}"));
 

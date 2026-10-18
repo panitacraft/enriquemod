@@ -21,6 +21,9 @@ public final class DiscordConfig implements ModConfig {
     public final ConfigValue<String> deliveryTag;
     public final ConfigValue<Boolean> mediaEnabled;
     public final ConfigValue<String> mediaHosts;
+    public final ConfigValue<Integer> mediaMapSeconds;
+    public final ConfigValue<Integer> mediaCooldownSeconds;
+    public final ConfigValue<Boolean> mediaDither;
 
     public DiscordConfig(ConfigSectionBuilder builder) {
         enabled = builder.bool("enabled", true,
@@ -35,6 +38,12 @@ public final class DiscordConfig implements ModConfig {
         mediaHosts = builder.string("mediaHosts", "cdn.discordapp.com,media.discordapp.net",
                 "The hosts a link to an image may point to, separated by commas. Anything else is not shown.",
                 MediaLinks::isHostList, "must be one or more host names separated by commas");
+        mediaMapSeconds = builder.intRange("mediaMapSeconds", 60, 5, 300,
+                "The most seconds an image stays on a map in the hand of a player who clicked it. It also ends as soon as they do anything but move or chat.");
+        mediaCooldownSeconds = builder.intRange("mediaCooldownSeconds", 5, 0, 60,
+                "The seconds a player waits between two requests to see an image.");
+        mediaDither = builder.bool("mediaDither", true,
+                "Whether the colors of a picture on a map are blended to look closer to the original, at the cost of some noise.");
     }
 
     /** Whether the address may be the bridge's: secure, or a local one for development. */

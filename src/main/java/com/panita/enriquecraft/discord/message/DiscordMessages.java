@@ -43,12 +43,30 @@ public final class DiscordMessages {
     }
 
     public static final class Media {
-        public static final String LABEL = "<aqua>[Imagen: {name}]";
-        public static final String LABEL_SPOILER = "<aqua>[Imagen oculta]";
-        public static final String HOVER = "<gray>Haz clic para abrir la imagen<newline><dark_gray>{details}";
-        public static final String HOVER_SPOILER = "<gray>Imagen marcada como spoiler<newline>Haz clic para abrirla";
+        public static final String LABEL = "<aqua>[{name}]";
+        public static final String LABEL_SPOILER = "<aqua>[spoiler]";
+        public static final String HOVER = "<gray>Haz clic para verla en un mapa<newline><dark_gray>{details}";
+        public static final String HOVER_SPOILER = "<gray>Marcada como spoiler<newline>Haz clic para verla en un mapa";
+        public static final String LINK = " <green>(Link)";
+        public static final String LINK_HOVER = "<gray>Abrir la imagen original";
 
         private Media() {
+        }
+    }
+
+    public static final class Image {
+        public static final String COMMAND_DESCRIPTION = "Muestra en un mapa una imagen que se envió desde Discord";
+        public static final String LOADING = "<gray>Cargando la imagen...";
+        public static final String SHOWN = "<gray>Imagen en tu mano. Se oculta en cuanto hagas cualquier cosa menos moverte.";
+        public static final String EXPIRED = "<red>Esa imagen ya no está disponible.";
+        public static final String BUSY = "<red>Ya estás cargando una imagen, espera un momento.";
+        public static final String COOLDOWN = "<red>Espera unos segundos antes de ver otra imagen.";
+        public static final String UNAVAILABLE = "<red>No se pudo descargar la imagen.";
+        public static final String TOO_LARGE = "<red>La imagen es demasiado grande para mostrarla.";
+        public static final String UNSUPPORTED = "<red>Ese formato de imagen no se puede mostrar en un mapa.";
+        public static final String FAILED = "<red>No se pudo preparar la imagen.";
+
+        private Image() {
         }
     }
 

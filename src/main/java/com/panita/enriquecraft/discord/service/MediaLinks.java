@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.discord.service;
 
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
+import com.panita.enriquecraft.discord.protocol.Protocol;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -31,12 +32,12 @@ public final class MediaLinks {
         return !hosts.isEmpty() && hosts.stream().allMatch(host -> HOST.matcher(host).matches());
     }
 
-    /** Whether the image is on {@code https} and exactly on one of the hosts, which is not the same as the host starting with one. */
+    /** Whether the image is on {@code https} (or a local host) and exactly on one of the hosts, which is not the same as the host starting with one. */
     public static boolean allows(MediaEntry entry, List<String> hosts) {
         try {
             URI address = URI.create(entry.url());
             String host = address.getHost();
-            return "https".equals(address.getScheme()) && host != null && hosts.contains(host.toLowerCase(Locale.ROOT));
+            return Protocol.isSecureOrLocal(address) && host != null && hosts.contains(host.toLowerCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return false;
         }

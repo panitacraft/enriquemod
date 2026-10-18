@@ -202,7 +202,7 @@ public final class FrameCodec {
             }
             boolean spoiler = spoilerField.getAsBoolean();
             URI address = URI.create(url);
-            boolean valid = url.length() <= Protocol.MAX_MEDIA_URL && "https".equals(address.getScheme()) && address.getHost() != null
+            boolean valid = url.length() <= Protocol.MAX_MEDIA_URL && Protocol.isSecureOrLocal(address) && address.getHost() != null
                     && !name.isEmpty() && name.length() <= Protocol.MAX_MEDIA_NAME && Protocol.MEDIA_TYPES.contains(type)
                     && size >= 0 && size <= Protocol.MAX_MEDIA_BYTES;
             return valid ? Optional.of(new MediaEntry(url, name, type, size, width, height, spoiler)) : Optional.empty();
