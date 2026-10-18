@@ -3,6 +3,7 @@ package com.panita.enriquecraft.discord.protocol;
 import com.google.gson.JsonObject;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,9 +16,14 @@ public sealed interface OutFrame {
      *
      * @param startedAt when the server started
      * @param icon      the server's icon as PNG bytes, when it has one that fits in the frame
+     * @param features  the optional features this mod can use, such as {@link Protocol#FEATURE_MEDIA}
      */
     record Hello(int protocol, String modVersion, String minecraftVersion, Instant startedAt, int maxPlayers,
-                 Optional<byte[]> icon) implements OutFrame {
+                 Optional<byte[]> icon, List<String> features) implements OutFrame {
+
+        public Hello {
+            features = List.copyOf(features);
+        }
     }
 
     /** A line a player wrote in a chat channel; {@code emote} is what they did with {@code /me}. */

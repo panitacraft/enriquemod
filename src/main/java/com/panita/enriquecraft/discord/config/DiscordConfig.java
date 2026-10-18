@@ -3,6 +3,7 @@ package com.panita.enriquecraft.discord.config;
 import com.panita.enriquecraft.core.framework.config.ConfigSectionBuilder;
 import com.panita.enriquecraft.core.framework.config.ConfigValue;
 import com.panita.enriquecraft.core.framework.config.ModConfig;
+import com.panita.enriquecraft.discord.service.MediaLinks;
 
 import java.net.URI;
 import java.util.Set;
@@ -18,6 +19,8 @@ public final class DiscordConfig implements ModConfig {
     public final ConfigValue<Boolean> enabled;
     public final ConfigValue<String> url;
     public final ConfigValue<String> deliveryTag;
+    public final ConfigValue<Boolean> mediaEnabled;
+    public final ConfigValue<String> mediaHosts;
 
     public DiscordConfig(ConfigSectionBuilder builder) {
         enabled = builder.bool("enabled", true,
@@ -27,6 +30,11 @@ public final class DiscordConfig implements ModConfig {
                 DiscordConfig::isBridgeUrl, "must be empty, or a wss address (ws is only allowed for localhost)");
         deliveryTag = builder.text("deliveryTag", "Discord",
                 "The tag shown before the name of a Discord member in the game chat.");
+        mediaEnabled = builder.bool("mediaEnabled", true,
+                "Whether the images that Discord members send are shown in the game chat as links. Off, they are written as [adjunto]. Applies at the next connection to the bot.");
+        mediaHosts = builder.string("mediaHosts", "cdn.discordapp.com,media.discordapp.net",
+                "The hosts a link to an image may point to, separated by commas. Anything else is not shown.",
+                MediaLinks::isHostList, "must be one or more host names separated by commas");
     }
 
     /** Whether the address may be the bridge's: secure, or a local one for development. */

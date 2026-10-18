@@ -13,6 +13,8 @@ import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.DiscordView;
+import com.panita.enriquecraft.discord.message.MediaView;
+import com.panita.enriquecraft.discord.protocol.Protocol;
 import com.panita.enriquecraft.discord.service.BridgeConnection;
 import com.panita.enriquecraft.discord.service.DiscordDelivery;
 import com.panita.enriquecraft.discord.service.ExecutorScheduler;
@@ -26,6 +28,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
@@ -52,13 +55,14 @@ public final class DiscordModule implements EnriquecraftModule {
         Path keyFile = FabricLoader.getInstance().getConfigDir().resolve(KEY_FILE);
         // Read at each attempt, so a key put in place later is found by the next one.
         Supplier<Optional<String>> key = () -> SecretFile.find(keyFile, KEY_VARIABLE, System::getenv);
-        ServerInfo info = new ServerInfo(Instant::now);
+        ServerInfo info = new ServerInfo(Instant::now,
+                () -> config.mediaEnabled.get() ? List.of(Protocol.FEATURE_MEDIA) : List.of());
         FrameRouter router = new FrameRouter(info);
         BridgeConnection connection = new BridgeConnection(new WebSocketTransport(), new ExecutorScheduler(), Instant::now,
                 () -> ThreadLocalRandom.current().nextDouble(), config.enabled::get, config.url::get, key, info::hello, router::route);
 
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class),
-                services.get(MessageFormatter.class), config);
+                services.get(MessageFormatter.class), config, new MediaView(services.get(MessageFormatter.class)));
         QueryAnswers answers = new QueryAnswers(connection, info, nicknames, services.get(HeldPlayers.class),
                 services.get(KnownPlayers.class), Instant::now);
         router.onChat(delivery::deliver);

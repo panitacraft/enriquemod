@@ -9,6 +9,7 @@ import com.panita.enriquecraft.chat.message.ChatView;
 import com.panita.enriquecraft.chat.text.ChatTextParser;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -59,13 +60,22 @@ public final class ChatService {
      * A line from outside the game, such as the message of a Discord member. It is plain text, it goes to whoever may read the
      * channel, and it does not fire {@link ChatEvents#MESSAGE}, so it can never be sent back out.
      *
-     * @param sender how the line names who wrote it, already finished
+     * @param sender   how the line names who wrote it, already finished
+     * @param attached finished parts shown after the text, such as links to images; the line may have only these
      * @return whether anything was said
      */
-    public boolean deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain) {
-        Component text = parser.parse(plain, Set.of());
-        if (text.getString().isBlank()) {
+    public boolean deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain,
+                                   List<Component> attached) {
+        Component typed = parser.parse(plain, Set.of());
+        if (typed.getString().isBlank() && attached.isEmpty()) {
             return false;
+        }
+        MutableComponent text = Component.empty();
+        if (!typed.getString().isBlank()) {
+            text.append(typed);
+        }
+        for (Component part : attached) {
+            text.append(text.getSiblings().isEmpty() ? part : Component.literal(" ").append(part));
         }
         List<ServerPlayer> readers = server.getPlayerList().getPlayers().stream()
                 .filter(player -> channel.canUse(player) && !held.isHeld(player))

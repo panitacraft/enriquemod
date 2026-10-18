@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -27,12 +28,15 @@ public final class ServerInfo {
     private static final byte[] PNG_SIGNATURE = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 
     private final Supplier<Instant> clock;
+    private final Supplier<List<String>> features;
     private volatile MinecraftServer server;
     private volatile Instant startedAt;
     private volatile Optional<byte[]> icon = Optional.empty();
 
-    public ServerInfo(Supplier<Instant> clock) {
+    /** @param features the optional features to announce in the hello, read each time it is built */
+    public ServerInfo(Supplier<Instant> clock, Supplier<List<String>> features) {
         this.clock = clock;
+        this.features = features;
     }
 
     public void started(MinecraftServer started) {
@@ -94,6 +98,6 @@ public final class ServerInfo {
         String mod = FabricLoader.getInstance().getModContainer(MOD_ID)
                 .map(container -> container.getMetadata().getVersion().getFriendlyString()).orElse("unknown");
         return Optional.of(new OutFrame.Hello(Protocol.VERSION, mod, running.getServerVersion(), startedAt, running.getMaxPlayers(),
-                icon));
+                icon, features.get()));
     }
 }

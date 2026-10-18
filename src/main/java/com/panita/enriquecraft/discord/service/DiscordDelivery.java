@@ -7,12 +7,14 @@ import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
+import com.panita.enriquecraft.discord.message.MediaView;
 import com.panita.enriquecraft.discord.protocol.InFrame;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.MinecraftServer;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -26,22 +28,27 @@ public final class DiscordDelivery {
     private final ChannelRegistry channels;
     private final MessageFormatter formatter;
     private final DiscordConfig config;
+    private final MediaView media;
 
-    public DiscordDelivery(ChatService chat, ChannelRegistry channels, MessageFormatter formatter, DiscordConfig config) {
+    public DiscordDelivery(ChatService chat, ChannelRegistry channels, MessageFormatter formatter, DiscordConfig config, MediaView media) {
         this.chat = chat;
         this.channels = channels;
         this.formatter = formatter;
         this.config = config;
+        this.media = media;
     }
 
     /** Called on the server thread. A message for a channel this server does not have, or with nothing to say, is dropped. */
     public void deliver(MinecraftServer server, InFrame.Chat frame) {
         Optional<ChannelDefinition> channel = channels.find(frame.channel());
         String text = PlainText.chat(frame.text());
-        if (channel.isEmpty() || text.isEmpty()) {
+        List<String> hosts = MediaLinks.hostsOf(config.mediaHosts.get());
+        // The bot checks the addresses too, but the administrator decides where a link in the game may lead
+        List<Component> images = frame.media().stream().filter(entry -> MediaLinks.allows(entry, hosts)).map(media::link).toList();
+        if (channel.isEmpty() || (text.isEmpty() && images.isEmpty())) {
             return;
         }
-        chat.deliverExternal(server, channel.get(), sender(frame.ign()), text);
+        chat.deliverExternal(server, channel.get(), sender(frame.ign()), text, images);
     }
 
     private Component sender(String ign) {

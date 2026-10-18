@@ -391,7 +391,10 @@ public final class BridgeConnection implements FrameSink {
                         lastError = Optional.of("the bot said: " + error.code());
                     }
                 }
-                case InFrame.Chat chat -> deliver(frame);
+                case InFrame.Chat chat -> {
+                    dropped.addAndGet(chat.rejectedMedia());
+                    deliver(frame);
+                }
                 case InFrame.Query query -> deliver(frame);
             }
         }

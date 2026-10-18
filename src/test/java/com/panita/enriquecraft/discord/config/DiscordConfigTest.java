@@ -26,7 +26,20 @@ class DiscordConfigTest {
         assertTrue(config.enabled.get());
         assertEquals("", config.url.get());
         assertEquals("Discord", config.deliveryTag.get());
+        assertTrue(config.mediaEnabled.get());
+        assertEquals("cdn.discordapp.com,media.discordapp.net", config.mediaHosts.get());
         assertTrue(manager.reload().isClean());
+    }
+
+    @Test
+    void anInvalidListOfMediaHostsInTheFileIsReportedAndTheDefaultIsUsed() throws IOException {
+        Files.writeString(directory.resolve("enriquecraft.json5"), "{ \"discord\": { \"mediaHosts\": \"https://cdn.discordapp.com/\" } }");
+        ConfigManager manager = new ConfigManager(directory);
+
+        DiscordConfig config = manager.bind("discord", DiscordConfig.class);
+
+        assertEquals("cdn.discordapp.com,media.discordapp.net", config.mediaHosts.get());
+        assertFalse(manager.reload().isClean());
     }
 
     @Test

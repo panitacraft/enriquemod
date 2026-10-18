@@ -42,6 +42,16 @@ public final class DiscordMessages {
         }
     }
 
+    public static final class Media {
+        public static final String LABEL = "<aqua>[Imagen: {name}]";
+        public static final String LABEL_SPOILER = "<aqua>[Imagen oculta]";
+        public static final String HOVER = "<gray>Haz clic para abrir la imagen<newline><dark_gray>{details}";
+        public static final String HOVER_SPOILER = "<gray>Imagen marcada como spoiler<newline>Haz clic para abrirla";
+
+        private Media() {
+        }
+    }
+
     public static final class Commands {
         public static final String DISCORD_DESCRIPTION = "Administra la conexión del servidor con el bot de Discord";
         public static final String STATUS_DESCRIPTION = "Muestra si el servidor está conectado al bot y qué canales usa";
