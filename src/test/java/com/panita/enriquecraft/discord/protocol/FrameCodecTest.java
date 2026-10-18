@@ -147,8 +147,26 @@ class FrameCodecTest {
 
     @Test
     void decodesAChatLineOfALinkedMember() {
-        assertEquals(new InFrame.Chat("global", "123456789012345678", "Javithor360", "hola", List.of(), 0),
+        assertEquals(new InFrame.Chat("global", "123456789012345678", "Javithor360", "hola", List.of(), 0, Optional.empty()),
                 frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Javithor360\"},\"text\":\"hola\"}"));
+    }
+
+    @Test
+    void aChatLineMayCarryTheMessageItAnswers() {
+        InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\","
+                + "\"reply\":{\"author\":\" Javi \",\"text\":\"vamos?\u0007\"}}");
+        assertEquals(Optional.of(new InFrame.Reply("Javi", "vamos?")), chat.reply());
+    }
+
+    @Test
+    void aReplyThatIsNotValidIsLeftOutAndTheMessageIsStillShown() {
+        for (String reply : new String[]{"\"reply\":{\"author\":\"\",\"text\":\"x\"}", "\"reply\":{\"author\":\"Javi\",\"text\":\"\"}",
+                "\"reply\":{\"author\":\"Javi\"}", "\"reply\":\"Javi\"", "\"reply\":{\"author\":5,\"text\":\"x\"}",
+                "\"reply\":{\"author\":\"Javi\",\"text\":\"" + "x".repeat(201) + "\"}"}) {
+            InFrame.Chat chat = (InFrame.Chat) frame("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"si\"," + reply + "}");
+            assertEquals(Optional.empty(), chat.reply(), reply);
+            assertEquals("si", chat.text());
+        }
     }
 
     @Test

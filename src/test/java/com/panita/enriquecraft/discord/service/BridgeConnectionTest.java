@@ -333,7 +333,7 @@ class BridgeConnectionTest {
         transport.listener().onText("{\"type\":\"query\",\"id\":\"q\",\"what\":\"status\"}");
         transport.listener().onText("{\"type\":\"chat\",\"channel\":\"global\",\"author\":{\"discordId\":\"123456789012345678\",\"ign\":\"Tez\"},\"text\":\"hi\"}");
 
-        assertEquals(List.of(new InFrame.Query("q", QueryKind.STATUS, java.util.Optional.empty()), new InFrame.Chat("global", "123456789012345678", "Tez", "hi", List.of(), 0)), frames);
+        assertEquals(List.of(new InFrame.Query("q", QueryKind.STATUS, java.util.Optional.empty()), new InFrame.Chat("global", "123456789012345678", "Tez", "hi", List.of(), 0, java.util.Optional.empty())), frames);
     }
 
     @Test

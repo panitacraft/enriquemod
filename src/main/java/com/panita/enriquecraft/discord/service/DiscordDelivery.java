@@ -8,6 +8,7 @@ import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.MediaView;
+import com.panita.enriquecraft.discord.message.ReplyView;
 import com.panita.enriquecraft.discord.protocol.InFrame;
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
 import net.minecraft.ChatFormatting;
@@ -32,15 +33,17 @@ public final class DiscordDelivery {
     private final DiscordConfig config;
     private final MediaView media;
     private final MediaPreviews previews;
+    private final ReplyView replies;
 
     public DiscordDelivery(ChatService chat, ChannelRegistry channels, MessageFormatter formatter, DiscordConfig config, MediaView media,
-                           MediaPreviews previews) {
+                           MediaPreviews previews, ReplyView replies) {
         this.chat = chat;
         this.channels = channels;
         this.formatter = formatter;
         this.config = config;
         this.media = media;
         this.previews = previews;
+        this.replies = replies;
     }
 
     /** Called on the server thread. A message for a channel this server does not have, or with nothing to say, is dropped. */
@@ -54,7 +57,12 @@ public final class DiscordDelivery {
         if (channel.isEmpty() || (text.isEmpty() && images.isEmpty())) {
             return;
         }
-        List<ServerPlayer> readers = chat.deliverExternal(server, channel.get(), sender(frame.ign()), text, images);
+        Component sender = sender(frame.ign());
+        // What it answers goes first, as a line of its own, so the reply reads as the answer
+        if (config.showReplies.get()) {
+            frame.reply().ifPresent(reply -> chat.deliverLine(server, channel.get(), replies.line(sender, reply)));
+        }
+        List<ServerPlayer> readers = chat.deliverExternal(server, channel.get(), sender, text, images);
         // The client companion draws the image itself, but only one from a host it trusts on its own
         previews.send(readers, allowed.stream().filter(MediaLinks::isTrusted).toList());
     }
@@ -62,7 +70,8 @@ public final class DiscordDelivery {
     private Component sender(String ign) {
         Component hover = formatter.format(Message.plain(DiscordMessages.Delivery.HOVER));
         return Component.empty()
-                .append(Component.literal("[" + config.deliveryTag.get() + "] ").withStyle(ChatFormatting.BLUE))
+                .append(formatter.format(Message.plain(config.deliveryPrefix.get())))
+                .append(Component.literal(" "))
                 .append(Component.literal(ign).withStyle(ChatFormatting.WHITE))
                 .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover)));
     }

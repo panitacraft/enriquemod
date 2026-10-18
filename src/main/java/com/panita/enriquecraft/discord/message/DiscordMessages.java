@@ -37,6 +37,8 @@ public final class DiscordMessages {
 
     public static final class Delivery {
         public static final String HOVER = "<gray>Mensaje desde Discord";
+        /** The line before a reply: who replies, and the message they answer. */
+        public static final String REPLY = "{sender} <gray>(respondiendo a)</gray> <dark_gray>»</dark_gray> <gray>{author}: {message}</gray>";
 
         private Delivery() {
         }

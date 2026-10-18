@@ -17,6 +17,7 @@ import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.DiscordView;
 import com.panita.enriquecraft.discord.message.ImageView;
 import com.panita.enriquecraft.discord.message.MediaView;
+import com.panita.enriquecraft.discord.message.ReplyView;
 import com.panita.enriquecraft.discord.message.ShareView;
 import com.panita.enriquecraft.discord.protocol.Protocol;
 import com.panita.enriquecraft.discord.service.BridgeConnection;
@@ -43,11 +44,13 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * The server's side of the Discord integration. The mod never talks to Discord: the Panita Bot does, and this module keeps
@@ -72,7 +75,8 @@ public final class DiscordModule implements EnriquecraftModule {
         // Read at each attempt, so a key put in place later is found by the next one.
         Supplier<Optional<String>> key = () -> SecretFile.find(keyFile, KEY_VARIABLE, System::getenv);
         ServerInfo info = new ServerInfo(Instant::now,
-                () -> config.mediaEnabled.get() ? List.of(Protocol.FEATURE_MEDIA) : List.of());
+                () -> Stream.of(config.mediaEnabled.get() ? Protocol.FEATURE_MEDIA : null, config.showReplies.get() ? Protocol.FEATURE_REPLY : null)
+                        .filter(Objects::nonNull).toList());
         FrameRouter router = new FrameRouter(info);
         BridgeConnection connection = new BridgeConnection(new WebSocketTransport(), new ExecutorScheduler(), Instant::now,
                 () -> ThreadLocalRandom.current().nextDouble(), config.enabled::get, config.url::get, key, info::hello, router::route);
@@ -91,7 +95,7 @@ public final class DiscordModule implements EnriquecraftModule {
         MediaView mediaView = new MediaView(services.get(MessageFormatter.class), tokens);
         MediaPreviews previews = new MediaPreviews(services.get(ClientCapabilities.class));
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class),
-                services.get(MessageFormatter.class), config, mediaView, previews);
+                services.get(MessageFormatter.class), config, mediaView, previews, new ReplyView(services.get(MessageFormatter.class)));
         PlayerInfos playerInfos = new PlayerInfos(nicknames);
         ScreenshotShares shares = new ScreenshotShares(new ShareTransfers(Instant::now), connection,
                 new HttpMediaUploader(worker, config.url::get, key), worker, services.get(ChatService.class),

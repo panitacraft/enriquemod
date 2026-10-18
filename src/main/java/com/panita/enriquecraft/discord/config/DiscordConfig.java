@@ -18,7 +18,8 @@ public final class DiscordConfig implements ModConfig {
 
     public final ConfigValue<Boolean> enabled;
     public final ConfigValue<String> url;
-    public final ConfigValue<String> deliveryTag;
+    public final ConfigValue<String> deliveryPrefix;
+    public final ConfigValue<Boolean> showReplies;
     public final ConfigValue<Boolean> mediaEnabled;
     public final ConfigValue<String> mediaHosts;
     public final ConfigValue<Integer> mediaMapSeconds;
@@ -34,8 +35,10 @@ public final class DiscordConfig implements ModConfig {
         url = builder.string("url", "",
                 "The address of the bridge of the Panita Bot, such as \"wss://bot.example.com/bridge\". Empty keeps the connection off.",
                 DiscordConfig::isBridgeUrl, "must be empty, or a wss address (ws is only allowed for localhost)");
-        deliveryTag = builder.text("deliveryTag", "Discord",
-                "The tag shown before the name of a Discord member in the game chat.");
+        deliveryPrefix = builder.text("deliveryPrefix", "<blue>[Discord]",
+                "What is shown before the name of a Discord member in the game chat, written exactly as it should look: text tags, colors and fonts are allowed, and nothing is added around it, so a custom glyph needs no brackets.");
+        showReplies = builder.bool("showReplies", true,
+                "Whether a Discord reply shows, before it, a line saying which message it answers. Applies at the next connection to the bot.");
         mediaEnabled = builder.bool("mediaEnabled", true,
                 "Whether the images that Discord members send are shown in the game chat as links. Off, they are written as [adjunto]. Applies at the next connection to the bot.");
         mediaHosts = builder.string("mediaHosts", "cdn.discordapp.com,media.discordapp.net,*.klipy.com,*.tenor.com,*.giphy.com",

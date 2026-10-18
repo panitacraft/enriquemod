@@ -77,11 +77,22 @@ public final class ChatService {
         for (Component part : attached) {
             text.append(text.getSiblings().isEmpty() ? part : Component.literal(" ").append(part));
         }
-        List<ServerPlayer> readers = server.getPlayerList().getPlayers().stream()
-                .filter(player -> channel.canUse(player) && !held.isHeld(player))
-                .toList();
+        List<ServerPlayer> readers = readersOf(server, channel);
         view.deliver(server, readers, view.externalLine(channel, sender, text));
         return readers;
+    }
+
+    /** A finished line for whoever may read the channel, such as the context of a reply; it fires no event. */
+    public List<ServerPlayer> deliverLine(MinecraftServer server, ChannelDefinition channel, Component line) {
+        List<ServerPlayer> readers = readersOf(server, channel);
+        view.deliver(server, readers, line);
+        return readers;
+    }
+
+    private List<ServerPlayer> readersOf(MinecraftServer server, ChannelDefinition channel) {
+        return server.getPlayerList().getPlayers().stream()
+                .filter(player -> channel.canUse(player) && !held.isHeld(player))
+                .toList();
     }
 
     private boolean deliver(ServerPlayer sender, ChannelDefinition channel, String raw,
@@ -98,9 +109,7 @@ public final class ChatService {
             return false;
         }
         MinecraftServer server = sender.level().getServer();
-        List<ServerPlayer> readers = server.getPlayerList().getPlayers().stream()
-                .filter(player -> channel.canUse(player) && !held.isHeld(player))
-                .toList();
+        List<ServerPlayer> readers = readersOf(server, channel);
         view.deliver(server, readers, lineOf.apply(text, sender));
         ChatEvents.MESSAGE.invoker().onMessage(new ChatEvents.ChatMessage(channel, sender, text.getString(), emote));
         return true;

@@ -30,12 +30,21 @@ public sealed interface InFrame {
      * @param text          what they wrote; empty only when there are images
      * @param media         the images that passed the shape checks, at most {@link Protocol#MAX_MEDIA}
      * @param rejectedMedia how many entries were left out because they were invalid or too many
+     * @param reply         the message this one answers, when the member replied to one
      */
-    record Chat(String channel, String discordId, String ign, String text, List<MediaEntry> media, int rejectedMedia) implements InFrame {
+    record Chat(String channel, String discordId, String ign, String text, List<MediaEntry> media, int rejectedMedia, Optional<Reply> reply)
+            implements InFrame {
 
         public Chat {
             media = List.copyOf(media);
         }
+    }
+
+    /**
+     * The message a Discord reply answers: who wrote it and what it said, as plain text. Cosmetic, so a reply that is not valid
+     * is left out and the message is still shown.
+     */
+    record Reply(String author, String text) {
     }
 
     /** A question about the server, to be answered with a reply of the same id. {@code player} is the name asked about, for {@code playerinfo}. */
