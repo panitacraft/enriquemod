@@ -4,11 +4,14 @@ import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
 import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.link.client.ApiAccess;
 import com.panita.enriquecraft.link.service.LinkedPlayers;
 import com.panita.enriquecraft.profile.client.HttpEmblemApi;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.data.EmblemSelections;
+import com.panita.enriquecraft.profile.gui.OpenMenus;
+import com.panita.enriquecraft.profile.gui.ProfileMenus;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 import com.panita.enriquecraft.profile.message.ProfileView;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
@@ -30,6 +33,8 @@ import java.util.Optional;
 public final class ProfileModule implements EnriquecraftModule {
 
     private static final String SELECTIONS_FILE = "emblem_selections.snbt";
+    /** How long opening the menu leaves the API alone, so opening it again and again does not read the profile each time. */
+    private static final int MENU_REFRESH_SECONDS = 15;
 
     @Override
     public Optional<Class<?>> messages() {
@@ -51,11 +56,19 @@ public final class ProfileModule implements EnriquecraftModule {
         EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get);
         new EmblemPlaceholders(profiles, tooltip).register();
 
+        OpenMenus openMenus = new OpenMenus();
+        profiles.onUpdated(player -> openMenus.refresh(player.getUUID()));
+
         services.register(EmblemTooltip.class, tooltip);
         services.register(EmblemResolver.class, resolver);
         services.register(ProfileService.class, profiles);
         services.register(RefreshCooldown.class, cooldown);
-        services.register(ProfileView.class, new ProfileView(services.get(Messenger.class)));
-        services.register(ProfileRefresher.class, new ProfileRefresher(loader, profiles, cooldown));
+        ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown);
+        ProfileView view = new ProfileView(services.get(Messenger.class));
+
+        services.register(ProfileView.class, view);
+        services.register(ProfileRefresher.class, refresher);
+        services.register(ProfileMenus.class, new ProfileMenus(services.get(UiService.class), profiles, refresher, view, tooltip, config,
+                services.get(Messenger.class), openMenus, new RefreshCooldown(() -> MENU_REFRESH_SECONDS, Instant::now)));
     }
 }

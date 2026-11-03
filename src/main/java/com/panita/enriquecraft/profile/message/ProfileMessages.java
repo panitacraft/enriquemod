@@ -18,6 +18,42 @@ public final class ProfileMessages {
         }
     }
 
+    public static final class Menu {
+        public static final String TITLE = "Tu perfil";
+        public static final String LINE_PLAYER = "<gray>Jugador: <white>{name}";
+        public static final String LINE_DISCORD = "<gray>Discord: <white>{discord}";
+        public static final String LINE_PLAY_TIME = "<gray>Tiempo de juego: <white>{time}";
+        public static final String LINE_TITLES = "<gray>Títulos: <white>{titles}";
+        public static final String NO_DATA = "<gray>Tu cuenta no está vinculada a Panitacraft, o no se pudieron leer tus datos.";
+        public static final String NO_EMBLEMS = "<gray>Aún no tienes emblemas de esta edición.";
+        public static final String EMBLEMS = "<yellow>Emblemas";
+        public static final String EMBLEMS_LORE = "<gray>Elige qué emblemas se ven junto a tu nombre.";
+        public static final String EMBLEMS_OPEN = "ver tus emblemas";
+        public static final String REFRESH = "<aqua>Actualizar";
+        public static final String REFRESH_LORE = "<gray>Vuelve a leer tus emblemas desde Panitacraft.";
+
+        private Menu() {
+        }
+    }
+
+    public static final class Emblems {
+        public static final String TITLE = "Tus emblemas";
+        public static final String SYSTEM = "<gray>Se muestra siempre junto a tu nombre y no se puede quitar aquí. La nacionalidad se cambia en el sitio web de Panitacraft.";
+        public static final String SHOWN = "<green>Se muestra junto a tu nombre.";
+        public static final String HIDDEN = "<gray>No se muestra.";
+        public static final String HIDE = "ocultarlo";
+        public static final String SHOW = "mostrarlo";
+        public static final String FULL = "Solo puedes mostrar <white>{max}</white> emblema(s) junto a tu nombre. Oculta uno primero.";
+        public static final String RESET = "<red>Restablecer";
+        public static final String RESET_LORE = "<gray>Vuelve a mostrar tus primeros emblemas, sin el orden que elegiste.";
+        public static final String RESET_TITLE = "Restablecer emblemas";
+        public static final String RESET_HEADLINE = "<yellow>¿Restablecer tus emblemas?";
+        public static final String RESET_WARNING = "<gray>Perderás la selección y el orden que elegiste.";
+
+        private Emblems() {
+        }
+    }
+
     public static final class Refresh {
         public static final String UPDATED = "Tus emblemas se actualizaron.";
         public static final String NOT_LINKED = "Tu cuenta no está vinculada a Panitacraft, así que no hay emblemas que mostrar.";
