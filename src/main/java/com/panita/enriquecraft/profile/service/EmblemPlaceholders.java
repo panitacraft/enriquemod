@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.profile.service;
 
 import com.panita.enriquecraft.Enriquecraft;
+import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
@@ -23,10 +24,12 @@ public final class EmblemPlaceholders {
 
     private final ProfileService profiles;
     private final EmblemTooltip tooltip;
+    private final InlineArts arts;
 
-    public EmblemPlaceholders(ProfileService profiles, EmblemTooltip tooltip) {
+    public EmblemPlaceholders(ProfileService profiles, EmblemTooltip tooltip, InlineArts arts) {
         this.profiles = profiles;
         this.tooltip = tooltip;
+        this.arts = arts;
     }
 
     public void register() {
@@ -42,7 +45,7 @@ public final class EmblemPlaceholders {
     Component system(List<EmblemView> emblems) {
         MutableComponent text = Component.empty();
         for (EmblemView emblem : emblems) {
-            text.append(tooltip.glyph(emblem)).append(Component.literal(" "));
+            text.append(drawn(emblem)).append(Component.literal(" "));
         }
         return text;
     }
@@ -51,9 +54,21 @@ public final class EmblemPlaceholders {
     Component lore(List<EmblemView> emblems) {
         MutableComponent text = Component.empty();
         for (EmblemView emblem : emblems) {
-            text.append(Component.literal(" ")).append(tooltip.glyph(emblem));
+            text.append(Component.literal(" ")).append(drawn(emblem));
         }
         return text;
+    }
+
+    /**
+     * The emblem as its character, or, for a client that draws art, as its image when it has one. Both show the tooltip when pointed at:
+     * the hover is on the whole, so the image has it too.
+     */
+    private Component drawn(EmblemView emblem) {
+        Component glyph = tooltip.glyph(emblem);
+        if (emblem.iconUrl().isEmpty()) {
+            return glyph;
+        }
+        return arts.wrap(glyph, emblem.iconUrl().get()).copy().withStyle(style -> style.withHoverEvent(tooltip.hoverEvent(emblem)));
     }
 
     private static Identifier id(String path) {

@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.profile;
 
+import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -54,7 +55,7 @@ public final class ProfileModule implements EnriquecraftModule {
         RefreshCooldown cooldown = new RefreshCooldown(config.refreshCooldownSeconds::get, Instant::now);
 
         EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get);
-        new EmblemPlaceholders(profiles, tooltip).register();
+        new EmblemPlaceholders(profiles, tooltip, services.get(InlineArts.class)).register();
 
         OpenMenus openMenus = new OpenMenus();
         profiles.onUpdated(player -> openMenus.refresh(player.getUUID()));

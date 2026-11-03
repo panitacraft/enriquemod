@@ -49,9 +49,14 @@ public final class EmblemTooltip {
         return text;
     }
 
+    /** What shows the tooltip when something is pointed at. */
+    public HoverEvent hoverEvent(EmblemView emblem) {
+        return new HoverEvent.ShowText(hover(emblem));
+    }
+
     /** The character of the emblem in its color, which shows the tooltip when pointed at. */
     public Component glyph(EmblemView emblem) {
         return Component.literal(emblem.look().icon()).withColor(emblem.look().textColor().getValue())
-                .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover(emblem))));
+                .withStyle(style -> style.withHoverEvent(hoverEvent(emblem)));
     }
 }
