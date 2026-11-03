@@ -9,6 +9,7 @@ import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ChestStyle;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
+import com.panita.enriquecraft.core.ui.PlayerModels;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiService;
@@ -20,6 +21,7 @@ import com.panita.enriquecraft.profile.service.EmblemView;
 import com.panita.enriquecraft.profile.service.PlayerEmblems;
 import com.panita.enriquecraft.profile.service.ProfileRefresher;
 import com.panita.enriquecraft.profile.service.ProfileService;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
@@ -93,11 +95,12 @@ final class ProfileMenu extends UiMenu {
         PlayerEmblems emblems = profiles.emblemsOf(id);
         tooltip.announce(player, Stream.concat(emblems.system().stream(), emblems.selectable().stream()).toList());
 
-        UiElement.Detail head = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
-                Component.literal(player.getGameProfile().name()), List.of());
-        UiElement facts = new UiElement.Column(factLines(player, profiles.profileOf(id)).stream().<UiElement>map(UiElement.Label::new).toList(),
-                UiElement.Align.START);
-        UiElement identity = new UiElement.Row(List.of(head, facts));
+        UiElement.Detail model = new UiElement.Detail(PlayerModels.ofViewer(PlayerHeads.item(player.getGameProfile())), Component.empty(), List.of());
+        List<UiElement> lines = new ArrayList<>();
+        lines.add(new UiElement.Label(Component.literal(player.getGameProfile().name()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
+        factLines(player, profiles.profileOf(id)).forEach(line -> lines.add(new UiElement.Label(line)));
+        UiElement facts = new UiElement.Column(lines, UiElement.Align.START);
+        UiElement identity = new UiElement.Row(List.of(model, facts));
 
         List<UiElement> body = new ArrayList<>();
         body.add(identity);
