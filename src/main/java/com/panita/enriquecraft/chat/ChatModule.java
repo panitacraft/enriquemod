@@ -80,7 +80,7 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(NicknameView.class, new NicknameView(messenger, config));
         services.register(ClientNames.class, new ClientNames());
         services.register(KnownPlayers.class, new KnownPlayers());
-        new ChatPlaceholders(nicknames, selection, messenger, services.get(InlineArts.class), config.rankIconMeta::get).register();
+        new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config.rankIconMeta::get).register();
         SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
