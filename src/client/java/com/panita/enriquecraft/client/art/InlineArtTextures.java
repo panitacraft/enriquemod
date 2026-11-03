@@ -22,8 +22,10 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The images the server announced for glyphs of the chat, and the textures made from them. Only an address the server announced is
@@ -44,6 +46,9 @@ public final class InlineArtTextures {
     private static final int HEIGHT = 8;
     private static final int MAX_WIDTH = 64;
     private static final int MAX_IMAGES = 256;
+    /** A fetch that fails is tried again a few times, as the network may only have hiccuped; the server announces an image once. */
+    private static final int MAX_ATTEMPTS = 3;
+    private static final int RETRY_SECONDS = 4;
     private static final int MAX_BYTES = 2 * 1024 * 1024;
     /** The longest side of the picture an item is drawn as: emblems are shown at 32 pixels at most, at any GUI scale. */
     static final int ICON_SIDE = 128;
@@ -52,6 +57,7 @@ public final class InlineArtTextures {
     private static final class Entry {
         final InlineArtGlyph glyph = new InlineArtGlyph();
         boolean requested;
+        int attempts;
         Identifier texture;
         Identifier iconTexture;
     }
@@ -101,12 +107,18 @@ public final class InlineArtTextures {
             return;
         }
         entry.requested = true;
+        entry.attempts++;
         Minecraft client = Minecraft.getInstance();
         FETCHER.fetch(URI.create(url))
                 .thenApplyAsync(InlineArtTextures::prepare, WORKER)
                 .whenComplete((prepared, failure) -> client.execute(() -> {
                     if (failure != null) {
-                        LOGGER.warn("The art {} ({}) could not be loaded: {}", id, url, String.valueOf(failure.getCause() != null ? failure.getCause() : failure));
+                        LOGGER.warn("The art {} ({}) could not be loaded (attempt {}): {}", id, url, entry.attempts,
+                                String.valueOf(failure.getCause() != null ? failure.getCause() : failure));
+                        if (entry.attempts < MAX_ATTEMPTS) {
+                            entry.requested = false;
+                            CompletableFuture.delayedExecutor(RETRY_SECONDS, TimeUnit.SECONDS).execute(() -> client.execute(() -> expect(id, url)));
+                        }
                     } else if (ENTRIES.get(id) == entry) {
                         show(client, id, entry, prepared);
                     }
