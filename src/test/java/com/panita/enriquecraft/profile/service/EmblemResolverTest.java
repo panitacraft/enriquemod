@@ -107,12 +107,12 @@ class EmblemResolverTest {
     }
 
     @Test
-    void titlesAreKeptApartAndNeverChosen() {
+    void titlesAreNeverShownOrChosen() {
         PlayerEmblems emblems = resolver.resolve(profile(emblem("rey", EmblemCategory.TITLE, 1), emblem("a", EmblemCategory.EMBLEM, 2)),
                 Optional.empty());
 
-        assertEquals(List.of("rey"), ids(emblems.titles()));
         assertEquals(List.of("a"), ids(emblems.chosen()));
+        assertEquals(List.of("a"), ids(emblems.selectable()));
     }
 
     @Test

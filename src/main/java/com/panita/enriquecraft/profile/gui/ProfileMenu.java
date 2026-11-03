@@ -1,10 +1,11 @@
 package com.panita.enriquecraft.profile.gui;
 
+import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
-import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.network.ButtonRole;
+import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ChestStyle;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
@@ -27,7 +28,6 @@ import net.minecraft.world.item.Items;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,10 +37,14 @@ import java.util.stream.Stream;
  * A player's own profile: who they are on this server and on Panitacraft, and the emblems that show next to their name. From it they
  * can read their emblems again from Panitacraft and go to the screen where they choose them. The data is read again on every redraw,
  * so it follows a refresh that finishes while the menu is open.
+ * <p>
+ * The client companion's screen has the player and their facts on top, then the system emblems and below them the player's other
+ * emblems, each as a small square with its image. A chest keeps to a row of cards, since it has no room for more.
  */
 final class ProfileMenu extends UiMenu {
 
     private static final int ROW_WIDTH = 9;
+    private static final int GRID_COLUMNS = 6;
 
     private final ProfileMenus menus;
     private final ProfileService profiles;
@@ -80,28 +84,55 @@ final class ProfileMenu extends UiMenu {
         openMenus.closed(viewer().getUUID(), this);
     }
 
-    /** The client companion draws the title of a card under its item, so its tooltip starts with the title as a line of its own. */
+    /** The client companion: the player and their facts side by side, then the emblems as squares. */
     @Override
     protected UiElement describe(UiBuilder builder) {
-        return describe(builder, true);
+        ServerPlayer player = viewer();
+        UUID id = player.getUUID();
+        openMenus.seen(id, this);
+        PlayerEmblems emblems = profiles.emblemsOf(id);
+        tooltip.announce(player, Stream.concat(emblems.system().stream(), emblems.selectable().stream()).toList());
+
+        UiElement.Detail head = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
+                Component.literal(player.getGameProfile().name()), List.of());
+        UiElement facts = new UiElement.Column(factLines(player, profiles.profileOf(id)).stream().<UiElement>map(UiElement.Label::new).toList(),
+                UiElement.Align.START);
+        UiElement identity = new UiElement.Row(List.of(head, facts));
+
+        List<UiElement> body = new ArrayList<>();
+        body.add(identity);
+        body.add(new UiElement.Divider());
+        body.add(new UiElement.Label(factory().text(ProfileMessages.Menu.EMBLEMS_HEADER)));
+        if (!emblems.system().isEmpty()) {
+            body.add(new UiElement.Row(emblems.system().stream().map(emblem -> square(builder, emblem, "")).toList()));
+            body.add(new UiElement.Divider());
+        }
+        List<EmblemView> chosen = emblems.chosen();
+        List<UiElement> squares = emblems.selectable().stream()
+                .map(emblem -> square(builder, emblem, chosen.stream().anyMatch(shown -> shown.id().equals(emblem.id())) ? "✔" : ""))
+                .toList();
+        if (squares.isEmpty()) {
+            body.add(new UiElement.Label(factory().text(ProfileMessages.Menu.NO_EMBLEMS)));
+        } else {
+            body.add(new UiElement.Grid(Math.min(GRID_COLUMNS, squares.size()), (squares.size() + GRID_COLUMNS - 1) / GRID_COLUMNS, squares));
+        }
+        body.add(controls(builder));
+        return new UiElement.Column(body);
     }
 
-    /** A chest shows the title as the name of the item, so its lines do not repeat it. */
+    /** A chest: the player, the emblems that show next to their name as cards, and the controls. */
     @Override
     protected UiElement describeChest(UiBuilder builder) {
-        return describe(builder, false);
-    }
-
-    private UiElement describe(UiBuilder builder, boolean titleInTooltip) {
         ServerPlayer player = viewer();
         openMenus.seen(player.getUUID(), this);
-        UUID id = player.getUUID();
-        Optional<ModProfile> profile = profiles.profileOf(id);
-        PlayerEmblems emblems = profiles.emblemsOf(id);
+        PlayerEmblems emblems = profiles.emblemsOf(player.getUUID());
         tooltip.announce(player, Stream.concat(emblems.system().stream(), emblems.chosen().stream()).toList());
-
         UiElement.Detail detail = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
-                Component.literal(player.getGameProfile().name()), lines(player, profile, emblems));
+                Component.literal(player.getGameProfile().name()), factLines(player, profiles.profileOf(player.getUUID())));
+        return new UiElement.Column(List.of(detail, cards(builder, emblems), controls(builder)));
+    }
+
+    private UiElement controls(UiBuilder builder) {
         UiElement none = new UiElement.Spacer();
         UiElement openEmblems = builder.button(ButtonRole.NONE, new ItemStack(Items.NAME_TAG), factory().text(ProfileMessages.Menu.EMBLEMS),
                 List.of(factory().text(ProfileMessages.Menu.EMBLEMS_LORE), Component.empty(),
@@ -118,26 +149,30 @@ final class ProfileMenu extends UiMenu {
                 });
         UiElement close = builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE), List.of(),
                 click -> ui().close(click.player()));
-        UiElement controls = new UiElement.Row(List.of(none, none, openEmblems, none, close, none, refresh, none, none));
-        return new UiElement.Column(List.of(detail, shown(builder, emblems, titleInTooltip), controls));
+        return new UiElement.Row(List.of(none, none, openEmblems, none, close, none, refresh, none, none));
     }
 
-    /** The emblems that show next to the player's name, as cards; the row keeps its place when there are none. */
-    private UiElement shown(UiBuilder builder, PlayerEmblems emblems, boolean titleInTooltip) {
+    /** One emblem as a square with its image; pressing it opens the screen where the emblems are chosen. */
+    private UiElement square(UiBuilder builder, EmblemView emblem, String badge) {
+        List<Component> lines = new ArrayList<>(tooltip.description(emblem));
+        lines.add(Component.empty());
+        lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN));
+        return builder.button(ButtonRole.NONE, tooltip.icon(emblem), tooltip.title(emblem), lines, badge, click -> {
+            if (click.isLeft()) {
+                menus.emblemsMenu(this).open(click.player());
+            }
+        });
+    }
+
+    /** The emblems that show next to the player's name, as cards of a chest; the row keeps its place when there are none. */
+    private UiElement cards(UiBuilder builder, PlayerEmblems emblems) {
         List<EmblemView> shown = Stream.concat(emblems.system().stream(), emblems.chosen().stream()).limit(ROW_WIDTH).toList();
-        if (shown.isEmpty()) {
-            return new UiElement.Row(List.of());
-        }
         List<UiElement> cards = new ArrayList<>();
         for (EmblemView emblem : shown) {
-            List<Component> lines = new ArrayList<>();
-            if (titleInTooltip) {
-                lines.add(tooltip.title(emblem));
-            }
-            lines.addAll(tooltip.description(emblem));
+            List<Component> lines = new ArrayList<>(tooltip.description(emblem));
             lines.add(Component.empty());
             lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN));
-            cards.add(builder.detail(new ItemStack(Items.NAME_TAG), tooltip.title(emblem), List.of(), lines, click -> {
+            cards.add(builder.detail(tooltip.icon(emblem), tooltip.title(emblem), List.of(), lines, click -> {
                 if (click.isLeft()) {
                     menus.emblemsMenu(this).open(click.player());
                 }
@@ -146,23 +181,25 @@ final class ProfileMenu extends UiMenu {
         return new UiElement.Row(cards);
     }
 
-    private List<Component> lines(ServerPlayer player, Optional<ModProfile> profile, PlayerEmblems emblems) {
+    /** The facts about the player, one line each; the Discord name is grayed out. */
+    private List<Component> factLines(ServerPlayer player, Optional<ModProfile> profile) {
         List<Component> lines = new ArrayList<>();
-        profile.ifPresentOrElse(known -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DISCORD)
-                .with("discord", known.discordName()))), () -> lines.add(factory().text(ProfileMessages.Menu.NO_DATA)));
+        profile.ifPresentOrElse(known -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DISCORD).with("discord", known.discordName()))),
+                () -> lines.add(factory().text(ProfileMessages.Menu.NO_DATA)));
+        boolean premium = AuthMode.of(player.getUUID(), player.getGameProfile().name()) == AuthMode.PREMIUM;
+        lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_STATUS)
+                .with("status", premium ? ProfileMessages.Menu.PREMIUM : ProfileMessages.Menu.NO_PREMIUM)));
         lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_PLAY_TIME).with("time", playTime(player))));
-        if (!emblems.titles().isEmpty()) {
-            lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_TITLES)
-                    .with("titles", String.join(", ", emblems.titles().stream().map(EmblemView::title).toList()))));
-        }
-        if (profile.isPresent() && emblems.system().isEmpty() && emblems.selectable().isEmpty()) {
-            lines.add(factory().text(ProfileMessages.Menu.NO_EMBLEMS));
-        }
-        return Collections.unmodifiableList(lines);
+        lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DEATHS).with("count", deaths(player))));
+        return lines;
     }
 
     private static String playTime(ServerPlayer player) {
         long seconds = Math.max(0, player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME))) / 20L;
         return Durations.format(Duration.ofSeconds(seconds));
+    }
+
+    private static int deaths(ServerPlayer player) {
+        return Math.max(0, player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS)));
     }
 }

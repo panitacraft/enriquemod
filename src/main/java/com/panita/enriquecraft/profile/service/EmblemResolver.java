@@ -64,13 +64,11 @@ public final class EmblemResolver {
                 .filter(emblem -> emblem.category() == EmblemCategory.EMBLEM || emblem.category() == EmblemCategory.LOCAL_EMBLEM)
                 .filter(emblem -> !promotedIds.contains(emblem.id()))
                 .toList();
-        List<ApiEmblem> titles = profile.emblems().stream().filter(emblem -> emblem.category() == EmblemCategory.TITLE).toList();
 
         return new PlayerEmblems(
                 system.stream().limit(config.systemMax.get()).map(this::view).toList(),
                 chosenFrom(selectable, chosen).stream().map(this::view).toList(),
-                selectable.stream().map(this::view).toList(),
-                titles.stream().map(this::view).toList());
+                selectable.stream().map(this::view).toList());
     }
 
     private List<ApiEmblem> chosenFrom(List<ApiEmblem> selectable, Optional<List<String>> chosen) {

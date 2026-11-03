@@ -8,6 +8,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +43,12 @@ public final class EmblemTooltip {
         Component icon = Component.literal(emblem.look().icon()).withColor(color);
         Component drawn = emblem.iconUrl().map(url -> arts.wrap(icon, url)).orElse(icon);
         return Component.empty().append(drawn).append(Component.literal(" " + emblem.title()).withColor(color));
+    }
+
+    /** The name tag that stands for the emblem in a menu: its image, for a client that draws art. */
+    public ItemStack icon(EmblemView emblem) {
+        ItemStack tag = new ItemStack(Items.NAME_TAG);
+        return emblem.iconUrl().map(url -> arts.item(tag, url)).orElse(tag);
     }
 
     /** Tells a player who draws art what the images of these emblems are, before a screen or a line that shows their titles. */

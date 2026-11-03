@@ -23,7 +23,11 @@ public final class ProfileMessages {
         public static final String LINE_PLAYER = "<gray>Jugador: <white>{name}";
         public static final String LINE_DISCORD = "<gray>Discord: <white>{discord}";
         public static final String LINE_PLAY_TIME = "<gray>Tiempo de juego: <white>{time}";
-        public static final String LINE_TITLES = "<gray>Títulos: <white>{titles}";
+        public static final String LINE_STATUS = "<gray>Estado de cuenta: <white>{status}";
+        public static final String PREMIUM = "Premium";
+        public static final String NO_PREMIUM = "No premium";
+        public static final String LINE_DEATHS = "<gray>Muertes: <white>{count}";
+        public static final String EMBLEMS_HEADER = "<light_purple>Emblemas";
         public static final String NO_DATA = "<gray>Tu cuenta no está vinculada a Panitacraft, o no se pudieron leer tus datos.";
         public static final String NO_EMBLEMS = "<gray>Aún no tienes emblemas de esta edición.";
         public static final String EMBLEMS = "<yellow>Emblemas";

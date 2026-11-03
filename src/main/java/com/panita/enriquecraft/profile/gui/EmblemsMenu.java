@@ -110,7 +110,8 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
             }
         }
         String badge = slot.kind() == Kind.CHOSEN ? CHOSEN_BADGE : "";
-        ItemStack icon = isLifted(slot) ? factory().item(Items.NAME_TAG).glint().build() : new ItemStack(Items.NAME_TAG);
+        ItemStack tag = tooltip.icon(emblem);
+        ItemStack icon = isLifted(slot) ? factory().item(tag).glint().build() : tag;
         return builder.button(ButtonRole.NONE, icon, tooltip.title(emblem), lines, badge, click -> {
             if (!click.isLeft() || slot.kind() == Kind.SYSTEM) {
                 return;
