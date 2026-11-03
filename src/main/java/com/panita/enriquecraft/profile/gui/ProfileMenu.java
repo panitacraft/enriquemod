@@ -118,7 +118,9 @@ final class ProfileMenu extends UiMenu {
         }
         List<UiElement> cards = new ArrayList<>();
         for (EmblemView emblem : shown) {
-            List<Component> lines = new ArrayList<>(tooltip.description(emblem));
+            List<Component> lines = new ArrayList<>();
+            lines.add(tooltip.title(emblem));
+            lines.addAll(tooltip.description(emblem));
             lines.add(Component.empty());
             lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN));
             cards.add(builder.detail(new ItemStack(Items.NAME_TAG), tooltip.title(emblem), List.of(), lines, click -> {
