@@ -19,7 +19,10 @@ public enum ClientFeature {
     MEDIA_PREVIEW("media_preview"),
 
     /** Sends a screenshot the player chose to share, in pieces, for the server to check and pass on. */
-    SCREENSHOT_SHARE("screenshot_share");
+    SCREENSHOT_SHARE("screenshot_share"),
+
+    /** Draws images inside lines of text (a rank, an emblem), which the server describes with a translation and announces once. */
+    INLINE_ART("inline_art");
 
     private final String id;
 
