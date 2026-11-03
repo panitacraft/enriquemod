@@ -39,21 +39,27 @@ public final class InlineArtTextures {
     private static final Logger LOGGER = LoggerFactory.getLogger(InlineArtTextures.class);
 
     /** The texture has this many pixels for each pixel of the screen, so the image stays sharp on a bigger GUI scale. */
-    private static final int SCALE = 2;
+    private static final int SCALE = 4;
     /** The height of a glyph in screen pixels, the height of the text. */
     private static final int HEIGHT = 8;
     private static final int MAX_WIDTH = 64;
     private static final int MAX_IMAGES = 256;
-    private static final int MAX_BYTES = 1024 * 1024;
+    private static final int MAX_BYTES = 2 * 1024 * 1024;
+    /** The longest side of the picture an item is drawn as: emblems are shown at 32 pixels at most, at any GUI scale. */
+    static final int ICON_SIDE = 128;
 
     /** What the client knows about the image of one glyph. */
     private static final class Entry {
         final InlineArtGlyph glyph = new InlineArtGlyph();
         boolean requested;
         Identifier texture;
+        Identifier iconTexture;
     }
 
-    private record Prepared(int width, int height, int[] pixels) {
+    private record Pixels(int width, int height, int[] argb) {
+    }
+
+    private record Prepared(Pixels glyph, Pixels icon) {
     }
 
     private static final Map<String, Entry> ENTRIES = new HashMap<>();
@@ -77,6 +83,12 @@ public final class InlineArtTextures {
             }
         }
         return Optional.empty();
+    }
+
+    /** The picture an item marked with this id is drawn as, once it is ready. */
+    public static Optional<Identifier> iconTexture(String id) {
+        Entry entry = ENTRIES.get(id);
+        return entry == null ? Optional.empty() : Optional.ofNullable(entry.iconTexture);
     }
 
     /** The server said the next lines hold this image: start loading it. Anything that does not add up is ignored. */
@@ -104,7 +116,14 @@ public final class InlineArtTextures {
     /** Forgets everything, as the textures belong to the game session that is ending. */
     public static void clear() {
         Minecraft client = Minecraft.getInstance();
-        ENTRIES.values().stream().filter(entry -> entry.texture != null).forEach(entry -> client.getTextureManager().release(entry.texture));
+        ENTRIES.values().forEach(entry -> {
+            if (entry.texture != null) {
+                client.getTextureManager().release(entry.texture);
+            }
+            if (entry.iconTexture != null) {
+                client.getTextureManager().release(entry.iconTexture);
+            }
+        });
         ENTRIES.values().forEach(entry -> entry.glyph.hide());
         ENTRIES.clear();
     }
@@ -113,39 +132,53 @@ public final class InlineArtTextures {
         return ENTRIES.computeIfAbsent(id, key -> new Entry());
     }
 
-    /** On the worker: decode and scale once to the height of a glyph, keeping the proportions of the image. */
+    /** On the worker: decode, then scale once to the height of a glyph and once to the picture of an item, keeping the proportions. */
     private static Prepared prepare(byte[] bytes) {
         try {
             BufferedImage source = ImageDecoder.decode(bytes);
             int height = HEIGHT * SCALE;
             int width = Math.max(1, Math.min(MAX_WIDTH * SCALE, Math.round(source.getWidth() * (float) height / source.getHeight())));
-            BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D canvas = scaled.createGraphics();
-            try {
-                canvas.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                canvas.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                canvas.drawImage(source, 0, 0, width, height, null);
-            } finally {
-                canvas.dispose();
-            }
-            return new Prepared(width, height, scaled.getRGB(0, 0, width, height, null, 0, width));
+            float fit = Math.min(1.0F, (float) ICON_SIDE / Math.max(source.getWidth(), source.getHeight()));
+            int iconWidth = Math.max(1, Math.round(source.getWidth() * fit));
+            int iconHeight = Math.max(1, Math.round(source.getHeight() * fit));
+            return new Prepared(scale(source, width, height, width, height, 0, 0), scale(source, ICON_SIDE, ICON_SIDE, iconWidth, iconHeight,
+                    (ICON_SIDE - iconWidth) / 2, (ICON_SIDE - iconHeight) / 2));
         } catch (ImageDecoder.DecodeException e) {
             throw new IllegalStateException(e.failure().name(), e);
         }
     }
 
-    /** On the client thread: the texture is made here, and the glyph starts drawing it. */
-    private static void show(Minecraft client, String id, Entry entry, Prepared prepared) {
-        NativeImage pixels = new NativeImage(prepared.width(), prepared.height(), true);
-        for (int y = 0; y < prepared.height(); y++) {
-            for (int x = 0; x < prepared.width(); x++) {
-                pixels.setPixel(x, y, prepared.pixels()[y * prepared.width() + x]);
+    /** The image drawn at the size given, at that place of a canvas that is transparent around it. */
+    private static Pixels scale(BufferedImage source, int width, int height, int drawnWidth, int drawnHeight, int x, int y) {
+        BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D canvas = scaled.createGraphics();
+        try {
+            canvas.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            canvas.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            canvas.drawImage(source, x, y, drawnWidth, drawnHeight, null);
+        } finally {
+            canvas.dispose();
+        }
+        return new Pixels(width, height, scaled.getRGB(0, 0, width, height, null, 0, width));
+    }
+
+    private static Identifier register(Minecraft client, String path, Pixels pixels) {
+        NativeImage image = new NativeImage(pixels.width(), pixels.height(), true);
+        for (int y = 0; y < pixels.height(); y++) {
+            for (int x = 0; x < pixels.width(); x++) {
+                image.setPixel(x, y, pixels.argb()[y * pixels.width() + x]);
             }
         }
-        Identifier texture = Identifier.fromNamespaceAndPath(Enriquecraft.MOD_ID, "inline_art/" + id);
-        client.getTextureManager().register(texture, new DynamicTexture(() -> "enriquecraft inline art", pixels));
-        entry.texture = texture;
-        entry.glyph.show(texture, prepared.width() / (float) SCALE);
+        Identifier texture = Identifier.fromNamespaceAndPath(Enriquecraft.MOD_ID, path);
+        client.getTextureManager().register(texture, new DynamicTexture(() -> "enriquecraft inline art", image));
+        return texture;
+    }
+
+    /** On the client thread: the textures are made here, and the glyph starts drawing its. */
+    private static void show(Minecraft client, String id, Entry entry, Prepared prepared) {
+        entry.texture = register(client, "inline_art/" + id, prepared.glyph());
+        entry.iconTexture = register(client, "inline_art/" + id + "_icon", prepared.icon());
+        entry.glyph.show(entry.texture, prepared.glyph().width() / (float) SCALE);
         // The lines that hold the glyph were laid out before it had its width
         client.gui.hud.getChat().rescaleChat();
     }

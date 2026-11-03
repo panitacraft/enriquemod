@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.client.ui;
 
+import com.panita.enriquecraft.client.art.ArtItems;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.panita.enriquecraft.core.network.UiClickC2S;
 import com.panita.enriquecraft.core.network.UiClosedC2S;
@@ -580,7 +581,7 @@ final class ServerUiScreen extends Screen implements UiActions {
         graphics.pose().pushMatrix();
         graphics.pose().translate(ghostX, ghostY);
         graphics.pose().scale(GHOST_SCALE, GHOST_SCALE);
-        graphics.item(picked.icon(), -8, -8);
+        ArtItems.draw(graphics, picked.icon(), -8, -8);
         graphics.pose().popMatrix();
     }
 

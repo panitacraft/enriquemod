@@ -5,6 +5,8 @@ import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.network.ClientFeature;
 import com.panita.enriquecraft.core.network.InlineArtS2C;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.HoverEvent;
@@ -12,6 +14,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -43,6 +47,9 @@ public final class InlineArts {
     /** The one character of a glyph. */
     public static final String GLYPH = "";
 
+    /** The key in the custom data of an item that names the image a client companion draws in its place. */
+    public static final String ITEM_KEY = "enriquecraft_art";
+
     private static final int MAX_KNOWN = 512;
 
     private final ClientCapabilities capabilities;
@@ -67,19 +74,46 @@ public final class InlineArts {
         if (!ArtLinks.isTrusted(url)) {
             return text;
         }
+        String id = register(url).orElseThrow();
+        Identifier font = Identifier.fromNamespaceAndPath(Enriquecraft.MOD_ID, FONT_PATH + id);
+        MutableComponent glyph = Component.literal(GLYPH).withStyle(style -> style.withFont(new FontDescription.Resource(font)).withColor(0xFFFFFF));
+        return Component.translatableWithFallback(KEY, "%1$s", text, glyph);
+    }
+
+    /**
+     * The item with the image marked on it: a client companion draws the image in its place, every other client draws the item. The
+     * mark is the id in the custom data of the item, so no packet changes; announce the id as for any other image.
+     */
+    public ItemStack item(ItemStack base, String url) {
+        register(url).ifPresent(id -> {
+            CompoundTag mark = new CompoundTag();
+            mark.putString(ITEM_KEY, id);
+            base.set(DataComponents.CUSTOM_DATA, CustomData.of(mark));
+        });
+        return base;
+    }
+
+    /** The id of the image at a trusted address, remembered so it can be announced; empty for any other address. */
+    public Optional<String> register(String url) {
+        if (!ArtLinks.isTrusted(url)) {
+            return Optional.empty();
+        }
         String id = ArtLinks.idOf(url);
         synchronized (known) {
             known.put(id, url);
         }
-        Identifier font = Identifier.fromNamespaceAndPath(Enriquecraft.MOD_ID, FONT_PATH + id);
-        MutableComponent glyph = Component.literal(GLYPH).withStyle(style -> style.withFont(new FontDescription.Resource(font)).withColor(0xFFFFFF));
-        return Component.translatableWithFallback(KEY, "%1$s", text, glyph);
+        return Optional.of(id);
     }
 
     /** Tells the readers who draw art what the images of the line are, once each. Call it before the line is sent. */
     public void announce(Collection<ServerPlayer> readers, Component line) {
         Set<String> ids = new HashSet<>();
         collect(line, ids);
+        announceIds(readers, ids);
+    }
+
+    /** Tells the readers who draw art what these images (by id, from {@link #register}) are, once each. */
+    public void announceIds(Collection<ServerPlayer> readers, Set<String> ids) {
         if (ids.isEmpty()) {
             return;
         }

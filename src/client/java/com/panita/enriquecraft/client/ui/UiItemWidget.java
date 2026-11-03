@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.client.ui;
 
+import com.panita.enriquecraft.client.art.ArtItems;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -27,7 +28,7 @@ final class UiItemWidget extends AbstractWidget {
         graphics.pose().pushMatrix();
         graphics.pose().translate(getX(), getY());
         graphics.pose().scale(getWidth() / ITEM_SIZE, getHeight() / ITEM_SIZE);
-        graphics.item(stack, 0, 0);
+        ArtItems.draw(graphics, stack, 0, 0);
         graphics.pose().popMatrix();
     }
 
