@@ -8,9 +8,7 @@ import com.mojang.serialization.JsonOps;
 import com.panita.enriquecraft.auth.data.AuthMode;
 import net.minecraft.util.StringUtil;
 
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -20,43 +18,32 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
- * Reads the list of players over HTTP with the JDK's own client. The address and the timeout are read for each
- * request, so a reload of the config takes effect at once; the key is only ever sent in a header and never
- * appears in a log or a failure reason.
+ * Reads the list of players over HTTP with the JDK's own client. The request, with the address, the timeout and the key, is
+ * made by {@link ApiAccess}.
  */
 public final class HttpPanitaApi implements PanitaApi {
 
     private static final String PATH = "/v1/mod/players";
 
     private final HttpClient client = HttpClient.newHttpClient();
-    private final Supplier<String> baseUrl;
-    private final Supplier<Duration> timeout;
-    private final Supplier<Optional<String>> key;
+    private final ApiAccess access;
+
+    public HttpPanitaApi(ApiAccess access) {
+        this.access = access;
+    }
 
     public HttpPanitaApi(Supplier<String> baseUrl, Supplier<Duration> timeout, Supplier<Optional<String>> key) {
-        this.baseUrl = baseUrl;
-        this.timeout = timeout;
-        this.key = key;
+        this(new ApiAccess(baseUrl, timeout, key));
     }
 
     @Override
     public CompletableFuture<Result> players(Optional<String> etag) {
-        Optional<String> apiKey = key.get();
-        if (apiKey.isEmpty()) {
-            return CompletableFuture.completedFuture(new Result.Failed("there is no API key"));
-        }
-        HttpRequest request;
-        try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl.get() + PATH))
-                    .timeout(timeout.get()).header("Accept", "application/json").header("X-Api-Key", apiKey.get()).GET();
-            etag.ifPresent(tag -> builder.header("If-None-Match", tag));
-            request = builder.build();
-        } catch (IllegalArgumentException e) {
-            return CompletableFuture.completedFuture(new Result.Failed("the API address is not valid"));
-        }
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .<Result>thenApply(response -> read(response.statusCode(), response.headers().firstValue("ETag"), response.body()))
-                .exceptionally(error -> new Result.Failed("the API could not be reached (" + error.getClass().getSimpleName() + ")"));
+        return switch (access.get(PATH, etag)) {
+            case ApiAccess.Prepared.Unavailable unavailable -> CompletableFuture.completedFuture(new Result.Failed(unavailable.reason()));
+            case ApiAccess.Prepared.Ready ready -> client.sendAsync(ready.request(), HttpResponse.BodyHandlers.ofString())
+                    .<Result>thenApply(response -> read(response.statusCode(), response.headers().firstValue("ETag"), response.body()))
+                    .exceptionally(error -> new Result.Failed("the API could not be reached (" + error.getClass().getSimpleName() + ")"));
+        };
     }
 
     /** Turns an answer into a result. Anything that is not exactly the documented list is a failure. */
