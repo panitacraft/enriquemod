@@ -56,6 +56,13 @@ public final class EmblemTooltip {
         arts.announce(List.of(player), Component.empty().append(emblems.stream().map(this::title).reduce(Component.empty(), (all, title) -> all.copy().append(title))));
     }
 
+    /** A note of the menus on short lines, in gray, like a description. */
+    public List<Component> note(String text) {
+        List<Component> lines = new ArrayList<>();
+        TextWrap.lines(text, width.getAsInt()).forEach(line -> lines.add(Component.literal(line).withStyle(ChatFormatting.GRAY)));
+        return lines;
+    }
+
     /** The description on short lines, in gray; none when the emblem has no description. */
     public List<Component> description(EmblemView emblem) {
         List<Component> lines = new ArrayList<>();

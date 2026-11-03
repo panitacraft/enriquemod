@@ -42,7 +42,7 @@ public final class ProfileMessages {
 
     public static final class Emblems {
         public static final String TITLE = "Tus emblemas";
-        public static final String SYSTEM = "<gray>Se muestra siempre junto a tu nombre y no se puede quitar aquí. La nacionalidad se cambia en el sitio web de Panitacraft.";
+        public static final String SYSTEM = "Se muestra siempre junto a tu nombre y no se puede quitar aquí. La nacionalidad se cambia en el sitio web de Panitacraft.";
         public static final String SHOWN = "<green>Se muestra junto a tu nombre.";
         public static final String HIDDEN = "<gray>No se muestra.";
         public static final String HIDE = "ocultarlo";

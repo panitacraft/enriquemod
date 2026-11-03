@@ -99,7 +99,7 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
         List<Component> lines = new ArrayList<>(tooltip.description(emblem));
         lines.add(Component.empty());
         switch (slot.kind()) {
-            case SYSTEM -> lines.add(factory().text(ProfileMessages.Emblems.SYSTEM));
+            case SYSTEM -> lines.addAll(tooltip.note(ProfileMessages.Emblems.SYSTEM));
             case CHOSEN -> {
                 lines.add(factory().text(ProfileMessages.Emblems.SHOWN));
                 lines.add(ClickHints.left(factory(), ProfileMessages.Emblems.HIDE));

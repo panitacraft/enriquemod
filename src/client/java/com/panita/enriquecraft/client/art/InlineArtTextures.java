@@ -106,7 +106,7 @@ public final class InlineArtTextures {
                 .thenApplyAsync(InlineArtTextures::prepare, WORKER)
                 .whenComplete((prepared, failure) -> client.execute(() -> {
                     if (failure != null) {
-                        LOGGER.debug("The art {} could not be loaded", id, failure);
+                        LOGGER.warn("The art {} ({}) could not be loaded: {}", id, url, String.valueOf(failure.getCause() != null ? failure.getCause() : failure));
                     } else if (ENTRIES.get(id) == entry) {
                         show(client, id, entry, prepared);
                     }

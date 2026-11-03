@@ -47,6 +47,8 @@ final class ProfileMenu extends UiMenu {
 
     private static final int ROW_WIDTH = 9;
     private static final int GRID_COLUMNS = 6;
+    /** A short thin line between the system emblems and the others. */
+    private static final String SEPARATOR = "─".repeat(16);
 
     private final ProfileMenus menus;
     private final ProfileService profiles;
@@ -107,8 +109,9 @@ final class ProfileMenu extends UiMenu {
         body.add(new UiElement.Divider());
         body.add(new UiElement.Label(factory().text(ProfileMessages.Menu.EMBLEMS_HEADER)));
         if (!emblems.system().isEmpty()) {
-            body.add(new UiElement.Row(emblems.system().stream().map(emblem -> square(builder, emblem, "")).toList()));
-            body.add(new UiElement.Divider());
+            List<UiElement> system = emblems.system().stream().map(emblem -> square(builder, emblem, "")).toList();
+            body.add(new UiElement.Grid(system.size(), 1, system));
+            body.add(new UiElement.Label(Component.literal(SEPARATOR).withStyle(ChatFormatting.DARK_GRAY)));
         }
         List<EmblemView> chosen = emblems.chosen();
         List<UiElement> squares = emblems.selectable().stream()
