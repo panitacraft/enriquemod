@@ -12,6 +12,7 @@ import com.panita.enriquecraft.chat.message.SenderNameView;
 import com.panita.enriquecraft.chat.message.SudoView;
 import com.panita.enriquecraft.chat.message.SystemMessageView;
 import com.panita.enriquecraft.chat.message.WelcomeView;
+import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.chat.service.ClientNames;
 import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
@@ -61,7 +62,7 @@ public final class ChatModule implements EnriquecraftModule {
         NicknameService nicknames = new NicknameService(services.get(WorldData.class), parser, config, Instant::now);
         Messenger messenger = services.get(Messenger.class);
         SenderNameView names = new SenderNameView(messenger, nicknames);
-        ChatView view = new ChatView(messenger, names);
+        ChatView view = new ChatView(messenger, names, new ChatHeads(config.heads::get));
         HeldPlayers held = services.get(HeldPlayers.class);
         ChatService chat = new ChatService(parser, view, held, selection);
         ReplyTracker replies = new ReplyTracker();

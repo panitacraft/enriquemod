@@ -14,6 +14,7 @@ public final class ChatConfig implements ModConfig {
 
     public final ConfigValue<Map<String, ChannelDefinition>> channels;
     public final ConfigValue<Map<String, String>> emojis;
+    public final ConfigValue<Boolean> heads;
     public final ConfigValue<Integer> nicknameMinLength;
     public final ConfigValue<Integer> nicknameMaxLength;
     public final ConfigValue<Integer> nicknameCooldownSeconds;
@@ -38,6 +39,9 @@ public final class ChatConfig implements ModConfig {
                         + "Use symbols the game's font draws. Remove every entry to turn emojis off.",
                 trigger -> !trigger.isBlank() && trigger.length() <= 32 && trigger.strip().equals(trigger) && !trigger.contains(" "),
                 "must be 1 to 32 characters long, without spaces");
+        heads = builder.bool("heads", true,
+                "Starts each line of a player in chat with their head, which any client draws at the size of the text. Players with the client\n"
+                        + "mod see it beside the line instead. Lines of Discord members, private messages and the game's own messages have none.");
         nicknameMinLength = builder.intRange("nickname.minLength", 3, 1, 32,
                 "The fewest characters a nickname can have, not counting its colors and styles.");
         nicknameMaxLength = builder.intRange("nickname.maxLength", 16, 1, 16,
