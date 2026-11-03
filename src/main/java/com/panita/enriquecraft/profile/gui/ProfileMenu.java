@@ -99,7 +99,8 @@ final class ProfileMenu extends UiMenu {
         List<UiElement> lines = new ArrayList<>();
         lines.add(new UiElement.Label(Component.literal(player.getGameProfile().name()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
         factLines(player, profiles.profileOf(id)).forEach(line -> lines.add(new UiElement.Label(line)));
-        UiElement facts = new UiElement.Column(lines, UiElement.Align.START);
+        // A column beside the model would start at the top; inside a row of its own it sits in the middle of the model's height
+        UiElement facts = new UiElement.Row(List.of(new UiElement.Column(lines, UiElement.Align.START)));
         UiElement identity = new UiElement.Row(List.of(model, facts));
 
         List<UiElement> body = new ArrayList<>();
