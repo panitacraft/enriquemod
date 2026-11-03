@@ -74,6 +74,21 @@ class ImageFetcherTest {
         }
     }
 
+    @Test
+    void downloadsThatFillTheWholePoolStillFinish() throws Exception {
+        // The client needs threads of its own for the connection; sharing the pool starved it until the connect timed out
+        ExecutorService busy = Executors.newFixedThreadPool(2);
+        try {
+            ImageFetcher shared = new ImageFetcher(busy, LIMIT, Duration.ofSeconds(2));
+            var first = shared.fetch(url("/ok"));
+            var second = shared.fetch(url("/ok"));
+            assertArrayEquals(new byte[]{1, 2, 3}, first.get(5, TimeUnit.SECONDS));
+            assertArrayEquals(new byte[]{1, 2, 3}, second.get(5, TimeUnit.SECONDS));
+        } finally {
+            busy.shutdownNow();
+        }
+    }
+
     private URI url(String path) {
         return URI.create("http://127.0.0.1:" + server.getAddress().getPort() + path);
     }

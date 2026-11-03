@@ -46,7 +46,8 @@ public final class ImageFetcher {
         this.executor = executor;
         this.maxBytes = maxBytes;
         this.timeout = timeout;
-        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).connectTimeout(timeout).executor(executor).build();
+        // The client keeps its own threads: the worker's are all busy inside blocking sends, and the connection needs one to finish
+        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).connectTimeout(timeout).build();
     }
 
     /** The bytes of the image; a failure is a {@link FetchException}, seen as the cause of the {@link CompletionException}. */
