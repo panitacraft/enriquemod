@@ -87,6 +87,7 @@ final class ProfileMenu extends UiMenu {
         UUID id = player.getUUID();
         Optional<ModProfile> profile = profiles.profileOf(id);
         PlayerEmblems emblems = profiles.emblemsOf(id);
+        tooltip.announce(player, Stream.concat(emblems.system().stream(), emblems.chosen().stream()).toList());
 
         UiElement.Detail detail = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
                 Component.literal(player.getGameProfile().name()), lines(player, profile, emblems));

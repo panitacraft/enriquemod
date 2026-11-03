@@ -7,6 +7,7 @@ import com.panita.enriquecraft.core.network.InlineArtS2C;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
@@ -115,6 +116,9 @@ public final class InlineArts {
                     collect(component, ids);
                 }
             }
+        }
+        if (text.getStyle().getHoverEvent() instanceof HoverEvent.ShowText hover) {
+            collect(hover.value(), ids);
         }
         text.getSiblings().forEach(sibling -> collect(sibling, ids));
     }

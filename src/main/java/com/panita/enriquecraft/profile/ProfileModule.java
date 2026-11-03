@@ -54,7 +54,7 @@ public final class ProfileModule implements EnriquecraftModule {
         ProfileLoader loader = new ProfileLoader(new HttpEmblemApi(services.get(ApiAccess.class)), linked, cache, config.editionId::get);
         RefreshCooldown cooldown = new RefreshCooldown(config.refreshCooldownSeconds::get, Instant::now);
 
-        EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get);
+        EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get, services.get(InlineArts.class));
         new EmblemPlaceholders(profiles, tooltip, services.get(InlineArts.class)).register();
 
         OpenMenus openMenus = new OpenMenus();

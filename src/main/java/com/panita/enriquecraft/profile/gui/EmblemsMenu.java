@@ -24,6 +24,7 @@ import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Where a player chooses which emblems show next to their name and in which order. The system emblems come first and cannot be changed
@@ -83,6 +84,7 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
     protected List<Slot> entries() {
         openMenus.seen(viewer().getUUID(), this);
         PlayerEmblems emblems = profiles.emblemsOf(viewer().getUUID());
+        tooltip.announce(viewer(), Stream.concat(emblems.system().stream(), emblems.selectable().stream()).toList());
         List<Slot> slots = new ArrayList<>();
         emblems.system().forEach(emblem -> slots.add(new Slot(emblem, Kind.SYSTEM)));
         emblems.chosen().forEach(emblem -> slots.add(new Slot(emblem, Kind.CHOSEN)));

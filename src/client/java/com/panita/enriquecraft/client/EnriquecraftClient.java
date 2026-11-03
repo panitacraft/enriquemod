@@ -1,11 +1,13 @@
 package com.panita.enriquecraft.client;
 
+import com.panita.enriquecraft.client.art.InlineArtTextures;
 import com.panita.enriquecraft.client.chat.ChatImages;
 import com.panita.enriquecraft.client.share.ScreenshotSharing;
 import com.panita.enriquecraft.client.ui.ServerUiNetworking;
 import com.panita.enriquecraft.discord.network.MediaPreviewS2C;
 import com.panita.enriquecraft.core.network.ClientFeature;
 import com.panita.enriquecraft.core.network.HelloC2S;
+import com.panita.enriquecraft.core.network.InlineArtS2C;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -20,7 +22,8 @@ import java.util.Set;
 public final class EnriquecraftClient implements ClientModInitializer {
 
     /** The enhancements this client implements; grows as each one is added. */
-    private static final Set<ClientFeature> SUPPORTED = EnumSet.of(ClientFeature.CUSTOM_UI, ClientFeature.MEDIA_PREVIEW, ClientFeature.SCREENSHOT_SHARE);
+    private static final Set<ClientFeature> SUPPORTED = EnumSet.of(ClientFeature.CUSTOM_UI, ClientFeature.MEDIA_PREVIEW, ClientFeature.SCREENSHOT_SHARE,
+            ClientFeature.INLINE_ART);
 
     @Override
     public void onInitializeClient() {
@@ -28,7 +31,11 @@ public final class EnriquecraftClient implements ClientModInitializer {
         CommandKeys.register();
         ScreenshotSharing.register();
         ClientPlayNetworking.registerGlobalReceiver(MediaPreviewS2C.TYPE, (payload, context) -> ChatImages.expect(payload.url()));
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ChatImages::clear));
+        ClientPlayNetworking.registerGlobalReceiver(InlineArtS2C.TYPE, (payload, context) -> InlineArtTextures.expect(payload.id(), payload.url()));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
+            ChatImages.clear();
+            InlineArtTextures.clear();
+        }));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> announce());
     }
 

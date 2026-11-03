@@ -1,13 +1,16 @@
 package com.panita.enriquecraft.profile.message;
 
+import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.core.message.TextWrap;
 import com.panita.enriquecraft.profile.service.EmblemView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.IntSupplier;
 
@@ -19,17 +22,30 @@ import java.util.function.IntSupplier;
 public final class EmblemTooltip {
 
     private final IntSupplier width;
+    private final InlineArts arts;
 
     /**
      * @param width how many characters a line of the description may have
      */
-    public EmblemTooltip(IntSupplier width) {
+    public EmblemTooltip(IntSupplier width, InlineArts arts) {
         this.width = width;
+        this.arts = arts;
     }
 
-    /** The title line: the character, a space and the title, in the emblem's color. */
+    /**
+     * The title line: the character, a space and the title, in the emblem's color. A client that draws art sees the image of the emblem
+     * in place of the character.
+     */
     public Component title(EmblemView emblem) {
-        return Component.literal(emblem.look().icon() + " " + emblem.title()).withColor(emblem.look().textColor().getValue());
+        int color = emblem.look().textColor().getValue();
+        Component icon = Component.literal(emblem.look().icon()).withColor(color);
+        Component drawn = emblem.iconUrl().map(url -> arts.wrap(icon, url)).orElse(icon);
+        return Component.empty().append(drawn).append(Component.literal(" " + emblem.title()).withColor(color));
+    }
+
+    /** Tells a player who draws art what the images of these emblems are, before a screen or a line that shows their titles. */
+    public void announce(ServerPlayer player, Collection<EmblemView> emblems) {
+        arts.announce(List.of(player), Component.empty().append(emblems.stream().map(this::title).reduce(Component.empty(), (all, title) -> all.copy().append(title))));
     }
 
     /** The description on short lines, in gray; none when the emblem has no description. */

@@ -1,5 +1,7 @@
 package com.panita.enriquecraft.profile.message;
 
+import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.profile.client.EmblemCategory;
 import com.panita.enriquecraft.profile.data.EmblemLook;
 import com.panita.enriquecraft.profile.service.EmblemView;
@@ -16,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EmblemTooltipTest {
 
-    private final EmblemTooltip tooltip = new EmblemTooltip(() -> 20);
+    private final EmblemTooltip tooltip = new EmblemTooltip(() -> 20, new InlineArts(new ClientCapabilities()));
 
     private static EmblemView emblem(Optional<String> description) {
         return new EmblemView("staff", "Staff", description, Optional.empty(), EmblemCategory.LOCAL_EMBLEM, new EmblemLook("★", "#ff5555"));
@@ -27,7 +29,19 @@ class EmblemTooltipTest {
         Component title = tooltip.title(emblem(Optional.empty()));
 
         assertEquals("★ Staff", title.getString());
-        assertEquals(0xFF5555, title.getStyle().getColor().getValue());
+        assertEquals(0xFF5555, title.getSiblings().get(0).getStyle().getColor().getValue());
+        assertEquals(0xFF5555, title.getSiblings().get(1).getStyle().getColor().getValue());
+    }
+
+    @Test
+    void anEmblemWithAnImageHasItInPlaceOfTheCharacterAndTheCharacterIsTheFallback() {
+        EmblemView drawn = new EmblemView("staff", "Staff", Optional.empty(), Optional.of("https://res.cloudinary.com/x/staff.png"),
+                EmblemCategory.LOCAL_EMBLEM, new EmblemLook("★", "#ff5555"));
+
+        Component title = tooltip.title(drawn);
+
+        assertEquals("★ Staff", title.getString());
+        assertInstanceOf(net.minecraft.network.chat.contents.TranslatableContents.class, title.getSiblings().get(0).getContents());
     }
 
     @Test
@@ -61,7 +75,7 @@ class EmblemTooltipTest {
     @Test
     void theWidthIsReadAtEachUse() {
         int[] width = {40};
-        EmblemTooltip adjustable = new EmblemTooltip(() -> width[0]);
+        EmblemTooltip adjustable = new EmblemTooltip(() -> width[0], new InlineArts(new ClientCapabilities()));
         EmblemView view = emblem(Optional.of("uno dos tres cuatro"));
 
         assertEquals(1, adjustable.description(view).size());
