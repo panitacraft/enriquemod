@@ -80,8 +80,19 @@ final class ProfileMenu extends UiMenu {
         openMenus.closed(viewer().getUUID(), this);
     }
 
+    /** The client companion draws the title of a card under its item, so its tooltip starts with the title as a line of its own. */
     @Override
     protected UiElement describe(UiBuilder builder) {
+        return describe(builder, true);
+    }
+
+    /** A chest shows the title as the name of the item, so its lines do not repeat it. */
+    @Override
+    protected UiElement describeChest(UiBuilder builder) {
+        return describe(builder, false);
+    }
+
+    private UiElement describe(UiBuilder builder, boolean titleInTooltip) {
         ServerPlayer player = viewer();
         openMenus.seen(player.getUUID(), this);
         UUID id = player.getUUID();
@@ -108,11 +119,11 @@ final class ProfileMenu extends UiMenu {
         UiElement close = builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE), List.of(),
                 click -> ui().close(click.player()));
         UiElement controls = new UiElement.Row(List.of(none, none, openEmblems, none, close, none, refresh, none, none));
-        return new UiElement.Column(List.of(detail, shown(builder, emblems), controls));
+        return new UiElement.Column(List.of(detail, shown(builder, emblems, titleInTooltip), controls));
     }
 
     /** The emblems that show next to the player's name, as cards; the row keeps its place when there are none. */
-    private UiElement shown(UiBuilder builder, PlayerEmblems emblems) {
+    private UiElement shown(UiBuilder builder, PlayerEmblems emblems, boolean titleInTooltip) {
         List<EmblemView> shown = Stream.concat(emblems.system().stream(), emblems.chosen().stream()).limit(ROW_WIDTH).toList();
         if (shown.isEmpty()) {
             return new UiElement.Row(List.of());
@@ -120,7 +131,9 @@ final class ProfileMenu extends UiMenu {
         List<UiElement> cards = new ArrayList<>();
         for (EmblemView emblem : shown) {
             List<Component> lines = new ArrayList<>();
-            lines.add(tooltip.title(emblem));
+            if (titleInTooltip) {
+                lines.add(tooltip.title(emblem));
+            }
             lines.addAll(tooltip.description(emblem));
             lines.add(Component.empty());
             lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN));
