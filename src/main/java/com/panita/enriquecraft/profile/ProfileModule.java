@@ -11,6 +11,8 @@ import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.data.EmblemSelections;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 import com.panita.enriquecraft.profile.message.ProfileView;
+import com.panita.enriquecraft.profile.message.EmblemTooltip;
+import com.panita.enriquecraft.profile.service.EmblemPlaceholders;
 import com.panita.enriquecraft.profile.service.EmblemResolver;
 import com.panita.enriquecraft.profile.service.ProfileCache;
 import com.panita.enriquecraft.profile.service.ProfileLoader;
@@ -46,6 +48,10 @@ public final class ProfileModule implements EnriquecraftModule {
         ProfileLoader loader = new ProfileLoader(new HttpEmblemApi(services.get(ApiAccess.class)), linked, cache, config.editionId::get);
         RefreshCooldown cooldown = new RefreshCooldown(config.refreshCooldownSeconds::get, Instant::now);
 
+        EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get);
+        new EmblemPlaceholders(profiles, tooltip).register();
+
+        services.register(EmblemTooltip.class, tooltip);
         services.register(EmblemResolver.class, resolver);
         services.register(ProfileService.class, profiles);
         services.register(RefreshCooldown.class, cooldown);
