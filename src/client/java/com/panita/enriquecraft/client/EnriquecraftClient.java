@@ -25,7 +25,7 @@ public final class EnriquecraftClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ServerUiNetworking.register();
-        StaffMenuKey.register();
+        CommandKeys.register();
         ScreenshotSharing.register();
         ClientPlayNetworking.registerGlobalReceiver(MediaPreviewS2C.TYPE, (payload, context) -> ChatImages.expect(payload.url()));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ChatImages::clear));
