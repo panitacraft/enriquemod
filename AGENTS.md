@@ -39,7 +39,7 @@ The mod is installed on the server and is the only required part. Players MUST b
 
 ### Environment
 - `fabric.mod.json` uses `"environment": "*"` and declares the client entrypoint, since the capability announcement is the first client enhancement.
-- Client-only text and key names live in `src/client/resources/assets/enriquecraft/lang/en_us.json`, written in Spanish like all player-visible text. The client's keys (the staff menu on U, rebindable in the controls) only run a server command, so the server keeps deciding who may do what; they do nothing on a server without the mod.
+- Client-only text and key names live in `src/client/resources/assets/enriquecraft/lang/en_us.json`, written in Spanish like all player-visible text. The client's keys (the staff menu on U and the profile menu on P, rebindable in the controls) only run a server command, so the server keeps deciding who may do what; they do nothing on a server without the mod.
 
 ## 3. Language and Communication
 
@@ -148,6 +148,7 @@ com.panita.enriquecraft
 │  ├─ gui/                  Menu, MenuFactory, ItemBuilder, ... (the chest toolkit behind UiChestMenu)
 │  ├─ ui/                   UiMenu, UiPagedMenu, UiBuilder, UiService, UiSessions, ChatPrompts, ChestLayout (screens shown as the client screen or a chest)
 │  ├─ item/                 CustomItemTag, ItemGiving
+│  ├─ art/                  ArtLinks, InlineArts: art drawn inside a line of text (see Chat)
 │  ├─ config/               CoreConfig (the core module's config section)
 │  ├─ message/              Messenger, Message, Messages (core's Spanish text), HelpView, PlayerOnly, channels
 │  ├─ network/              shared protocol: NetworkProtocol, HelloC2S, ClientFeature, ClientCapabilities, UiElement, the UI payloads
@@ -187,6 +188,13 @@ com.panita.enriquecraft
    ├─ protocol/             the frames of the bridge protocol and their codec
    ├─ transport/            BridgeTransport and its WebSocket implementation
    └─ message/              DiscordMessages (Spanish text) and DiscordView
+└─ profile/                 what a player shows of their Panita profile: emblems next to the name and their menu (see Profile)
+   ├─ ProfileModule.java
+   ├─ config/ commands/ listeners/ service/
+   ├─ client/               EmblemApi, HttpEmblemApi, ModProfile, ApiEmblem (the Panita API, read only)
+   ├─ data/                 EmblemLook, EmblemSelections (the players' own choice)
+   ├─ gui/                  ProfileMenus, ProfileMenu, EmblemsMenu
+   └─ message/              ProfileMessages (Spanish text), ProfileView, EmblemTooltip
 ```
 
 Every module follows the same layout:
@@ -304,6 +312,9 @@ Rules:
 - `/sudo <player> <text>` (administrators, level 3) makes a player run a command (text starting with `/`) or say a message in the channel they write in. The command runs with the permissions of the player, and only when they have no higher command level than who asks (`SudoService`), so it is never a way to gain permissions. Held players are refused.
 - The server list text is `ChatMessages.Motd.TEXT` (`motd.enabled`). The game rebuilds its status every few seconds and `MinecraftServerMotdMixin` puts a real component in it, so placeholders such as `%server:online%` stay current.
 - Players who have not entered their PIN yet (`HeldPlayers`) neither write nor read chat, private messages and the messages about players; their join is still announced at connect, as auth does. The welcome message (`WelcomeListener`) waits for `AuthEvents.PLAYER_READY`, not for the connection.
+- Every channel line (and `/me`) starts with the sender's head, built into `ChatService` (`ChatHeads`, `chat.heads`): an `object` text component with the player's own game profile, read at each line and never cached, so it is the skin the server shows (SkinsRestorer is not a dependency: it writes the skin into the profile's `textures`, and replaces the profile when a player changes it). Only the `textures` property travels and without its signature. Lines of Discord members, private messages and the game's own messages have no head.
+- The rank is `%enriquecraft:rank%` (the default channel formats use it in place of `%luckperms:prefix%`; a messages file that already exists keeps the old format, so the administrator edits `chat.format.global` and `chat.format.staff` there). It reads `%luckperms:prefix%` and the LuckPerms meta key of `chat.rankIconMeta` (default `rank_icon`) straight from Placeholder API (`Placeholders.parseServerPlaceholder`), so there is no LuckPerms code. A group is a rank: its prefix is the text every client sees, and its meta `rank_icon` is the https address of its image for clients that draw art. Creating a rank is a LuckPerms change, with no mod update, config edit or reload.
+- Art inside a line of text (`core.art.InlineArts`, `ClientFeature.INLINE_ART`, `InlineArtS2C`): the line is the same for every reader. It is a translation with the key `enriquecraft.art.v1`, the fallback `%1$s` and two arguments, the plain text and a glyph in the font `enriquecraft:art/<id>` (`<id>` is a hash of the address, `ArtLinks.idOf`). A vanilla client has no such key and shows the first argument; the companion's language says `%2$s`, so it shows the glyph, which `InlineArtTextures` fills with the fetched image (`FontManagerGlyphMixin` answers the font code for those fonts). The server sends `InlineArtS2C(id, url)` once per player before the first line that holds an image (`ChatView.deliver` and the profile menus call `InlineArts.announce`, which also looks inside hover texts). Only https addresses on the fixed hosts of `ArtLinks` (Cloudinary) are used, on both sides; a glyph whose image is not there yet takes the room of a letter and draws nothing. The version in the key changes when the way a glyph is drawn does.
 - Other modules follow chat through `ChatEvents` (`MESSAGE`, with the channel, the sender, the plain text and whether it is a `/me`; `SYSTEM`) and never through the game's own events or the mixins.
 
 ### Link
@@ -329,6 +340,12 @@ Rules:
 - What a Discord member's line is prefixed with is `discord.deliveryPrefix`, written exactly as it should look (text tags, colors and fonts allowed) with nothing added around it, so a custom glyph needs no brackets; the default is `<blue>[Discord]`. A Discord reply (the `reply` feature, announced in the hello when `discord.showReplies` is on; the bot only sends it to a mod that announced it) carries only the name of the author of the message it answers, as plain text, so it also works for a message of the bot; `FrameCodec` drops a reply that is not the documented shape and keeps the message. `DiscordDelivery` adds `ReplyView`'s note (`DiscordMessages.Delivery.REPLY_TO`, configurable, by default a gray italic "(responde a <name>)") to the name of the member, before the text, so the reply reads in one line: `[Discord] Name (responde a Other) » text`.
 - The bot may ask `playerlist`, `tps`, `status` and `playerinfo` (which carries the `player` name asked about, checked as a Minecraft name); `QueryAnswers` answers on the server thread, without counting players still on the PIN screen. `PlayerRoster` builds what a player list and a player card need: for each player their uuid, name, nickname, skin hash and ping, the play time (the live statistic when online, the world's statistics file otherwise, `PlayTimes`) and the line the server shows for them (`DiscordMessages.Players.ENTRY`, a text of the messages file with the placeholders of that player, by default the LuckPerms prefix, the name and the LuckPerms suffix). That line travels as `DisplayRuns`, never as a game text component: a few runs of text with a color, a font id and marks, cut to what a frame holds, so the bot draws it with nothing to parse. A player who is not online has only their name as their line. `playerinfo` finds the player among those online and then the whitelist, and answers `{found: false}` for any other name. Frames from the network hop to the server thread in `FrameRouter`.
 - `/discord status` (game masters) and `/discord reconnect` (administrators).
+
+### Profile
+- The profile module only reads the Panita API: `GET /v1/mod/players/{user_id}/profile?edition_id=` with the `mod` key, through `ApiAccess` (the link module's address, timeout and key). It never writes to the API and never contacts Discord. The Panita account of a player is found by their name in the link module's last list (`LinkedPlayers`). A profile is read when a player is ready, when they open the menu (at most every 15 seconds) and when somebody refreshes it; there is no timer. A failed read keeps the data the cache had, and an answer that is not the documented shape fails as a whole.
+- Which emblems this server shows is the server's rule, in `profile.*`: the emblems of `profile.editionId`, the system emblems whose id starts with `profile.systemPrefixes` (`nationality_`), and the emblems of `profile.systemIds` (`staff`) promoted to system emblems: always shown, not selectable, counted in `systemMax` (2). A player chooses up to `loreMax` (3) of the others; the choice is the mod's own (`emblem_selections.snbt`, by Panita account, ids no longer held drop out) and is independent of the website's layout. The nationality is chosen on the website only.
+- How an emblem looks to a player with only text is `profile.looks` (by id) and `profile.categoryLooks`: an icon of one or two characters and a color. Its tooltip is always `EmblemTooltip`: the icon (the image for a client that draws art) and the title in its color, then the description on lines of `profile.tooltipWidth` characters. Chat shows emblems with `%enriquecraft:emblems_system%` and `%enriquecraft:emblems_lore%`, each bringing its own space; titles are never shown in chat.
+- `/profile` (alias `/perfil`, key P on the client) opens the menu. `/profile refresh` refreshes the player's own data after `profile.refreshCooldownSeconds`; `/profile refresh all` (administrators) and `/enriquecraft reload` refresh everybody, a few requests at a time.
 
 ### Messaging
 - All text shown to players goes through `Messenger`. Never call `sendSystemMessage`, title, or boss bar APIs directly. Text built from parts, such as a chat line that carries what a player typed, is formatted with `Messenger.format(Message, player)` (named arguments, placeholders resolved for that player) and sent with `Messenger.deliver` to the players who should read it, and to the console when the other overload is used.
