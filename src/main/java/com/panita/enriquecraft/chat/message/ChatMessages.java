@@ -15,7 +15,7 @@ public final class ChatMessages {
      */
     public static final class Format {
         public static final String GLOBAL = "%enriquecraft:emblems_system%%enriquecraft:rank%{sender}%luckperms:suffix%%enriquecraft:emblems_lore%<dark_gray> » <white>{message}";
-        public static final String STAFF = "<dark_red>[Staff]</dark_red> %enriquecraft:emblems_system%%enriquecraft:rank%{sender}%enriquecraft:emblems_lore%<dark_gray> » <aqua>{message}";
+        public static final String STAFF = "<dark_red>[Staff]</dark_red> %enriquecraft:rank%{sender}<dark_gray> » <aqua>{message}";
         public static final String EXTERNAL = "{sender}<dark_gray> » <white>{message}";
         public static final String EXTERNAL_STAFF = "<dark_red>[Staff]</dark_red> {sender}<dark_gray> » <aqua>{message}";
         public static final String NAME_HOVER = "<yellow>{nickname}</yellow>\n<gray>Nombre real: <white>{name}</white>\n\n<gray>Clic para escribirle un mensaje privado";
