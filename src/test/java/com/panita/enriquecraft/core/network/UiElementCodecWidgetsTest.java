@@ -93,6 +93,11 @@ final class UiElementCodecWidgetsTest {
     }
 
     @Test
+    void aRuleSurvivesARoundTrip() {
+        assertInstanceOf(UiElement.Rule.class, roundTrip(new UiElement.Rule()));
+    }
+
+    @Test
     void aDividerSurvivesARoundTrip() {
         assertInstanceOf(UiElement.Divider.class, roundTrip(new UiElement.Divider()));
     }

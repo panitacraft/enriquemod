@@ -259,6 +259,10 @@ public sealed interface UiElement {
     record Divider() implements UiElement {
     }
 
+    /** A short thin line, centered, that groups what is above it apart from what is below, without spanning the screen. A chest has no place for it. */
+    record Rule() implements UiElement {
+    }
+
     /** An empty cell that keeps its neighbours in place. */
     record Spacer() implements UiElement {
     }
