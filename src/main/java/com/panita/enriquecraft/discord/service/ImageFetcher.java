@@ -66,7 +66,7 @@ public final class ImageFetcher {
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             try (InputStream body = response.body()) {
                 if (response.statusCode() != 200) {
-                    throw new FetchException(Failure.UNAVAILABLE, null);
+                    throw new FetchException(Failure.UNAVAILABLE, new IOException("the host answered with status " + response.statusCode()));
                 }
                 if (!response.headers().firstValue("content-type").map(type -> type.toLowerCase(java.util.Locale.ROOT).startsWith("image/")).orElse(false)) {
                     throw new FetchException(Failure.NOT_AN_IMAGE, null);
