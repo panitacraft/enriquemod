@@ -39,7 +39,7 @@ class ChatConfigTest {
 
         assertEquals(List.of("global", "staff"), List.copyOf(config.channels.get().keySet()));
         String file = Files.readString(directory.resolve("enriquecraft.json5"));
-        assertTrue(file.contains("\"format\": \"%enriquecraft:emblems_system%%luckperms:prefix%{sender}%luckperms:suffix%%enriquecraft:emblems_lore%<dark_gray> » <white>{message}\""), file);
+        assertTrue(file.contains("\"format\": \"%enriquecraft:emblems_system%%enriquecraft:rank%{sender}%luckperms:suffix%%enriquecraft:emblems_lore%<dark_gray> » <white>{message}\""), file);
         assertTrue(manager.reload().isClean());
     }
 

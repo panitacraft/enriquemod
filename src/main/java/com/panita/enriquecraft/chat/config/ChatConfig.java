@@ -15,6 +15,7 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Map<String, ChannelDefinition>> channels;
     public final ConfigValue<Map<String, String>> emojis;
     public final ConfigValue<Boolean> heads;
+    public final ConfigValue<String> rankIconMeta;
     public final ConfigValue<Integer> nicknameMinLength;
     public final ConfigValue<Integer> nicknameMaxLength;
     public final ConfigValue<Integer> nicknameCooldownSeconds;
@@ -42,6 +43,11 @@ public final class ChatConfig implements ModConfig {
         heads = builder.bool("heads", true,
                 "Starts each line of a player in chat with their head, which any client draws at the size of the text. Players with the client\n"
                         + "mod see it beside the line instead. Lines of Discord members, private messages and the game's own messages have none.");
+        rankIconMeta = builder.string("rankIconMeta", "rank_icon",
+                "The LuckPerms meta key whose value is the https address of the image of a rank (set it on the group with\n"
+                        + "/lp group <group> meta set <key> <address>). Players with the client mod see that image in place of the prefix of the\n"
+                        + "group, and everyone else sees the prefix. Used by %enriquecraft:rank%.",
+                value -> value.matches("[A-Za-z0-9_.-]{1,32}"), "must be 1 to 32 letters, digits, ., - or _");
         nicknameMinLength = builder.intRange("nickname.minLength", 3, 1, 32,
                 "The fewest characters a nickname can have, not counting its colors and styles.");
         nicknameMaxLength = builder.intRange("nickname.maxLength", 16, 1, 16,

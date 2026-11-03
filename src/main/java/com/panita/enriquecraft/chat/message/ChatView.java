@@ -2,6 +2,7 @@ package com.panita.enriquecraft.chat.message;
 
 import com.panita.enriquecraft.chat.channel.ChannelDefinition;
 import com.panita.enriquecraft.chat.service.ChatHeads;
+import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.message.Messages;
@@ -21,11 +22,13 @@ public final class ChatView {
     private final Messenger messenger;
     private final SenderNameView names;
     private final ChatHeads heads;
+    private final InlineArts arts;
 
-    public ChatView(Messenger messenger, SenderNameView names, ChatHeads heads) {
+    public ChatView(Messenger messenger, SenderNameView names, ChatHeads heads, InlineArts arts) {
         this.messenger = messenger;
         this.names = names;
         this.heads = heads;
+        this.arts = arts;
     }
 
     /** The line a player's text makes in a channel, as the channel's format says, after the head of the player. */
@@ -55,8 +58,9 @@ public final class ChatView {
         return heads.of(sender).<Component>map(head -> Component.empty().append(head).append(line)).orElse(line);
     }
 
-    /** Delivers a line to the readers and to the console. */
+    /** Delivers a line to the readers and to the console, after telling the readers who draw art what its images are. */
     public void deliver(MinecraftServer server, Collection<ServerPlayer> readers, Component line) {
+        arts.announce(readers, line);
         messenger.deliver(server, readers, line);
     }
 
