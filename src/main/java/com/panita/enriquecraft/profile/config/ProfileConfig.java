@@ -38,7 +38,7 @@ public final class ProfileConfig implements ModConfig {
         systemPrefixes = builder.string("systemPrefixes", "nationality_",
                 "System emblems of the Panita API this server shows, by the start of their id, separated by commas. Empty shows none.",
                 ProfileConfig::isIdList, "must be ids made of letters, digits, - or _, separated by commas");
-        systemIds = builder.string("systemIds", "staff",
+        systemIds = builder.string("systemIds", "enriquecraft6_staff",
                 "Emblems of the edition that are shown with the system emblems, before the nationality: they are always shown, cannot be\n"
                         + "chosen or put away, and count toward systemMax. Ids separated by commas. Empty promotes none.",
                 ProfileConfig::isIdList, "must be ids made of letters, digits, - or _, separated by commas");
@@ -48,7 +48,7 @@ public final class ProfileConfig implements ModConfig {
                 "Seconds a player must wait before refreshing their own profile again with /profile refresh. 0 turns the wait off.");
         tooltipWidth = builder.intRange("tooltipWidth", 40, 16, 120,
                 "The most characters on a line of the description in an emblem's tooltip before it continues on the next line.");
-        looks = builder.custom("looks", Map.of("staff", new EmblemLook("★", "#ff5555")),
+        looks = builder.custom("looks", Map.of("enriquecraft6_staff", new EmblemLook("★", "#ff5555")),
                 "How an emblem looks to a player without the client mod, by its id: icon (one or two characters the game's font draws)\n"
                         + "and color (a name such as gold or a code such as #ffaa00). The icon and the color also draw its tooltip.\n"
                         + "An emblem with no entry looks as its category does (categoryLooks).",

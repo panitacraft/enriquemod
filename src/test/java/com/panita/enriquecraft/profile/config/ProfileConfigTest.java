@@ -43,7 +43,7 @@ class ProfileConfigTest {
         assertEquals("enriquecraft6", config.editionId.get());
         assertEquals(2, config.systemMax.get());
         assertEquals(3, config.loreMax.get());
-        assertEquals(new EmblemLook("★", "#ff5555"), config.looks.get().get("staff"));
+        assertEquals(new EmblemLook("★", "#ff5555"), config.looks.get().get("enriquecraft6_staff"));
         assertEquals(new EmblemLook("●", "gold"), config.categoryLooks.get().get("system"));
         assertEquals(new EmblemLook("○", "gray"), config.categoryLooks.get().get("emblem"));
     }

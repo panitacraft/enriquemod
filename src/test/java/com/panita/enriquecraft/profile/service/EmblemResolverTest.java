@@ -45,10 +45,10 @@ class EmblemResolverTest {
     void theStaffEmblemIsPromotedAndShownBeforeTheNationality() {
         PlayerEmblems emblems = resolver.resolve(profile(
                 emblem("nationality_co", EmblemCategory.SYSTEM, 1),
-                emblem("staff", EmblemCategory.LOCAL_EMBLEM, 2),
+                emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 2),
                 emblem("hero", EmblemCategory.EMBLEM, 3)), Optional.empty());
 
-        assertEquals(List.of("staff", "nationality_co"), ids(emblems.system()));
+        assertEquals(List.of("enriquecraft6_staff", "nationality_co"), ids(emblems.system()));
         assertEquals(List.of("hero"), ids(emblems.selectable()));
     }
 
@@ -64,11 +64,11 @@ class EmblemResolverTest {
     @Test
     void theSystemEmblemsAreCappedByTheSetting() {
         PlayerEmblems emblems = resolver.resolve(profile(
-                emblem("staff", EmblemCategory.LOCAL_EMBLEM, 1),
+                emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 1),
                 emblem("nationality_co", EmblemCategory.SYSTEM, 2),
                 emblem("nationality_mx", EmblemCategory.SYSTEM, 3)), Optional.empty());
 
-        assertEquals(List.of("staff", "nationality_co"), ids(emblems.system()));
+        assertEquals(List.of("enriquecraft6_staff", "nationality_co"), ids(emblems.system()));
     }
 
     @Test
@@ -91,9 +91,9 @@ class EmblemResolverTest {
 
     @Test
     void whatThePlayerNoLongerHoldsDropsOutOfTheirChoice() {
-        ModProfile held = profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("staff", EmblemCategory.LOCAL_EMBLEM, 2));
+        ModProfile held = profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 2));
 
-        PlayerEmblems emblems = resolver.resolve(held, Optional.of(List.of("gone", "a", "staff", "a")));
+        PlayerEmblems emblems = resolver.resolve(held, Optional.of(List.of("gone", "a", "enriquecraft6_staff", "a")));
 
         assertEquals(List.of("a"), ids(emblems.chosen()));
     }
@@ -117,7 +117,7 @@ class EmblemResolverTest {
 
     @Test
     void anEmblemLooksAsItsOwnEntryOrElseAsItsCategory() {
-        assertEquals(new EmblemLook("★", "#ff5555"), resolver.lookOf(emblem("staff", EmblemCategory.LOCAL_EMBLEM, 1)));
+        assertEquals(new EmblemLook("★", "#ff5555"), resolver.lookOf(emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 1)));
         assertEquals(new EmblemLook("●", "gold"), resolver.lookOf(emblem("nationality_co", EmblemCategory.SYSTEM, 1)));
         assertEquals(new EmblemLook("○", "gray"), resolver.lookOf(emblem("hero", EmblemCategory.EMBLEM, 1)));
         assertEquals(new EmblemLook("○", "gray"), resolver.lookOf(emblem("rey", EmblemCategory.TITLE, 1)));
