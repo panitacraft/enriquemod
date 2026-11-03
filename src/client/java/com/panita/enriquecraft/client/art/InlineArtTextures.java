@@ -91,6 +91,14 @@ public final class InlineArtTextures {
         return Optional.empty();
     }
 
+    private static String rootCause(Throwable failure) {
+        Throwable cause = failure;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause.getClass().getSimpleName() + ": " + cause.getMessage();
+    }
+
     /** The picture an item marked with this id is drawn as, once it is ready. */
     public static Optional<Identifier> iconTexture(String id) {
         Entry entry = ENTRIES.get(id);
@@ -114,7 +122,7 @@ public final class InlineArtTextures {
                 .whenComplete((prepared, failure) -> client.execute(() -> {
                     if (failure != null) {
                         LOGGER.warn("The art {} ({}) could not be loaded (attempt {}): {}", id, url, entry.attempts,
-                                String.valueOf(failure.getCause() != null ? failure.getCause() : failure));
+                                rootCause(failure));
                         if (entry.attempts < MAX_ATTEMPTS) {
                             entry.requested = false;
                             CompletableFuture.delayedExecutor(RETRY_SECONDS, TimeUnit.SECONDS).execute(() -> client.execute(() -> expect(id, url)));
