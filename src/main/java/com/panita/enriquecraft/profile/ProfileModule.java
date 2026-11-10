@@ -7,9 +7,11 @@ import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.link.client.ApiAccess;
+import com.panita.enriquecraft.link.config.LinkConfig;
 import com.panita.enriquecraft.link.service.LinkedPlayers;
 import com.panita.enriquecraft.profile.client.HttpEmblemApi;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
+import com.panita.enriquecraft.profile.data.CachedProfiles;
 import com.panita.enriquecraft.profile.data.EmblemSelections;
 import com.panita.enriquecraft.profile.gui.OpenMenus;
 import com.panita.enriquecraft.profile.gui.ProfileMenus;
@@ -34,6 +36,7 @@ import java.util.Optional;
 public final class ProfileModule implements EnriquecraftModule {
 
     private static final String SELECTIONS_FILE = "emblem_selections.snbt";
+    private static final String CACHE_FILE = "profile_cache.snbt";
 
     @Override
     public Optional<Class<?>> messages() {
@@ -45,7 +48,8 @@ public final class ProfileModule implements EnriquecraftModule {
         ProfileConfig config = services.get(ProfileConfig.class);
         var selections = services.get(WorldData.class).register(SELECTIONS_FILE, EmblemSelections.CODEC, EmblemSelections.EMPTY);
 
-        ProfileCache cache = new ProfileCache(Instant::now);
+        var cached = services.get(WorldData.class).register(CACHE_FILE, CachedProfiles.CODEC, CachedProfiles.EMPTY);
+        ProfileCache cache = new ProfileCache(Instant::now, cached::get, cached::set);
         EmblemResolver resolver = new EmblemResolver(config);
         LinkedPlayers linked = services.get(LinkedPlayers.class);
         ProfileService profiles = new ProfileService(cache, resolver, linked, selections::get, selections::set);
@@ -62,7 +66,8 @@ public final class ProfileModule implements EnriquecraftModule {
         services.register(EmblemResolver.class, resolver);
         services.register(ProfileService.class, profiles);
         services.register(RefreshCooldown.class, cooldown);
-        ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown, config.cacheSeconds::get);
+        ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown, config.cacheSeconds::get,
+                services.get(LinkConfig.class).autoFetch::get);
         ProfileView view = new ProfileView(services.get(Messenger.class));
 
         services.register(ProfileView.class, view);

@@ -5,6 +5,7 @@ import com.panita.enriquecraft.link.client.LinkedPlayer;
 import net.minecraft.server.players.NameAndId;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LinkPlanTest {
 
-    private static final LinkedPlayer JAVI = new LinkedPlayer(12, "Javithor360", AuthMode.PREMIUM, "1");
-    private static final LinkedPlayer TEZ = new LinkedPlayer(30, "Tezzlar", AuthMode.CRACKED, "2");
+    private static final LinkedPlayer JAVI = new LinkedPlayer(12, "Javithor360", Optional.of(AuthMode.PREMIUM), "1");
+    private static final LinkedPlayer TEZ = new LinkedPlayer(30, "Tezzlar", Optional.of(AuthMode.CRACKED), "2");
 
     private static NameAndId premium(String name) {
         return new NameAndId(UUID.nameUUIDFromBytes(("real:" + name).getBytes()), name);
@@ -53,6 +54,22 @@ class LinkPlanTest {
     }
 
     @Test
+    void aMemberWhoNeverChoseIsAddedWhenTheyHaveNoEntry() {
+        LinkedPlayer old = new LinkedPlayer(5, "Old", Optional.empty(), "5");
+
+        assertEquals(List.of(new LinkPlan.Action.Add(old)), plan(List.of(), List.of(old)).actions());
+    }
+
+    @Test
+    void aMemberWhoNeverChoseKeepsWhateverEntryTheNameHas() {
+        LinkedPlayer old = new LinkedPlayer(5, "Old", Optional.empty(), "5");
+
+        assertTrue(plan(List.of(old), List.of(old), premium("Old")).actions().isEmpty());
+        assertTrue(plan(List.of(old), List.of(old), cracked("Old")).actions().isEmpty());
+        assertTrue(plan(List.of(old), List.of(old), cracked("old")).actions().isEmpty());
+    }
+
+    @Test
     void anEntryOfTheOtherModeIsReplaced() {
         NameAndId wrongJavi = cracked("Javithor360");
         NameAndId wrongTez = premium("Tezzlar");
@@ -87,7 +104,7 @@ class LinkPlanTest {
 
     @Test
     void aPlayerWhoChangedTheirNameIsRenamedFromTheirPreviousName() {
-        LinkedPlayer renamed = new LinkedPlayer(30, "TezzlarNew", AuthMode.CRACKED, "2");
+        LinkedPlayer renamed = new LinkedPlayer(30, "TezzlarNew", Optional.of(AuthMode.CRACKED), "2");
 
         LinkPlan plan = plan(List.of(TEZ), List.of(renamed), cracked("Tezzlar"));
 
@@ -97,7 +114,7 @@ class LinkPlanTest {
 
     @Test
     void aChangeOfCapitalizationAloneIsARename() {
-        LinkedPlayer recased = new LinkedPlayer(30, "tezzlar", AuthMode.CRACKED, "2");
+        LinkedPlayer recased = new LinkedPlayer(30, "tezzlar", Optional.of(AuthMode.CRACKED), "2");
 
         LinkPlan plan = plan(List.of(TEZ), List.of(recased), cracked("Tezzlar"));
 
@@ -124,7 +141,7 @@ class LinkPlanTest {
 
     @Test
     void aNameThatPassedToAnotherPlayerKeepsItsEntry() {
-        LinkedPlayer newOwner = new LinkedPlayer(99, "Tezzlar", AuthMode.CRACKED, "9");
+        LinkedPlayer newOwner = new LinkedPlayer(99, "Tezzlar", Optional.of(AuthMode.CRACKED), "9");
 
         LinkPlan plan = plan(List.of(TEZ), List.of(newOwner), cracked("Tezzlar"));
 
@@ -134,7 +151,7 @@ class LinkPlanTest {
 
     @Test
     void theFirstPlayerOfADuplicatedNameWinsAndTheOtherIsReported() {
-        LinkedPlayer twin = new LinkedPlayer(40, "TEZZLAR", AuthMode.CRACKED, "4");
+        LinkedPlayer twin = new LinkedPlayer(40, "TEZZLAR", Optional.of(AuthMode.CRACKED), "4");
 
         LinkPlan plan = plan(List.of(), List.of(TEZ, twin));
 

@@ -30,7 +30,11 @@ public final class ProfileListener implements ModListener {
     @Override
     public void register() {
         AuthEvents.PLAYER_READY.register(refresher::refresh);
-        reloads.onReload(source -> refresher.refreshAll(source.getServer()).thenAccept(report -> view.allRefreshed(source, report)));
+        reloads.onReload(source -> {
+            if (refresher.autoFetch()) {
+                refresher.refreshAll(source.getServer()).thenAccept(report -> view.allRefreshed(source, report));
+            }
+        });
         // The profile stays cached, so coming back soon does not ask the API again.
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> cooldown.forget(handler.getPlayer().getUUID()));
     }

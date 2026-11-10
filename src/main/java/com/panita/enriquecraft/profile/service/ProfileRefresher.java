@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
 /**
@@ -57,14 +58,17 @@ public final class ProfileRefresher {
     private final ProfileService profiles;
     private final RefreshCooldown cooldown;
     private final IntSupplier cacheSeconds;
+    private final BooleanSupplier autoFetch;
     private final AtomicBoolean refreshingAll = new AtomicBoolean();
     private volatile String lastProblem = "";
 
-    public ProfileRefresher(ProfileLoader loader, ProfileService profiles, RefreshCooldown cooldown, IntSupplier cacheSeconds) {
+    public ProfileRefresher(ProfileLoader loader, ProfileService profiles, RefreshCooldown cooldown, IntSupplier cacheSeconds,
+                            BooleanSupplier autoFetch) {
         this.loader = loader;
         this.profiles = profiles;
         this.cooldown = cooldown;
         this.cacheSeconds = cacheSeconds;
+        this.autoFetch = autoFetch;
     }
 
     /**
@@ -72,6 +76,9 @@ public final class ProfileRefresher {
      * their menu): the API is asked only when the cache is older than {@code profile.cacheSeconds}.
      */
     public CompletableFuture<ProfileLoader.Outcome> refresh(ServerPlayer player) {
+        if (!autoFetch()) {
+            return CompletableFuture.completedFuture(new ProfileLoader.Outcome.Current());
+        }
         return read(player, new ProfileLoader.Freshness.AllowCached(Duration.ofSeconds(cacheSeconds.getAsInt())));
     }
 
@@ -91,6 +98,11 @@ public final class ProfileRefresher {
             });
             return done;
         });
+    }
+
+    /** Whether the mod may read the API by itself ({@code link.autoFetch}); commands always may. */
+    public boolean autoFetch() {
+        return autoFetch.getAsBoolean();
     }
 
     /** The player refreshing their own profile: only when their wait is over. */

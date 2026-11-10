@@ -77,11 +77,13 @@ public final class HttpPanitaApi implements PanitaApi {
         int userId = item.get("user_id").getAsInt();
         String ign = item.get("ign").getAsString();
         String discordId = item.get("discord_id").getAsString();
-        Optional<AuthMode> mode = AuthMode.CODEC.parse(JsonOps.INSTANCE, item.get("minecraft_status"))
-                .result();
-        if (!StringUtil.isValidPlayerName(ign) || mode.isEmpty()) {
+        JsonElement status = item.get("minecraft_status");
+        boolean chosen = status != null && !status.isJsonNull();
+        Optional<AuthMode> mode = chosen ? AuthMode.CODEC.parse(JsonOps.INSTANCE, status).result() : Optional.empty();
+        // A status that is there but is not one of the two modes is a malformed list; an absent one means the member never chose.
+        if (!StringUtil.isValidPlayerName(ign) || (chosen && mode.isEmpty())) {
             return Optional.empty();
         }
-        return Optional.of(new LinkedPlayer(userId, ign, mode.get(), discordId));
+        return Optional.of(new LinkedPlayer(userId, ign, mode, discordId));
     }
 }

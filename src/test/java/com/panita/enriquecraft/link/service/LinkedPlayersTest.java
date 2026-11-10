@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class LinkedPlayersTest {
 
     private final LinkedPlayers players = new LinkedPlayers(() -> new LinkedSnapshot(List.of(
-            new LinkedPlayer(12, "Javithor360", AuthMode.PREMIUM, "1"),
-            new LinkedPlayer(30, "Tezzlar", AuthMode.CRACKED, "2")), Optional.empty()));
+            new LinkedPlayer(12, "Javithor360", Optional.of(AuthMode.PREMIUM), "1"),
+            new LinkedPlayer(30, "Tezzlar", Optional.of(AuthMode.CRACKED), "2")), Optional.empty()));
 
     @Test
     void findsAPlayerByNameWhateverTheCapitalization() {

@@ -6,6 +6,7 @@ import com.panita.enriquecraft.link.data.LinkedSnapshot;
 import com.panita.enriquecraft.link.service.LinkedPlayers;
 import com.panita.enriquecraft.profile.client.EmblemApi;
 import com.panita.enriquecraft.profile.client.ModProfile;
+import com.panita.enriquecraft.profile.data.CachedProfiles;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -27,9 +28,10 @@ class ProfileLoaderTest {
 
     private Instant now = Instant.parse("2026-11-09T12:00:00Z");
     private final UUID player = UUID.randomUUID();
-    private final ProfileCache cache = new ProfileCache(() -> now);
+    private CachedProfiles saved = CachedProfiles.EMPTY;
+    private final ProfileCache cache = new ProfileCache(() -> now, () -> saved, value -> saved = value);
     private final LinkedPlayers linked = new LinkedPlayers(() -> new LinkedSnapshot(
-            List.of(new LinkedPlayer(7, "Alex", AuthMode.PREMIUM, "1")), Optional.empty()));
+            List.of(new LinkedPlayer(7, "Alex", Optional.of(AuthMode.PREMIUM), "1")), Optional.empty()));
     private CompletableFuture<EmblemApi.Result> answer = CompletableFuture.completedFuture(new EmblemApi.Result.Found(PROFILE));
     private int asked;
     private String askedEdition;
@@ -60,6 +62,22 @@ class ProfileLoaderTest {
         assertInstanceOf(ProfileLoader.Outcome.Current.class, loader.load(player, "Alex", TEN_MINUTES).join());
         assertEquals(1, asked);
         assertEquals(Optional.of(PROFILE), cache.get(player));
+    }
+
+    @Test
+    void aRestartDoesNotAskTheApiAgain() {
+        loader.load(player, "Alex", TEN_MINUTES).join();
+        now = now.plus(Duration.ofMinutes(2));
+        // A new cache over what was saved stands for the server after a restart.
+        ProfileCache restarted = new ProfileCache(() -> now, () -> saved, value -> saved = value);
+        ProfileLoader afterRestart = new ProfileLoader((userId, editionId) -> {
+            asked++;
+            return answer;
+        }, linked, restarted, () -> "enriquecraft6");
+
+        assertInstanceOf(ProfileLoader.Outcome.Current.class, afterRestart.load(player, "Alex", TEN_MINUTES).join());
+        assertEquals(1, asked);
+        assertEquals(Optional.of(PROFILE), restarted.get(player));
     }
 
     @Test

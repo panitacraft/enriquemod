@@ -110,7 +110,11 @@ public record LinkPlan(List<Action> actions, int unchanged, List<LinkedPlayer> d
      * compared. An offline UUID depends on the exact spelling, so that must match too.
      */
     private static boolean isRightEntry(LinkedPlayer player, NameAndId entry) {
-        if (player.mode() == AuthMode.PREMIUM) {
+        if (player.mode().isEmpty()) {
+            // The member never chose: whatever mode the whitelist already has for the name stands.
+            return true;
+        }
+        if (player.mode().get() == AuthMode.PREMIUM) {
             return AuthMode.of(entry) == AuthMode.PREMIUM;
         }
         return entry.equals(NameAndId.createOffline(player.ign()));
