@@ -27,6 +27,7 @@ public final class ProfileConfig implements ModConfig {
     public final ConfigValue<Integer> systemMax;
     public final ConfigValue<Integer> loreMax;
     public final ConfigValue<Integer> refreshCooldownSeconds;
+    public final ConfigValue<Integer> cacheSeconds;
     public final ConfigValue<Integer> tooltipWidth;
     public final ConfigValue<Map<String, EmblemLook>> looks;
     public final ConfigValue<Map<String, EmblemLook>> categoryLooks;
@@ -46,6 +47,9 @@ public final class ProfileConfig implements ModConfig {
         loreMax = builder.intRange("loreMax", 3, 0, 10, "The most emblems a player can choose to show next to their name.");
         refreshCooldownSeconds = builder.intRange("refreshCooldownSeconds", 60, 0, 86_400,
                 "Seconds a player must wait before refreshing their own profile again with /profile refresh. 0 turns the wait off.");
+        cacheSeconds = builder.intRange("cacheSeconds", 1_800, 0, 604_800,
+                "Seconds a player's profile is kept before joining or opening the menu reads it from the Panita API again. /profile refresh,\n"
+                        + "/profile refresh all and /enriquecraft reload always read it. 0 reads it at every join and every menu opening.");
         tooltipWidth = builder.intRange("tooltipWidth", 40, 16, 120,
                 "The most characters on a line of the description in an emblem's tooltip before it continues on the next line.");
         looks = builder.custom("looks", Map.of("enriquecraft6_staff", new EmblemLook("★", "#ff5555")),

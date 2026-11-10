@@ -8,6 +8,8 @@ import com.panita.enriquecraft.profile.client.EmblemApi;
 import com.panita.enriquecraft.profile.client.ModProfile;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,9 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProfileLoaderTest {
 
     private static final ModProfile PROFILE = new ModProfile(7, Optional.of("Alex"), "alex", List.of());
+    private static final ProfileLoader.Freshness FORCE = new ProfileLoader.Freshness.Force();
+    private static final ProfileLoader.Freshness TEN_MINUTES = new ProfileLoader.Freshness.AllowCached(Duration.ofMinutes(10));
 
+    private Instant now = Instant.parse("2026-11-09T12:00:00Z");
     private final UUID player = UUID.randomUUID();
-    private final ProfileCache cache = new ProfileCache();
+    private final ProfileCache cache = new ProfileCache(() -> now);
     private final LinkedPlayers linked = new LinkedPlayers(() -> new LinkedSnapshot(
             List.of(new LinkedPlayer(7, "Alex", AuthMode.PREMIUM, "1")), Optional.empty()));
     private CompletableFuture<EmblemApi.Result> answer = CompletableFuture.completedFuture(new EmblemApi.Result.Found(PROFILE));
@@ -39,7 +44,7 @@ class ProfileLoaderTest {
 
     @Test
     void aLinkedPlayerIsReadByTheirPanitaAccountAndTheEditionOfTheServer() {
-        ProfileLoader.Outcome outcome = loader.load(player, "alex").join();
+        ProfileLoader.Outcome outcome = loader.load(player, "alex", FORCE).join();
 
         assertInstanceOf(ProfileLoader.Outcome.Updated.class, outcome);
         assertEquals(Optional.of(PROFILE), cache.get(player));
@@ -48,10 +53,56 @@ class ProfileLoaderTest {
     }
 
     @Test
+    void aRecentAnswerIsServedFromTheCacheWithoutAskingTheApi() {
+        loader.load(player, "Alex", TEN_MINUTES).join();
+        now = now.plus(Duration.ofMinutes(9));
+
+        assertInstanceOf(ProfileLoader.Outcome.Current.class, loader.load(player, "Alex", TEN_MINUTES).join());
+        assertEquals(1, asked);
+        assertEquals(Optional.of(PROFILE), cache.get(player));
+    }
+
+    @Test
+    void anOldAnswerIsReadAgain() {
+        loader.load(player, "Alex", TEN_MINUTES).join();
+        now = now.plus(Duration.ofMinutes(10));
+
+        assertInstanceOf(ProfileLoader.Outcome.Updated.class, loader.load(player, "Alex", TEN_MINUTES).join());
+        assertEquals(2, asked);
+    }
+
+    @Test
+    void aForcedReadIgnoresTheCache() {
+        loader.load(player, "Alex", TEN_MINUTES).join();
+
+        assertInstanceOf(ProfileLoader.Outcome.Updated.class, loader.load(player, "Alex", FORCE).join());
+        assertEquals(2, asked);
+    }
+
+    @Test
+    void aFailureIsNotRememberedAsAnAnswer() {
+        answer = CompletableFuture.completedFuture(new EmblemApi.Result.Failed("the API answered with status 500"));
+        loader.load(player, "Alex", TEN_MINUTES).join();
+
+        loader.load(player, "Alex", TEN_MINUTES).join();
+
+        assertEquals(2, asked);
+    }
+
+    @Test
+    void anAccountTheApiDoesNotKnowIsNotAskedAboutAgainEither() {
+        answer = CompletableFuture.completedFuture(new EmblemApi.Result.NotFound());
+        loader.load(player, "Alex", TEN_MINUTES).join();
+
+        assertInstanceOf(ProfileLoader.Outcome.Current.class, loader.load(player, "Alex", TEN_MINUTES).join());
+        assertEquals(1, asked);
+    }
+
+    @Test
     void aPlayerWhoIsNotLinkedIsNotAskedAboutAndKeepsNoData() {
         cache.put(player, PROFILE);
 
-        ProfileLoader.Outcome outcome = loader.load(player, "Stranger").join();
+        ProfileLoader.Outcome outcome = loader.load(player, "Stranger", FORCE).join();
 
         assertInstanceOf(ProfileLoader.Outcome.NotLinked.class, outcome);
         assertEquals(0, asked);
@@ -63,7 +114,7 @@ class ProfileLoaderTest {
         cache.put(player, PROFILE);
         answer = CompletableFuture.completedFuture(new EmblemApi.Result.NotFound());
 
-        assertInstanceOf(ProfileLoader.Outcome.NotLinked.class, loader.load(player, "Alex").join());
+        assertInstanceOf(ProfileLoader.Outcome.NotLinked.class, loader.load(player, "Alex", FORCE).join());
         assertEquals(Optional.empty(), cache.get(player));
     }
 
@@ -72,7 +123,7 @@ class ProfileLoaderTest {
         cache.put(player, PROFILE);
         answer = CompletableFuture.completedFuture(new EmblemApi.Result.Failed("the API answered with status 500"));
 
-        ProfileLoader.Outcome outcome = loader.load(player, "Alex").join();
+        ProfileLoader.Outcome outcome = loader.load(player, "Alex", FORCE).join();
 
         assertEquals(new ProfileLoader.Outcome.Failed("the API answered with status 500"), outcome);
         assertEquals(Optional.of(PROFILE), cache.get(player));
@@ -82,7 +133,7 @@ class ProfileLoaderTest {
     void anUnexpectedErrorIsAFailureAndNeverEscapes() {
         answer = CompletableFuture.failedFuture(new IllegalStateException("boom"));
 
-        ProfileLoader.Outcome outcome = loader.load(player, "Alex").join();
+        ProfileLoader.Outcome outcome = loader.load(player, "Alex", FORCE).join();
 
         assertTrue(assertInstanceOf(ProfileLoader.Outcome.Failed.class, outcome).reason().contains("IllegalStateException"));
         assertInstanceOf(ProfileLoader.Outcome.Updated.class, retry());
@@ -90,7 +141,7 @@ class ProfileLoaderTest {
 
     private ProfileLoader.Outcome retry() {
         answer = CompletableFuture.completedFuture(new EmblemApi.Result.Found(PROFILE));
-        return loader.load(player, "Alex").join();
+        return loader.load(player, "Alex", FORCE).join();
     }
 
     @Test
@@ -98,13 +149,13 @@ class ProfileLoaderTest {
         CompletableFuture<EmblemApi.Result> pending = new CompletableFuture<>();
         answer = pending;
 
-        CompletableFuture<ProfileLoader.Outcome> first = loader.load(player, "Alex");
-        ProfileLoader.Outcome second = loader.load(player, "Alex").join();
+        CompletableFuture<ProfileLoader.Outcome> first = loader.load(player, "Alex", FORCE);
+        ProfileLoader.Outcome second = loader.load(player, "Alex", FORCE).join();
         pending.complete(new EmblemApi.Result.Found(PROFILE));
 
         assertInstanceOf(ProfileLoader.Outcome.Busy.class, second);
         assertInstanceOf(ProfileLoader.Outcome.Updated.class, first.join());
         assertEquals(1, asked);
-        assertInstanceOf(ProfileLoader.Outcome.Updated.class, loader.load(player, "Alex").join());
+        assertInstanceOf(ProfileLoader.Outcome.Updated.class, loader.load(player, "Alex", FORCE).join());
     }
 }

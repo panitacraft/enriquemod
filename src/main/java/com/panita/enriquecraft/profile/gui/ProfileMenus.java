@@ -25,11 +25,9 @@ public final class ProfileMenus {
     private final ProfileConfig config;
     private final Messenger messenger;
     private final OpenMenus openMenus;
-    /** Keeps opening the menu over and over from asking the API each time. */
-    private final RefreshCooldown openThrottle;
 
     public ProfileMenus(UiService ui, ProfileService profiles, ProfileRefresher refresher, ProfileView view, EmblemTooltip tooltip,
-                        ProfileConfig config, Messenger messenger, OpenMenus openMenus, RefreshCooldown openThrottle) {
+                        ProfileConfig config, Messenger messenger, OpenMenus openMenus) {
         this.ui = ui;
         this.profiles = profiles;
         this.refresher = refresher;
@@ -38,19 +36,15 @@ public final class ProfileMenus {
         this.config = config;
         this.messenger = messenger;
         this.openMenus = openMenus;
-        this.openThrottle = openThrottle;
     }
 
     /**
-     * Opens the profile menu with what is known now, and reads the player's data again in the background, which redraws the menu
-     * when it arrives.
+     * Opens the profile menu with what is known now. When that is older than the cache allows, the player's data is read again in
+     * the background, which redraws the menu when it arrives.
      */
     public void open(ServerPlayer player) {
         new ProfileMenu(ui, this, profiles, view, tooltip, refresher, openMenus).open(player);
-        if (openThrottle.remainingSeconds(player.getUUID()) == 0) {
-            openThrottle.start(player.getUUID());
-            refresher.refresh(player);
-        }
+        refresher.refresh(player);
     }
 
     UiMenu emblemsMenu(UiMenu profileMenu) {

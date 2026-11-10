@@ -4,6 +4,7 @@ import com.panita.enriquecraft.link.client.LinkedPlayer;
 import com.panita.enriquecraft.link.service.LinkedPlayers;
 import com.panita.enriquecraft.profile.client.EmblemApi;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -23,6 +24,10 @@ public final class ProfileLoader {
         record Updated() implements Outcome {
         }
 
+        /** The cache already had an answer recent enough, so the API was not asked. */
+        record Current() implements Outcome {
+        }
+
         /** The player is not on the Panita list, or the API has no active account for them, so they have no emblems. */
         record NotLinked() implements Outcome {
         }
@@ -33,6 +38,17 @@ public final class ProfileLoader {
 
         /** A read of this player is already on its way. */
         record Busy() implements Outcome {
+        }
+    }
+
+    /** Whether a read may be answered from the cache. */
+    public sealed interface Freshness {
+        /** Always ask the API: a player or staff asked for the newest data. */
+        record Force() implements Freshness {
+        }
+
+        /** Ask the API only when the cache has nothing newer than {@code maxAge}. */
+        record AllowCached(Duration maxAge) implements Freshness {
         }
     }
 
@@ -52,7 +68,7 @@ public final class ProfileLoader {
     /**
      * @param name the Minecraft name the player is on the Panita list with
      */
-    public CompletableFuture<Outcome> load(UUID player, String name) {
+    public CompletableFuture<Outcome> load(UUID player, String name, Freshness freshness) {
         if (!running.add(player)) {
             return CompletableFuture.completedFuture(new Outcome.Busy());
         }
@@ -61,6 +77,10 @@ public final class ProfileLoader {
             cache.remove(player);
             running.remove(player);
             return CompletableFuture.completedFuture(new Outcome.NotLinked());
+        }
+        if (freshness instanceof Freshness.AllowCached allow && cache.isFresh(player, allow.maxAge())) {
+            running.remove(player);
+            return CompletableFuture.completedFuture(new Outcome.Current());
         }
         return api.profile(account.get().userId(), editionId.get())
                 .<Outcome>thenApply(result -> answer(player, result))
@@ -76,7 +96,7 @@ public final class ProfileLoader {
                 yield new Outcome.Updated();
             }
             case EmblemApi.Result.NotFound notFound -> {
-                cache.remove(player);
+                cache.putAbsent(player);
                 yield new Outcome.NotLinked();
             }
             case EmblemApi.Result.Failed failed -> new Outcome.Failed(failed.reason());

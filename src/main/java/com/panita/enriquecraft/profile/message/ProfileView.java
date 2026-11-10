@@ -28,6 +28,8 @@ public final class ProfileView {
                     messenger.send(player, Message.warning(ProfileMessages.Refresh.COOLDOWN).prefixed().with("seconds", (int) cooling.seconds()));
             case ProfileRefresher.SelfResult.Finished finished -> messenger.send(player, switch (finished.outcome()) {
                 case ProfileLoader.Outcome.Updated updated -> Message.success(ProfileMessages.Refresh.UPDATED).prefixed();
+                // A forced read never ends as current; it is listed because the outcome type is shared with reads that may.
+                case ProfileLoader.Outcome.Current current -> Message.success(ProfileMessages.Refresh.UPDATED).prefixed();
                 case ProfileLoader.Outcome.NotLinked notLinked -> Message.warning(ProfileMessages.Refresh.NOT_LINKED).prefixed();
                 case ProfileLoader.Outcome.Failed failed -> Message.error(ProfileMessages.Refresh.FAILED).prefixed();
                 case ProfileLoader.Outcome.Busy busy -> Message.info(ProfileMessages.Refresh.BUSY).prefixed();

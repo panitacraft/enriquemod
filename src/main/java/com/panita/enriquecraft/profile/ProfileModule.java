@@ -34,8 +34,6 @@ import java.util.Optional;
 public final class ProfileModule implements EnriquecraftModule {
 
     private static final String SELECTIONS_FILE = "emblem_selections.snbt";
-    /** How long opening the menu leaves the API alone, so opening it again and again does not read the profile each time. */
-    private static final int MENU_REFRESH_SECONDS = 15;
 
     @Override
     public Optional<Class<?>> messages() {
@@ -47,7 +45,7 @@ public final class ProfileModule implements EnriquecraftModule {
         ProfileConfig config = services.get(ProfileConfig.class);
         var selections = services.get(WorldData.class).register(SELECTIONS_FILE, EmblemSelections.CODEC, EmblemSelections.EMPTY);
 
-        ProfileCache cache = new ProfileCache();
+        ProfileCache cache = new ProfileCache(Instant::now);
         EmblemResolver resolver = new EmblemResolver(config);
         LinkedPlayers linked = services.get(LinkedPlayers.class);
         ProfileService profiles = new ProfileService(cache, resolver, linked, selections::get, selections::set);
@@ -64,12 +62,12 @@ public final class ProfileModule implements EnriquecraftModule {
         services.register(EmblemResolver.class, resolver);
         services.register(ProfileService.class, profiles);
         services.register(RefreshCooldown.class, cooldown);
-        ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown);
+        ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown, config.cacheSeconds::get);
         ProfileView view = new ProfileView(services.get(Messenger.class));
 
         services.register(ProfileView.class, view);
         services.register(ProfileRefresher.class, refresher);
         services.register(ProfileMenus.class, new ProfileMenus(services.get(UiService.class), profiles, refresher, view, tooltip, config,
-                services.get(Messenger.class), openMenus, new RefreshCooldown(() -> MENU_REFRESH_SECONDS, Instant::now)));
+                services.get(Messenger.class), openMenus));
     }
 }

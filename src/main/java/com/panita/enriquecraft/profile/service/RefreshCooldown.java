@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 /**
  * How long a player must wait between two refreshes of their own profile, so the command and the button cannot be used to
- * flood the API. It lives in memory; a player who leaves and comes back is read again anyway.
+ * flood the API. It lives in memory and is dropped when the player leaves.
  */
 public final class RefreshCooldown {
 

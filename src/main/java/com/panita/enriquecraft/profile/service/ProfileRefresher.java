@@ -5,16 +5,19 @@ import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntSupplier;
 
 /**
- * Reads players' profiles again and tells the rest of the mod when they changed: when a player is ready, when a player asks for
- * their own to be refreshed, and when staff refresh everyone. It is called and answers on the server thread; the network work
+ * Reads players' profiles again and tells the rest of the mod when they changed: when a player is ready or opens their menu (only
+ * if the cache is older than {@code profile.cacheSeconds}), and always when a player asks for their own to be refreshed or staff
+ * refresh everyone. It is called and answers on the server thread; the network work
  * happens in the {@link ProfileLoader}.
  */
 public final class ProfileRefresher {
@@ -43,6 +46,7 @@ public final class ProfileRefresher {
             return switch (outcome) {
                 case ProfileLoader.Outcome.Updated updated -> new Report(this.updated + 1, notLinked, failed);
                 case ProfileLoader.Outcome.Busy busy -> new Report(this.updated + 1, notLinked, failed);
+                case ProfileLoader.Outcome.Current current -> new Report(this.updated + 1, notLinked, failed);
                 case ProfileLoader.Outcome.NotLinked notLinked -> new Report(updated, this.notLinked + 1, failed);
                 case ProfileLoader.Outcome.Failed failed -> new Report(updated, notLinked, this.failed + 1);
             };
@@ -52,20 +56,30 @@ public final class ProfileRefresher {
     private final ProfileLoader loader;
     private final ProfileService profiles;
     private final RefreshCooldown cooldown;
+    private final IntSupplier cacheSeconds;
     private final AtomicBoolean refreshingAll = new AtomicBoolean();
     private volatile String lastProblem = "";
 
-    public ProfileRefresher(ProfileLoader loader, ProfileService profiles, RefreshCooldown cooldown) {
+    public ProfileRefresher(ProfileLoader loader, ProfileService profiles, RefreshCooldown cooldown, IntSupplier cacheSeconds) {
         this.loader = loader;
         this.profiles = profiles;
         this.cooldown = cooldown;
+        this.cacheSeconds = cacheSeconds;
+    }
+
+    /**
+     * Brings one player's profile up to date for a moment that is not a request for the newest data (they joined, they opened
+     * their menu): the API is asked only when the cache is older than {@code profile.cacheSeconds}.
+     */
+    public CompletableFuture<ProfileLoader.Outcome> refresh(ServerPlayer player) {
+        return read(player, new ProfileLoader.Freshness.AllowCached(Duration.ofSeconds(cacheSeconds.getAsInt())));
     }
 
     /** Reads one player's profile and tells the listeners when it changed. The future never fails. */
-    public CompletableFuture<ProfileLoader.Outcome> refresh(ServerPlayer player) {
+    private CompletableFuture<ProfileLoader.Outcome> read(ServerPlayer player, ProfileLoader.Freshness freshness) {
         MinecraftServer server = player.level().getServer();
         UUID id = player.getUUID();
-        return loader.load(id, player.getGameProfile().name()).thenCompose(outcome -> {
+        return loader.load(id, player.getGameProfile().name(), freshness).thenCompose(outcome -> {
             CompletableFuture<ProfileLoader.Outcome> done = new CompletableFuture<>();
             server.execute(() -> {
                 boolean changed = outcome instanceof ProfileLoader.Outcome.Updated || outcome instanceof ProfileLoader.Outcome.NotLinked;
@@ -86,7 +100,7 @@ public final class ProfileRefresher {
             return CompletableFuture.completedFuture(new SelfResult.Cooling(remaining));
         }
         cooldown.start(player.getUUID());
-        return refresh(player).thenApply(SelfResult.Finished::new);
+        return read(player, new ProfileLoader.Freshness.Force()).thenApply(SelfResult.Finished::new);
     }
 
     /**
@@ -108,7 +122,7 @@ public final class ProfileRefresher {
     private CompletableFuture<Report> refreshBatch(List<ServerPlayer> batch, Report soFar) {
         List<CompletableFuture<ProfileLoader.Outcome>> reads = new ArrayList<>();
         for (ServerPlayer player : batch) {
-            reads.add(refresh(player));
+            reads.add(read(player, new ProfileLoader.Freshness.Force()));
         }
         return CompletableFuture.allOf(reads.toArray(CompletableFuture[]::new)).thenApply(ignored -> {
             Report report = soFar;

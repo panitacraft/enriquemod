@@ -67,8 +67,4 @@ public final class ProfileService {
     public void updated(ServerPlayer player) {
         updates.forEach(listener -> listener.accept(player));
     }
-
-    public void forget(UUID player) {
-        cache.remove(player);
-    }
 }
