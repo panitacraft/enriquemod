@@ -59,6 +59,7 @@ public final class InlineArtTextures {
         int attempts;
         Identifier texture;
         Identifier iconTexture;
+        int iconSide;
         /** The image without its transparent margins, kept to make the glyph again when the GUI scale changes. */
         BufferedImage trimmed;
         /** The GUI scale the glyph texture was made for. */
@@ -106,9 +107,13 @@ public final class InlineArtTextures {
     }
 
     /** The picture an item marked with this id is drawn as, once it is ready. */
-    public static Optional<Identifier> iconTexture(String id) {
+    public static Optional<Icon> icon(String id) {
         Entry entry = ENTRIES.get(id);
-        return entry == null ? Optional.empty() : Optional.ofNullable(entry.iconTexture);
+        return entry == null || entry.iconTexture == null ? Optional.empty() : Optional.of(new Icon(entry.iconTexture, entry.iconSide));
+    }
+
+    /** The texture of an item's picture and the side of its square, in texture pixels. */
+    public record Icon(Identifier texture, int side) {
     }
 
     /** The server said the next lines hold this image: start loading it. Anything that does not add up is ignored. */
@@ -170,15 +175,29 @@ public final class InlineArtTextures {
     private static Prepared prepare(byte[] bytes, int scale) {
         try {
             BufferedImage source = ImageDecoder.decode(bytes);
-            BufferedImage trimmed = trim(nativePixels(source));
-            float fit = Math.min(1.0F, (float) ICON_SIDE / Math.max(source.getWidth(), source.getHeight()));
-            int iconWidth = Math.max(1, Math.round(source.getWidth() * fit));
-            int iconHeight = Math.max(1, Math.round(source.getHeight() * fit));
-            return new Prepared(glyphPixels(trimmed, scale), scale(source, ICON_SIDE, ICON_SIDE, iconWidth, iconHeight,
-                    (ICON_SIDE - iconWidth) / 2, (ICON_SIDE - iconHeight) / 2), trimmed, scale);
+            BufferedImage original = nativePixels(source);
+            BufferedImage trimmed = trim(original);
+            return new Prepared(glyphPixels(trimmed, scale), iconPixels(source, original), trimmed, scale);
         } catch (ImageDecoder.DecodeException e) {
             throw new IllegalStateException(e.failure().name(), e);
         }
+    }
+
+    /**
+     * The picture of an item, a square the image is fitted into. Art with a native pixel grid keeps that grid, centered and not resampled:
+     * the texture is sampled without blending, so a screen that draws it at a whole multiple of its size (32 pixels at an even GUI scale)
+     * shows every pixel of the art as a square of equal size. Any other picture is fitted into {@link #ICON_SIDE} pixels.
+     */
+    private static Pixels iconPixels(BufferedImage source, BufferedImage original) {
+        if (original != source) {
+            int side = Math.max(original.getWidth(), original.getHeight());
+            return scale(original, side, side, original.getWidth(), original.getHeight(), (side - original.getWidth()) / 2,
+                    (side - original.getHeight()) / 2);
+        }
+        float fit = Math.min(1.0F, (float) ICON_SIDE / Math.max(source.getWidth(), source.getHeight()));
+        int width = Math.max(1, Math.round(source.getWidth() * fit));
+        int height = Math.max(1, Math.round(source.getHeight() * fit));
+        return scale(source, ICON_SIDE, ICON_SIDE, width, height, (ICON_SIDE - width) / 2, (ICON_SIDE - height) / 2);
     }
 
     /** The glyph's pixels: as tall as the text is on screen, so one texture pixel is one screen pixel at this GUI scale. */
@@ -333,6 +352,7 @@ public final class InlineArtTextures {
     /** On the client thread: the textures are made here, and the glyph starts drawing its. */
     private static void show(Minecraft client, String id, Entry entry, Prepared prepared) {
         entry.trimmed = prepared.trimmed();
+        entry.iconSide = prepared.icon().width();
         entry.iconTexture = register(client, "inline_art/" + id + "_icon", prepared.icon());
         showGlyph(client, id, entry, prepared.glyph(), prepared.scale());
     }

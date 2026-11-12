@@ -4,7 +4,6 @@ import com.panita.enriquecraft.core.art.InlineArts;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -24,22 +23,23 @@ public final class ArtItems {
     }
 
     public static void draw(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y) {
-        Optional<Identifier> art = artOf(stack);
+        Optional<InlineArtTextures.Icon> art = artOf(stack);
         if (art.isEmpty()) {
             graphics.item(stack, x, y);
             return;
         }
         // The pose scales the sixteen pixels of an item to the size of the icon; the texture is a square the picture is fitted into
-        graphics.blit(RenderPipelines.GUI_TEXTURED, art.get(), x, y, 0.0F, 0.0F, SIZE, SIZE, InlineArtTextures.ICON_SIDE, InlineArtTextures.ICON_SIDE,
-                InlineArtTextures.ICON_SIDE, InlineArtTextures.ICON_SIDE, ARGB.white(1.0F));
+        int side = art.get().side();
+        graphics.blit(RenderPipelines.GUI_TEXTURED, art.get().texture(), x, y, 0.0F, 0.0F, SIZE, SIZE, side, side, side, side,
+                ARGB.white(1.0F));
     }
 
-    private static Optional<Identifier> artOf(ItemStack stack) {
+    private static Optional<InlineArtTextures.Icon> artOf(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         if (data == null) {
             return Optional.empty();
         }
         String id = data.copyTag().getStringOr(InlineArts.ITEM_KEY, "");
-        return id.isEmpty() ? Optional.empty() : InlineArtTextures.iconTexture(id);
+        return id.isEmpty() ? Optional.empty() : InlineArtTextures.icon(id);
     }
 }
