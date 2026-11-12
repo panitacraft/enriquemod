@@ -50,7 +50,7 @@ public final class ProfileModule implements EnriquecraftModule {
 
         var cached = services.get(WorldData.class).register(CACHE_FILE, CachedProfiles.CODEC, CachedProfiles.EMPTY);
         ProfileCache cache = new ProfileCache(Instant::now, cached::get, cached::set);
-        EmblemResolver resolver = new EmblemResolver(config);
+        EmblemResolver resolver = new EmblemResolver(config, cache::emblem);
         LinkedPlayers linked = services.get(LinkedPlayers.class);
         ProfileService profiles = new ProfileService(cache, resolver, linked, selections::get, selections::set);
         ProfileLoader loader = new ProfileLoader(new HttpEmblemApi(services.get(ApiAccess.class)), linked, cache, config.editionId::get);

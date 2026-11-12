@@ -13,6 +13,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Decides which of the emblems the API says a player holds this server shows, and in which place. The API only filters by edition:
@@ -27,9 +28,15 @@ public final class EmblemResolver {
     private static final EmblemLook FALLBACK_LOOK = new EmblemLook("○", "gray");
 
     private final ProfileConfig config;
+    private final Function<String, Optional<ApiEmblem>> catalog;
 
-    public EmblemResolver(ProfileConfig config) {
+    /**
+     * @param catalog finds an emblem by id among everything the API has said of anyone, so the default prank level has its image even
+     *                for a player who does not hold it
+     */
+    public EmblemResolver(ProfileConfig config, Function<String, Optional<ApiEmblem>> catalog) {
         this.config = config;
+        this.catalog = catalog;
     }
 
     /** How an emblem looks without the client mod: its own entry, its prank level, or its category's. */
@@ -97,10 +104,11 @@ public final class EmblemResolver {
         return isPlain(emblem) ? PrankLevel.parse(emblem.id(), config.prankPrefix.get()) : Optional.empty();
     }
 
+    /** The default level as the API describes it, when anyone's profile has it; otherwise its text alone. */
     private EmblemView defaultPrank() {
         String id = PrankLevel.DEFAULT.id(config.prankPrefix.get());
-        return new EmblemView(id, ProfileMessages.Prank.DEFAULT_TITLE, Optional.empty(), Optional.empty(), EmblemCategory.LOCAL_EMBLEM,
-                lookOf(id, EmblemCategory.LOCAL_EMBLEM));
+        return catalog.apply(id).map(this::view).orElseGet(() -> new EmblemView(id, ProfileMessages.Prank.DEFAULT_TITLE, Optional.empty(),
+                Optional.empty(), EmblemCategory.LOCAL_EMBLEM, lookOf(id, EmblemCategory.LOCAL_EMBLEM)));
     }
 
     private List<ApiEmblem> chosenFrom(List<ApiEmblem> selectable, Optional<List<String>> chosen) {

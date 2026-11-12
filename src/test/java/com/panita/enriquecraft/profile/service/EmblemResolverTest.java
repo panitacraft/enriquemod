@@ -38,7 +38,7 @@ class EmblemResolverTest {
 
     @BeforeEach
     void bind() {
-        resolver = new EmblemResolver(new ConfigManager(directory).bind("profile", ProfileConfig.class));
+        resolver = new EmblemResolver(new ConfigManager(directory).bind("profile", ProfileConfig.class), id -> Optional.empty());
     }
 
     /** Resolves a player who chose no prank level. */
@@ -190,9 +190,21 @@ class EmblemResolverTest {
     }
 
     @Test
-    void aPrankLooksAsItsLevelAndGoldWhenItIsAPlus() {
-        assertEquals(new EmblemLook("0", "aqua"), resolver.lookOf(emblem("enrique6_prank_0", EmblemCategory.LOCAL_EMBLEM, 1)));
-        assertEquals(new EmblemLook("3+", "gold"), resolver.lookOf(emblem("enrique6_prank_3_plus", EmblemCategory.LOCAL_EMBLEM, 1)));
-        assertEquals(new EmblemLook("12", "gold"), resolver.lookOf(emblem("enrique6_prank_12_plus", EmblemCategory.LOCAL_EMBLEM, 1)));
+    void aPrankIsASkullInTheColorOfItsLevelWithARaisedPlusWhenItIsAPlus() {
+        assertEquals(new EmblemLook("☠", "white"), resolver.lookOf(emblem("enrique6_prank_0", EmblemCategory.LOCAL_EMBLEM, 1)));
+        assertEquals(new EmblemLook("☠", "yellow"), resolver.lookOf(emblem("enrique6_prank_1", EmblemCategory.LOCAL_EMBLEM, 1)));
+        assertEquals(new EmblemLook("☠⁺", "gold"), resolver.lookOf(emblem("enrique6_prank_2_plus", EmblemCategory.LOCAL_EMBLEM, 1)));
+        assertEquals(new EmblemLook("☠⁺", "red"), resolver.lookOf(emblem("enrique6_prank_3_plus", EmblemCategory.LOCAL_EMBLEM, 1)));
+        assertEquals(new EmblemLook("☠", "red"), resolver.lookOf(emblem("enrique6_prank_12", EmblemCategory.LOCAL_EMBLEM, 1)));
+    }
+
+    @Test
+    void theDefaultPrankBorrowsItsImageFromWhoeverHoldsIt() {
+        ApiEmblem zero = emblem("enrique6_prank_0", EmblemCategory.LOCAL_EMBLEM, 1);
+        EmblemResolver withCatalog = new EmblemResolver(new ConfigManager(directory).bind("profile", ProfileConfig.class),
+                id -> id.equals(zero.id()) ? Optional.of(zero) : Optional.empty());
+
+        assertEquals(zero.iconUrl(), withCatalog.withoutProfile().prank().iconUrl());
+        assertEquals(zero.iconUrl(), withCatalog.resolve(profile(emblem("hero", EmblemCategory.EMBLEM, 2)), Optional.empty(), Optional.empty()).prank().iconUrl());
     }
 }

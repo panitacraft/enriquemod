@@ -3,6 +3,7 @@ package com.panita.enriquecraft.profile.service;
 import com.panita.enriquecraft.profile.data.EmblemLook;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,6 +18,8 @@ record PrankLevel(int level, boolean plus) implements Comparable<PrankLevel> {
     /** What a player with no prank emblem is at. */
     static final PrankLevel DEFAULT = new PrankLevel(0, false);
 
+    /** The color of each level from zero; a higher level than these keeps the last. */
+    private static final List<String> COLORS = List.of("white", "yellow", "gold", "red");
     private static final Pattern SUFFIX = Pattern.compile("(\\d{1,2})(_plus)?");
     private static final Comparator<PrankLevel> ORDER = Comparator.comparingInt(PrankLevel::level).thenComparing(PrankLevel::plus);
 
@@ -33,10 +36,9 @@ record PrankLevel(int level, boolean plus) implements Comparable<PrankLevel> {
         return prefix + level + (plus ? "_plus" : "");
     }
 
-    /** The look of a prank emblem that has none of its own: its level, with a plus sign when it has one and there is room for it. */
+    /** The look of a prank emblem that has none of its own: a skull, with a raised plus for the plus variant, in the color of its level. */
     EmblemLook look() {
-        String icon = plus && level < 10 ? level + "+" : String.valueOf(level);
-        return new EmblemLook(icon, plus ? "gold" : "aqua");
+        return new EmblemLook(plus ? "☠⁺" : "☠", COLORS.get(Math.min(level, COLORS.size() - 1)));
     }
 
     @Override
