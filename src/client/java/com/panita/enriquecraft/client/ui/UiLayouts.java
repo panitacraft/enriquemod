@@ -14,6 +14,7 @@ import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
+import com.panita.enriquecraft.core.ui.PlayerModels;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,9 @@ final class UiLayouts {
     private static final double MAX_SCROLL_SHARE = 0.45;
     private static final int MIN_SCROLL_HEIGHT = 30;
     private static final int COMPACT_ICON = 32;
+    /** The box of the player's model, as tall as a player is in the inventory screen is. */
+    private static final int MODEL_WIDTH = 80;
+    private static final int MODEL_HEIGHT = 140;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -196,6 +200,7 @@ final class UiLayouts {
             case UiElement.TextInput input -> input(input);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Divider ignored -> new UiDividerWidget();
+            case UiElement.Rule ignored -> new UiRuleWidget();
             case UiElement.PinPad pad -> new UiPinPadWidget(font, pad, actions, compact);
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
@@ -271,7 +276,9 @@ final class UiLayouts {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
         if (!detail.icon().isEmpty()) {
             int size = largeIconSize(detail.icon());
-            LayoutElement icon = detail.iconId() == UiElement.Detail.NOT_PRESSABLE
+            LayoutElement icon = PlayerModels.isModel(detail.icon())
+                    ? new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT)
+                    : detail.iconId() == UiElement.Detail.NOT_PRESSABLE
                     ? new UiItemWidget(detail.icon(), size)
                     : UiButtonWidget.big(font, detail.icon(), size, detail.iconTooltip(),
                             (mouse, shift) -> actions.press(detail.iconId(), mouse, shift));

@@ -72,7 +72,7 @@ public final class LinkApplier {
     }
 
     private WhitelistAdmin.Resolution entryOf(LinkedPlayer player) {
-        return admin.resolve(player.ign(), Optional.of(player.mode()));
+        return admin.resolve(player.ign(), player.mode());
     }
 
     /** Changes the whitelist. Must run on the server thread. */

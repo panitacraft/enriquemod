@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core.ui;
 
+import com.mojang.authlib.GameProfile;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -23,6 +24,13 @@ public final class PlayerHeads {
     public static ItemStack item(UUID player) {
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         head.set(DataComponents.PROFILE, ResolvableProfile.createUnresolved(player));
+        return head;
+    }
+
+    /** A player head item showing the skin in a profile the server holds, which needs no lookup by whoever shows it. */
+    public static ItemStack item(GameProfile profile) {
+        ItemStack head = new ItemStack(Items.PLAYER_HEAD);
+        head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return head;
     }
 

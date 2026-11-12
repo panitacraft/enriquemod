@@ -22,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LinkSyncTest {
 
-    private static final LinkedPlayer A = new LinkedPlayer(1, "Alpha", AuthMode.PREMIUM, "1");
-    private static final LinkedPlayer B = new LinkedPlayer(2, "Bravo", AuthMode.CRACKED, "2");
-    private static final LinkedPlayer C = new LinkedPlayer(3, "Charlie", AuthMode.CRACKED, "3");
-    private static final LinkedPlayer D = new LinkedPlayer(4, "Delta", AuthMode.CRACKED, "4");
+    private static final LinkedPlayer A = new LinkedPlayer(1, "Alpha", Optional.of(AuthMode.PREMIUM), "1");
+    private static final LinkedPlayer B = new LinkedPlayer(2, "Bravo", Optional.of(AuthMode.CRACKED), "2");
+    private static final LinkedPlayer C = new LinkedPlayer(3, "Charlie", Optional.of(AuthMode.CRACKED), "3");
+    private static final LinkedPlayer D = new LinkedPlayer(4, "Delta", Optional.of(AuthMode.CRACKED), "4");
 
     private final AtomicInteger asked = new AtomicInteger();
     private final AtomicInteger applied = new AtomicInteger();
@@ -156,7 +156,7 @@ class LinkSyncTest {
 
     @Test
     void aRenameThatWaitsKeepsTheOldNameAndDropsTheTagSoTheNextSyncAsksForTheWholeList() {
-        LinkedPlayer renamed = new LinkedPlayer(2, "BravoNew", AuthMode.CRACKED, "2");
+        LinkedPlayer renamed = new LinkedPlayer(2, "BravoNew", Optional.of(AuthMode.CRACKED), "2");
         snapshot = new LinkedSnapshot(List.of(A, B), Optional.of("\"v1\""));
         answer = CompletableFuture.completedFuture(players("\"v2\"", A, renamed));
         report = new LinkReport(0, 0, 0, 0, 1, List.of("BravoNew"), List.of(2), List.of());

@@ -36,6 +36,7 @@ public final class UiElementCodec {
     private static final byte DROPDOWN = 10;
     private static final byte DIVIDER = 11;
     private static final byte PIN_PAD = 12;
+    private static final byte RULE = 13;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -135,6 +136,7 @@ public final class UiElementCodec {
                 buffer.writeVarInt(pad.firstKeyId());
             }
             case UiElement.Divider ignored -> buffer.writeByte(DIVIDER);
+            case UiElement.Rule ignored -> buffer.writeByte(RULE);
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
     }
@@ -177,6 +179,7 @@ public final class UiElementCodec {
             case DROPDOWN -> readDropdown(buffer);
             case PIN_PAD -> readPinPad(buffer);
             case DIVIDER -> new UiElement.Divider();
+            case RULE -> new UiElement.Rule();
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
         };

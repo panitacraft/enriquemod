@@ -48,8 +48,8 @@ class HttpPanitaApiTest {
         PanitaApi.Result result = ask(Optional.empty());
 
         assertEquals(new PanitaApi.Result.Players(List.of(
-                new LinkedPlayer(12, "Javithor360", AuthMode.PREMIUM, "123456789012345678"),
-                new LinkedPlayer(30, "Tezzlar", AuthMode.CRACKED, "223456789012345678")), Optional.of("\"v1\"")), result);
+                new LinkedPlayer(12, "Javithor360", Optional.of(AuthMode.PREMIUM), "123456789012345678"),
+                new LinkedPlayer(30, "Tezzlar", Optional.of(AuthMode.CRACKED), "223456789012345678")), Optional.of("\"v1\"")), result);
     }
 
     @Test
@@ -101,6 +101,17 @@ class HttpPanitaApiTest {
 
             assertInstanceOf(PanitaApi.Result.Failed.class, ask(Optional.empty()), body);
         }
+    }
+
+    @Test
+    void aMemberWhoNeverChoseHowTheyLogInIsListedWithoutAMode() {
+        server.body = FakePanitaServer.list(
+                "{\"user_id\":1,\"ign\":\"Old\",\"minecraft_status\":null,\"discord_id\":\"1\"}",
+                "{\"user_id\":2,\"ign\":\"Older\",\"discord_id\":\"2\"}");
+
+        PanitaApi.Result.Players players = assertInstanceOf(PanitaApi.Result.Players.class, ask(Optional.empty()));
+
+        assertEquals(List.of(Optional.empty(), Optional.empty()), players.players().stream().map(LinkedPlayer::mode).toList());
     }
 
     @Test

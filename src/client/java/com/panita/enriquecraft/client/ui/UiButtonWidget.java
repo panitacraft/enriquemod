@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.client.ui;
 
+import com.panita.enriquecraft.client.art.ArtItems;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.client.Minecraft;
@@ -279,7 +280,7 @@ final class UiButtonWidget extends AbstractButton {
                 surface(graphics, hovered);
                 int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
                 int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
-                graphics.item(icon, iconX, iconY);
+                ArtItems.draw(graphics, icon, iconX, iconY);
                 graphics.itemDecorations(font, icon, iconX, iconY);
                 drawBadge(graphics, getX() + getWidth() - 1, getY() + getHeight() - 1);
             }
@@ -288,7 +289,7 @@ final class UiButtonWidget extends AbstractButton {
                         hovered ? tone.hoverBorder() : tone.border());
                 int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
                 int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
-                graphics.item(icon, iconX, iconY);
+                ArtItems.draw(graphics, icon, iconX, iconY);
                 graphics.itemDecorations(font, icon, iconX, iconY);
             }
             case CARD -> {
@@ -296,7 +297,7 @@ final class UiButtonWidget extends AbstractButton {
                 graphics.pose().pushMatrix();
                 graphics.pose().translate(getX() + (getWidth() - CARD_ICON) / 2.0F, getY() + CARD_MARGIN);
                 graphics.pose().scale(CARD_ICON / (float) ICON_SIZE, CARD_ICON / (float) ICON_SIZE);
-                graphics.item(icon, 0, 0);
+                ArtItems.draw(graphics, icon, 0, 0);
                 graphics.pose().popMatrix();
                 int room = getWidth() - 2 * PADDING;
                 FormattedCharSequence title = Language.getInstance().getVisualOrder(font.substrByWidth(getMessage(), room));
@@ -314,7 +315,7 @@ final class UiButtonWidget extends AbstractButton {
                 int textX = getX() + PADDING;
                 if (!icon.isEmpty()) {
                     int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
-                    graphics.item(icon, textX, iconY);
+                    ArtItems.draw(graphics, icon, textX, iconY);
                     graphics.itemDecorations(font, icon, textX, iconY);
                     drawBadge(graphics, textX + ICON_SIZE, getY() + (getHeight() + ICON_SIZE) / 2);
                     textX += ICON_SIZE + PADDING;
@@ -335,7 +336,7 @@ final class UiButtonWidget extends AbstractButton {
                 graphics.pose().pushMatrix();
                 graphics.pose().translate(getX() + (getWidth() - bigIcon) / 2.0F, getY() + (getHeight() - bigIcon) / 2.0F);
                 graphics.pose().scale(bigIcon / (float) ICON_SIZE, bigIcon / (float) ICON_SIZE);
-                graphics.item(icon, 0, 0);
+                ArtItems.draw(graphics, icon, 0, 0);
                 graphics.pose().popMatrix();
             }
         }

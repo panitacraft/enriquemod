@@ -93,6 +93,14 @@ public abstract class UiPagedMenu<T> extends UiMenu {
         refresh();
     }
 
+    /**
+     * A control of the menu's own, in the last cell of the row of controls, such as a button that resets the list. A spacer
+     * by default.
+     */
+    protected UiElement extraControl(UiBuilder builder) {
+        return new UiElement.Spacer();
+    }
+
     /** All entries, read again on every refresh so removals show up. */
     protected abstract List<T> entries();
 
@@ -210,7 +218,7 @@ public abstract class UiPagedMenu<T> extends UiMenu {
         // The page indicator sits in a slot that is empty in a chest, so the chest looks as it always did.
         UiElement pageIndicator = new UiElement.Page(page + 1, PAGINATOR.pageCount(total));
         UiElement arrange = chest && reorderable() ? arrangeButton(builder) : none;
-        return new UiElement.Row(List.of(back, search, filter, previousPage, close, nextPage, pageIndicator, arrange, none));
+        return new UiElement.Row(List.of(back, search, filter, previousPage, close, nextPage, pageIndicator, arrange, extraControl(builder)));
     }
 
     /** The switch between using the list and rearranging it, for a chest. */

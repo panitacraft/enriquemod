@@ -46,7 +46,8 @@ public final class ImageFetcher {
         this.executor = executor;
         this.maxBytes = maxBytes;
         this.timeout = timeout;
-        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).connectTimeout(timeout).executor(executor).build();
+        // The client keeps its own threads: the worker's are all busy inside blocking sends, and the connection needs one to finish
+        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).connectTimeout(timeout).build();
     }
 
     /** The bytes of the image; a failure is a {@link FetchException}, seen as the cause of the {@link CompletionException}. */
@@ -66,7 +67,7 @@ public final class ImageFetcher {
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             try (InputStream body = response.body()) {
                 if (response.statusCode() != 200) {
-                    throw new FetchException(Failure.UNAVAILABLE, null);
+                    throw new FetchException(Failure.UNAVAILABLE, new IOException("the host answered with status " + response.statusCode()));
                 }
                 if (!response.headers().firstValue("content-type").map(type -> type.toLowerCase(java.util.Locale.ROOT).startsWith("image/")).orElse(false)) {
                     throw new FetchException(Failure.NOT_AN_IMAGE, null);

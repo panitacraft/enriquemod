@@ -7,6 +7,7 @@ import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.link.client.ApiAccess;
 import com.panita.enriquecraft.link.client.ApiKey;
 import com.panita.enriquecraft.link.client.HttpPanitaApi;
 import com.panita.enriquecraft.link.config.LinkConfig;
@@ -16,6 +17,7 @@ import com.panita.enriquecraft.link.message.LinkView;
 import com.panita.enriquecraft.link.service.LinkApplier;
 import com.panita.enriquecraft.link.service.LinkRunner;
 import com.panita.enriquecraft.link.service.LinkSync;
+import com.panita.enriquecraft.link.service.LinkedPlayers;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
@@ -54,10 +56,12 @@ public final class LinkModule implements EnriquecraftModule {
         var snapshot = services.get(WorldData.class).register(SNAPSHOT_FILE, LinkedSnapshot.CODEC, LinkedSnapshot.EMPTY);
         LinkView view = new LinkView(services.get(Messenger.class), services.get(MessageFormatter.class));
         LinkApplier applier = new LinkApplier(services.get(WhitelistAdmin.class), services.get(PlayerDataMigration.class), view);
-        LinkSync sync = new LinkSync(
-                new HttpPanitaApi(config.apiUrl::get, () -> Duration.ofSeconds(config.requestTimeoutSeconds.get()), key),
-                snapshot::get, snapshot::set, key, config.maxRemovalPercent::get, worker, Instant::now);
+        ApiAccess access = new ApiAccess(config.apiUrl::get, () -> Duration.ofSeconds(config.requestTimeoutSeconds.get()), key);
+        LinkSync sync = new LinkSync(new HttpPanitaApi(access), snapshot::get, snapshot::set, key, config.maxRemovalPercent::get,
+                worker, Instant::now);
 
+        services.register(ApiAccess.class, access);
+        services.register(LinkedPlayers.class, new LinkedPlayers(snapshot::get));
         services.register(LinkView.class, view);
         services.register(LinkSync.class, sync);
         services.register(LinkRunner.class, new LinkRunner(sync, applier, view));

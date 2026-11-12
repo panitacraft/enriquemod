@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core;
 
+import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.core.framework.command.CommandCatalog;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.message.MessageCatalog;
@@ -49,6 +50,7 @@ public final class CoreModule implements EnriquecraftModule {
         MenuFactory menuFactory = new MenuFactory(formatter);
         services.register(MenuFactory.class, menuFactory);
         services.register(ClientCapabilities.class, capabilities);
+        services.register(InlineArts.class, new InlineArts(capabilities));
         ChatPrompts chatPrompts = new ChatPrompts(messenger);
         services.register(ChatPrompts.class, chatPrompts);
         UiSessions uiSessions = new UiSessions();

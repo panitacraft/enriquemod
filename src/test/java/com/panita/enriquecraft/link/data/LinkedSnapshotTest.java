@@ -28,8 +28,8 @@ class LinkedSnapshotTest {
     @Test
     void aSnapshotComesBackAsItWasStored() {
         LinkedSnapshot snapshot = new LinkedSnapshot(List.of(
-                new LinkedPlayer(12, "Javithor360", AuthMode.PREMIUM, "123456789012345678"),
-                new LinkedPlayer(30, "Tezzlar", AuthMode.CRACKED, "223456789012345678")), Optional.of("\"v1\""));
+                new LinkedPlayer(12, "Javithor360", Optional.of(AuthMode.PREMIUM), "123456789012345678"),
+                new LinkedPlayer(30, "Tezzlar", Optional.of(AuthMode.CRACKED), "223456789012345678")), Optional.of("\"v1\""));
 
         assertEquals(snapshot, roundTrip(snapshot));
     }

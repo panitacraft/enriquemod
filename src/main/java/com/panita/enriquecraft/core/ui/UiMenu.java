@@ -105,7 +105,8 @@ public abstract class UiMenu {
         return builder.build(describeChest(builder));
     }
 
-    final ServerPlayer viewer() {
+    /** The player the menu is shown to; null until it is opened. */
+    protected final ServerPlayer viewer() {
         return viewer;
     }
 
