@@ -27,7 +27,9 @@ final class InlineArtGlyph implements GlyphSource, BakedGlyph {
 
     /** The width of a glyph whose image is not ready. */
     private static final float PLACEHOLDER_ADVANCE = 8.0F;
-    private static final float HEIGHT = 8.0F;
+    /** Taller than the text (8) and raised by RAISE, so it reaches a little above and below the line without moving the text. */
+    private static final float HEIGHT = 10.0F;
+    private static final float RAISE = 1.0F;
 
     private @Nullable Identifier texture;
     private float advance = PLACEHOLDER_ADVANCE;
@@ -78,8 +80,8 @@ final class InlineArtGlyph implements GlyphSource, BakedGlyph {
         public void renderSprite(Matrix4fc pose, VertexConsumer buffer, int packedLightCoords, float offsetX, float offsetY, float z, int color) {
             float x0 = offsetX + left();
             float x1 = offsetX + right();
-            float y0 = offsetY + top();
-            float y1 = offsetY + bottom();
+            float y0 = offsetY + top() - RAISE;
+            float y1 = y0 + HEIGHT;
             buffer.addVertex(pose, x0, y0, z).setUv(0, 0).setColor(color).setLight(packedLightCoords);
             buffer.addVertex(pose, x0, y1, z).setUv(0, 1).setColor(color).setLight(packedLightCoords);
             buffer.addVertex(pose, x1, y1, z).setUv(1, 1).setColor(color).setLight(packedLightCoords);

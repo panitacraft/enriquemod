@@ -39,8 +39,8 @@ public final class InlineArtTextures {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InlineArtTextures.class);
 
-    /** The height of a glyph in GUI pixels, the height of the text. Its texture has one pixel per screen pixel, so nothing is resampled. */
-    private static final int HEIGHT = 8;
+    /** The height of a glyph in GUI pixels, a little more than the text (see InlineArtGlyph). Its texture has one pixel per screen pixel, so nothing is resampled. */
+    private static final int HEIGHT = 10;
     private static final int MAX_WIDTH = 64;
     /** Pixels this transparent or more count as empty when the margins of an image are cut. */
     private static final int MARGIN_ALPHA = 8;
