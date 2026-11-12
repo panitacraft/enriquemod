@@ -40,8 +40,11 @@ public final class InlineArtTextures {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InlineArtTextures.class);
 
-    /** The texture has this many pixels for each pixel of the screen, so the image stays sharp on a bigger GUI scale. */
-    private static final int SCALE = 4;
+    /**
+     * The texture has this many pixels for each pixel of the screen, so the image stays sharp on a bigger GUI scale: 8 makes a glyph
+     * texture 64 pixels tall, the usual size of a texture pack's icon.
+     */
+    private static final int SCALE = 8;
     /** The height of a glyph in screen pixels, the height of the text. */
     private static final int HEIGHT = 8;
     private static final int MAX_WIDTH = 64;
