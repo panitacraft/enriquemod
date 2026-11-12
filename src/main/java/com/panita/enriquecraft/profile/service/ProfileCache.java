@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.profile.service;
 
-import com.panita.enriquecraft.profile.client.ApiEmblem;
 import com.panita.enriquecraft.profile.client.ModProfile;
 import com.panita.enriquecraft.profile.data.CachedProfiles;
 
@@ -35,15 +34,6 @@ public final class ProfileCache {
     public synchronized Optional<ModProfile> get(UUID player) {
         CachedProfiles.Entry entry = read.get().entries().get(player);
         return entry == null ? Optional.empty() : entry.profile();
-    }
-
-    /** An emblem with this id as the API described it to anyone, for what a player does not hold but is still shown; empty when no cached player holds it. */
-    public synchronized Optional<ApiEmblem> emblem(String id) {
-        return read.get().entries().values().stream()
-                .flatMap(entry -> entry.profile().stream())
-                .flatMap(profile -> profile.emblems().stream())
-                .filter(emblem -> emblem.id().equals(id))
-                .findFirst();
     }
 
     /** Stores what the API said of the player, now. */

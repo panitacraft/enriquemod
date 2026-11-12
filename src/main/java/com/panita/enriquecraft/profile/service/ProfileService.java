@@ -5,11 +5,14 @@ import com.panita.enriquecraft.profile.client.ModProfile;
 import com.panita.enriquecraft.profile.data.EmblemSelections;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -18,32 +21,58 @@ import java.util.function.Supplier;
  */
 public final class ProfileService {
 
+    /** What asking to change the prank level did. */
+    public record PrankChange(Status status, Duration remaining) {
+
+        public enum Status {
+            CHANGED,
+            /** The player is already at that level, or it is not a level. */
+            UNCHANGED,
+            /** The last change was too recent; {@code remaining} says how long is left. */
+            COOLDOWN,
+            /** The player has no Panita account to keep the choice under. */
+            NOT_LINKED
+        }
+
+        static PrankChange of(Status status) {
+            return new PrankChange(status, Duration.ZERO);
+        }
+    }
+
     private final ProfileCache cache;
     private final EmblemResolver resolver;
     private final LinkedPlayers linked;
     private final Supplier<EmblemSelections> read;
     private final Consumer<EmblemSelections> write;
+    private final Supplier<Instant> clock;
+    private final IntSupplier prankCooldownSeconds;
     private final List<Consumer<ServerPlayer>> updates = new CopyOnWriteArrayList<>();
 
     public ProfileService(ProfileCache cache, EmblemResolver resolver, LinkedPlayers linked, Supplier<EmblemSelections> read,
-                          Consumer<EmblemSelections> write) {
+                          Consumer<EmblemSelections> write, Supplier<Instant> clock, IntSupplier prankCooldownSeconds) {
         this.cache = cache;
         this.resolver = resolver;
         this.linked = linked;
         this.read = read;
         this.write = write;
+        this.clock = clock;
+        this.prankCooldownSeconds = prankCooldownSeconds;
     }
 
     public Optional<ModProfile> profileOf(UUID player) {
         return cache.get(player);
     }
 
-    /** The emblems of the player as this server shows them; only the default prank level for a player the API has not said anything of. */
-    public PlayerEmblems emblemsOf(UUID player) {
-        return cache.get(player).map(profile -> {
-            EmblemSelections selections = read.get();
-            return resolver.resolve(profile, selections.of(profile.userId()), selections.prankOf(profile.userId()));
-        }).orElseGet(resolver::withoutProfile);
+    /**
+     * The emblems of the player as this server shows them. The prank level does not need the API, only the Panita account the player
+     * is listed under; the emblems after the name need what the API said of them.
+     */
+    public PlayerEmblems emblemsOf(ServerPlayer player) {
+        EmblemSelections selections = read.get();
+        Optional<String> prank = accountOf(player).flatMap(selections::prankOf).map(EmblemSelections.Prank::level);
+        return cache.get(player.getUUID())
+                .map(profile -> resolver.resolve(profile, selections.of(profile.userId()), prank))
+                .orElseGet(() -> resolver.withoutProfile(prank));
     }
 
     /** The Panita account of a player, if they are on the list. */
@@ -61,9 +90,31 @@ public final class ProfileService {
         accountOf(player).ifPresent(userId -> write.accept(read.get().without(userId)));
     }
 
-    /** Remembers which prank level the player wants shown, or, with none, goes back to the default level. A level they do not hold is ignored when read. */
-    public void choosePrank(ServerPlayer player, Optional<String> emblem) {
-        accountOf(player).ifPresent(userId -> write.accept(emblem.map(id -> read.get().withPrank(userId, id)).orElseGet(() -> read.get().withoutPrank(userId))));
+    /**
+     * Changes the prank level of the player, unless the last change was less than the configured wait ago. The first change has no
+     * wait, and going back to the first level counts as a change like any other.
+     *
+     * @param bypass whether the wait is ignored
+     */
+    public PrankChange choosePrank(ServerPlayer player, String level, boolean bypass) {
+        return accountOf(player).map(userId -> choosePrank(userId, level, bypass)).orElseGet(() -> PrankChange.of(PrankChange.Status.NOT_LINKED));
+    }
+
+    PrankChange choosePrank(int userId, String level, boolean bypass) {
+        EmblemSelections selections = read.get();
+        Optional<EmblemSelections.Prank> current = selections.prankOf(userId);
+        String shown = current.map(EmblemSelections.Prank::level).filter(resolver::isPrank).orElseGet(resolver::defaultPrankId);
+        if (!resolver.isPrank(level) || shown.equals(level)) {
+            return PrankChange.of(PrankChange.Status.UNCHANGED);
+        }
+        if (!bypass && current.isPresent()) {
+            Duration remaining = Duration.between(clock.get(), current.get().changedAt().plusSeconds(prankCooldownSeconds.getAsInt()));
+            if (remaining.isPositive()) {
+                return new PrankChange(PrankChange.Status.COOLDOWN, remaining);
+            }
+        }
+        write.accept(selections.withPrank(userId, level, clock.get()));
+        return PrankChange.of(PrankChange.Status.CHANGED);
     }
 
     /** Called on the server thread, with the player, whenever their data was replaced by a newer read. */

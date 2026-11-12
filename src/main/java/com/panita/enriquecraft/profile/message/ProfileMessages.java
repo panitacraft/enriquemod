@@ -41,8 +41,17 @@ public final class ProfileMessages {
     }
 
     public static final class Prank {
-        /** The title of the level every player has until Panitacraft says otherwise. */
-        public static final String DEFAULT_TITLE = "Pranks: Nivel Cero";
+        public static final String ZERO = "Pranks: Nivel Cero";
+        public static final String ZERO_PLUS = "Pranks+: Nivel Cero";
+        public static final String ONE = "Pranks: Nivel Uno";
+        public static final String ONE_PLUS = "Pranks+: Nivel Uno";
+        public static final String TWO = "Pranks: Nivel Dos";
+        public static final String TWO_PLUS = "Pranks+: Nivel Dos";
+        public static final String THREE = "Pranks: Nivel Tres";
+        public static final String THREE_PLUS = "Pranks+: Nivel Tres";
+        public static final String CHANGED = "Tu nivel de Pranks ahora es <white>{level}</white>.";
+        public static final String COOLDOWN = "Podrás cambiar tu nivel de Pranks de nuevo en <white>{time}</white>.";
+        public static final String NOT_LINKED = "Tu cuenta no está vinculada a Panitacraft, así que no se puede guardar tu nivel de Pranks.";
 
         private Prank() {
         }
@@ -50,10 +59,11 @@ public final class ProfileMessages {
 
     public static final class Emblems {
         public static final String TITLE = "Tus emblemas";
-        public static final String PRANK_DEFAULT = "Es tu nivel de Pranks por defecto y se muestra antes de tu nombre. Elige uno de tus otros niveles para mostrarlo en su lugar.";
         public static final String PRANK_SHOWN = "<green>Es tu nivel de Pranks y se muestra antes de tu nombre.";
-        public static final String PRANK_HIDDEN = "<gray>Es uno de tus niveles de Pranks.";
-        public static final String PRANK_RESET = "volver al nivel por defecto";
+        public static final String PRANK_OTHER = "<gray>Un nivel de Pranks. Cambiarlo tiene un tiempo de espera.";
+        public static final String PRANK_CHOOSE = "elegir este nivel";
+        public static final String EMPTY_TITLE = "Espacio vacío";
+        public static final String EMPTY_DESCRIPTION = "Aún no elegiste un emblema para este espacio. Elígelo en tu perfil.";
         public static final String SHOWN = "<green>Se muestra junto a tu nombre.";
         public static final String HIDDEN = "<gray>No se muestra.";
         public static final String HIDE = "ocultarlo";

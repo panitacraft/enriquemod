@@ -92,7 +92,7 @@ final class ProfileMenu extends UiMenu {
         ServerPlayer player = viewer();
         UUID id = player.getUUID();
         openMenus.seen(id, this);
-        PlayerEmblems emblems = profiles.emblemsOf(id);
+        PlayerEmblems emblems = profiles.emblemsOf(player);
         tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).toList());
 
         UiElement.Detail model = new UiElement.Detail(PlayerModels.ofViewer(PlayerHeads.item(player.getGameProfile())), Component.empty(), List.of());
@@ -127,7 +127,7 @@ final class ProfileMenu extends UiMenu {
     protected UiElement describeChest(UiBuilder builder) {
         ServerPlayer player = viewer();
         openMenus.seen(player.getUUID(), this);
-        PlayerEmblems emblems = profiles.emblemsOf(player.getUUID());
+        PlayerEmblems emblems = profiles.emblemsOf(player);
         tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.chosen().stream()).toList());
         UiElement.Detail detail = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
                 Component.literal(player.getGameProfile().name()), factLines(player, profiles.profileOf(player.getUUID())));

@@ -5,110 +5,105 @@ import com.panita.enriquecraft.profile.client.EmblemCategory;
 import com.panita.enriquecraft.profile.client.ModProfile;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.data.EmblemLook;
+import com.panita.enriquecraft.profile.data.PrankLevel;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
- * Decides which of the emblems the API says a player holds this server shows, and in which place. The API only filters by edition:
- * which emblem is the prank level, which system emblems can be chosen and how many fit are this server's rules, in the config.
+ * Decides which emblems a player shows and in which place. The API only says which emblems of the edition a player holds; which of
+ * them can be chosen and how many fit are this server's rules, in the config.
  * <p>
- * Every player shows one prank emblem before their name: the level they chose among those they hold, or level zero, which is where
- * everyone starts and is not a choice itself. It does not count toward the emblems after the name, which are everything else they
- * hold, the nationality and the staff emblem included.
+ * Every player shows one prank level before their name. The levels are the server's own, from the config, and the player may pick
+ * any of them; the first is where they start. Everything the API says they hold, the nationality and the staff emblem included, is
+ * theirs to choose to show after the name, except the emblems the API has for the prank levels, which would show the same thing twice.
  */
 public final class EmblemResolver {
 
+    /** The id of the stand-in for a place after the name the player has not filled; an entry of {@code profile.looks} may restyle it. */
+    static final String EMPTY_ID = "no_emblem";
+
     private static final EmblemLook FALLBACK_LOOK = new EmblemLook("○", "gray");
+    private static final EmblemLook EMPTY_LOOK = new EmblemLook("○", "dark_gray");
 
     private final ProfileConfig config;
-    private final Function<String, Optional<ApiEmblem>> catalog;
 
-    /**
-     * @param catalog finds an emblem by id among everything the API has said of anyone, so the default prank level has its image even
-     *                for a player who does not hold it
-     */
-    public EmblemResolver(ProfileConfig config, Function<String, Optional<ApiEmblem>> catalog) {
+    public EmblemResolver(ProfileConfig config) {
         this.config = config;
-        this.catalog = catalog;
     }
 
-    /** How an emblem looks without the client mod: its own entry, its prank level, or its category's. */
+    /** How an emblem looks without the client mod: its own entry, or its category's. */
     public EmblemLook lookOf(ApiEmblem emblem) {
-        return lookOf(emblem.id(), emblem.category());
-    }
-
-    private EmblemLook lookOf(String id, EmblemCategory category) {
-        EmblemLook own = config.looks.get().get(id);
+        EmblemLook own = config.looks.get().get(emblem.id());
         if (own != null) {
             return own;
         }
-        Optional<PrankLevel> prank = PrankLevel.parse(id, config.prankPrefix.get());
-        if (prank.isPresent()) {
-            return prank.get().look();
-        }
         // A title has no icon of its own, so it is drawn as the plain kind of emblem
-        String key = category == EmblemCategory.TITLE ? EmblemCategory.EMBLEM.id() : category.id();
-        return config.categoryLooks.get().getOrDefault(key, FALLBACK_LOOK);
+        String category = emblem.category() == EmblemCategory.TITLE ? EmblemCategory.EMBLEM.id() : emblem.category().id();
+        return config.categoryLooks.get().getOrDefault(category, FALLBACK_LOOK);
     }
 
     public EmblemView view(ApiEmblem emblem) {
         return new EmblemView(emblem.id(), emblem.name(), emblem.description(), emblem.iconUrl(), emblem.category(), lookOf(emblem));
     }
 
-    /** What a player the API has said nothing of shows: the default prank level, as text only, and nothing to choose from. */
-    public PlayerEmblems withoutProfile() {
-        return new PlayerEmblems(defaultPrank(), List.of(), List.of(), List.of());
+    private EmblemView view(PrankLevel level) {
+        return new EmblemView(level.id(), level.title(), Optional.of(level.description()).filter(text -> !text.isBlank()),
+                Optional.of(level.image()).filter(url -> !url.isEmpty()), EmblemCategory.LOCAL_EMBLEM, level.look());
+    }
+
+    /** Whether the id is one of the prank levels. */
+    public boolean isPrank(String id) {
+        return config.pranks.get().stream().anyMatch(level -> level.id().equals(id));
+    }
+
+    /** The level a player is at until they choose one. */
+    public String defaultPrankId() {
+        return config.pranks.get().getFirst().id();
+    }
+
+    /** What a player the API has said nothing of shows: the prank level and the empty places, and nothing to choose from. */
+    public PlayerEmblems withoutProfile(Optional<String> prank) {
+        return assemble(List.of(), Optional.empty(), prank);
     }
 
     /**
-     * @param chosen      the ids the player chose, in order; empty when they never chose, in which case the first emblems they hold are
-     *                    shown
-     * @param chosenPrank the prank emblem the player chose; empty when they never did, or when they no longer hold it, which shows the
-     *                    default level
+     * @param chosen the ids the player chose, in order; empty when they never chose, in which case the first emblems they hold are
+     *               shown
+     * @param prank  the id of the prank level the player chose; empty when they never did, or when it is no longer a level, which
+     *               shows the first one
      */
-    public PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen, Optional<String> chosenPrank) {
+    public PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen, Optional<String> prank) {
         List<String> prefixes = ProfileConfig.idsOf(config.systemPrefixes.get());
-
-        // The default level is what everyone starts at, so it is shown when nothing else is chosen and is not a choice itself
-        List<ApiEmblem> pranks = profile.emblems().stream()
-                .filter(emblem -> prankOf(emblem).filter(level -> !level.equals(PrankLevel.DEFAULT)).isPresent())
-                .sorted(Comparator.comparing(emblem -> prankOf(emblem).orElse(PrankLevel.DEFAULT)))
-                .toList();
-        EmblemView prank = chosenPrank.flatMap(id -> pranks.stream().filter(emblem -> emblem.id().equals(id)).findFirst())
-                .or(() -> profile.emblems().stream().filter(emblem -> prankOf(emblem).filter(PrankLevel.DEFAULT::equals).isPresent()).findFirst())
-                .map(this::view)
-                .orElseGet(this::defaultPrank);
-
         List<ApiEmblem> selectable = profile.emblems().stream()
-                .filter(emblem -> (isPlain(emblem) && prankOf(emblem).isEmpty())
+                .filter(emblem -> (isPlain(emblem) && !isPrank(emblem.id()))
                         || (emblem.category() == EmblemCategory.SYSTEM && prefixes.stream().anyMatch(emblem.id()::startsWith)))
                 .toList();
+        return assemble(selectable, chosen, prank);
+    }
 
-        return new PlayerEmblems(prank, pranks.stream().map(this::view).toList(), chosenFrom(selectable, chosen).stream().map(this::view).toList(),
-                selectable.stream().map(this::view).toList());
+    private PlayerEmblems assemble(List<ApiEmblem> selectable, Optional<List<String>> chosen, Optional<String> prank) {
+        List<EmblemView> levels = config.pranks.get().stream().map(this::view).toList();
+        EmblemView shown = prank.flatMap(id -> levels.stream().filter(level -> level.id().equals(id)).findFirst()).orElse(levels.getFirst());
+        List<EmblemView> shownEmblems = chosenFrom(selectable, chosen).stream().map(this::view).toList();
+        List<EmblemView> empty = Collections.nCopies(Math.max(0, config.loreMax.get() - shownEmblems.size()), emptySlot());
+        return new PlayerEmblems(shown, levels, shownEmblems, empty, selectable.stream().map(this::view).toList());
     }
 
     private static boolean isPlain(ApiEmblem emblem) {
         return emblem.category() == EmblemCategory.EMBLEM || emblem.category() == EmblemCategory.LOCAL_EMBLEM;
     }
 
-    /** The prank level of an emblem, when it is one: a global or local emblem whose id is a prank id. */
-    private Optional<PrankLevel> prankOf(ApiEmblem emblem) {
-        return isPlain(emblem) ? PrankLevel.parse(emblem.id(), config.prankPrefix.get()) : Optional.empty();
-    }
-
-    /** The default level as the API describes it, when anyone's profile has it; otherwise its text alone. */
-    private EmblemView defaultPrank() {
-        String id = PrankLevel.DEFAULT.id(config.prankPrefix.get());
-        return catalog.apply(id).map(this::view).orElseGet(() -> new EmblemView(id, ProfileMessages.Prank.DEFAULT_TITLE, Optional.empty(),
-                Optional.empty(), EmblemCategory.LOCAL_EMBLEM, lookOf(id, EmblemCategory.LOCAL_EMBLEM)));
+    /** What stands for a place after the name the player has not filled. */
+    private EmblemView emptySlot() {
+        EmblemLook look = config.looks.get().getOrDefault(EMPTY_ID, EMPTY_LOOK);
+        return new EmblemView(EMPTY_ID, ProfileMessages.Emblems.EMPTY_TITLE, Optional.of(ProfileMessages.Emblems.EMPTY_DESCRIPTION),
+                Optional.of(config.emptyEmblemImage.get()).filter(url -> !url.isEmpty()), EmblemCategory.LOCAL_EMBLEM, look);
     }
 
     private List<ApiEmblem> chosenFrom(List<ApiEmblem> selectable, Optional<List<String>> chosen) {

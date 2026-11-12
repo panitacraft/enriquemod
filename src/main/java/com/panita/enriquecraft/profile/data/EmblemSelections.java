@@ -2,7 +2,9 @@ package com.panita.enriquecraft.profile.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.panita.enriquecraft.core.framework.data.TimeCodecs;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +16,7 @@ import java.util.Optional;
  * choice.
  *
  * @param entries one entry for every player who chose emblems, in the order they first did
- * @param pranks  one entry for every player who chose a prank level
+ * @param pranks  one entry for every player who changed their prank level
  */
 public record EmblemSelections(List<Entry> entries, List<Prank> pranks) {
 
@@ -37,21 +39,23 @@ public record EmblemSelections(List<Entry> entries, List<Prank> pranks) {
     }
 
     /**
-     * @param userId the Panita account
-     * @param emblem the id of the prank emblem the player chose to show
+     * @param userId    the Panita account
+     * @param level     the id of the prank level the player chose to show
+     * @param changedAt when they chose it, which the wait before the next change counts from
      */
-    public record Prank(int userId, String emblem) {
+    public record Prank(int userId, String level, Instant changedAt) {
 
         public static final Codec<Prank> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("userId").forGetter(Prank::userId),
-                Codec.STRING.fieldOf("emblem").forGetter(Prank::emblem)
+                Codec.STRING.fieldOf("level").forGetter(Prank::level),
+                TimeCodecs.INSTANT.fieldOf("changedAt").forGetter(Prank::changedAt)
         ).apply(instance, Prank::new));
     }
 
     public static final Codec<EmblemSelections> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Entry.CODEC.listOf().fieldOf("entries").forGetter(EmblemSelections::entries),
-            // A file written before the prank could be chosen has no such list
-            Prank.CODEC.listOf().optionalFieldOf("pranks", List.of()).forGetter(EmblemSelections::pranks)
+            // A file written before the levels belonged to the server has no such list; its old "pranks" list is ignored
+            Prank.CODEC.listOf().optionalFieldOf("prankLevels", List.of()).forGetter(EmblemSelections::pranks)
     ).apply(instance, EmblemSelections::new));
 
     public EmblemSelections {
@@ -77,21 +81,16 @@ public record EmblemSelections(List<Entry> entries, List<Prank> pranks) {
         return new EmblemSelections(entries.stream().filter(entry -> entry.userId() != userId).toList(), pranks);
     }
 
-    /** The prank level the player chose; empty when they never did, which shows the default level. */
-    public Optional<String> prankOf(int userId) {
-        return pranks.stream().filter(prank -> prank.userId() == userId).findFirst().map(Prank::emblem);
+    /** The prank level the player chose and when; empty when they never did, which shows the first level. */
+    public Optional<Prank> prankOf(int userId) {
+        return pranks.stream().filter(prank -> prank.userId() == userId).findFirst();
     }
 
     /** The same choices with this player's prank level replaced. */
-    public EmblemSelections withPrank(int userId, String emblem) {
+    public EmblemSelections withPrank(int userId, String level, Instant changedAt) {
         List<Prank> updated = new ArrayList<>(pranks);
         updated.removeIf(prank -> prank.userId() == userId);
-        updated.add(new Prank(userId, emblem));
+        updated.add(new Prank(userId, level, changedAt));
         return new EmblemSelections(entries, updated);
-    }
-
-    /** The same choices without this player's prank level, so they are back to the default one. */
-    public EmblemSelections withoutPrank(int userId) {
-        return new EmblemSelections(entries, pranks.stream().filter(prank -> prank.userId() != userId).toList());
     }
 }

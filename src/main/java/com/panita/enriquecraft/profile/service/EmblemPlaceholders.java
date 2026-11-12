@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * The placeholders that put a player's emblems around their name, for every text that resolves them (the lines of chat, and mods
@@ -35,10 +35,10 @@ public final class EmblemPlaceholders {
 
     public void register() {
         Placeholders.registerServer(id("emblems_system"), (context, argument) -> context.hasServerPlayer()
-                ? PlaceholderResult.value(system(profiles.emblemsOf(context.serverPlayer().getUUID()).prank()))
+                ? PlaceholderResult.value(system(profiles.emblemsOf(context.serverPlayer()).prank()))
                 : PlaceholderResult.invalid("No player"));
         Placeholders.registerServer(id("emblems_lore"), (context, argument) -> context.hasServerPlayer()
-                ? PlaceholderResult.value(lore(profiles.emblemsOf(context.serverPlayer().getUUID()).chosen()))
+                ? PlaceholderResult.value(lore(profiles.emblemsOf(context.serverPlayer())))
                 : PlaceholderResult.invalid("No player"));
     }
 
@@ -47,10 +47,13 @@ public final class EmblemPlaceholders {
         return Component.empty().append(drawn(emblem)).append(Component.literal(" "));
     }
 
-    /** The characters each preceded by a space, so they stand apart from the name before them. */
-    Component lore(List<EmblemView> emblems) {
+    /**
+     * The emblems the player chose, then a stand-in for each place they have not filled, each preceded by a space so they stand apart
+     * from the name before them.
+     */
+    Component lore(PlayerEmblems emblems) {
         MutableComponent text = Component.empty();
-        for (EmblemView emblem : emblems) {
+        for (EmblemView emblem : Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList()) {
             text.append(Component.literal(" ")).append(drawn(emblem));
         }
         return text;
