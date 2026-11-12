@@ -129,7 +129,7 @@ class EmblemResolverTest {
                 emblem("c", EmblemCategory.EMBLEM, 3)), Optional.empty());
 
         assertEquals(List.of("no_emblem", "no_emblem"), ids(one.empty()));
-        assertEquals(Optional.of("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png"),
+        assertEquals(Optional.of("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=8"),
                 one.empty().getFirst().iconUrl());
         assertEquals(new EmblemLook("○", "dark_gray"), one.empty().getFirst().look());
         assertTrue(full.empty().isEmpty());
