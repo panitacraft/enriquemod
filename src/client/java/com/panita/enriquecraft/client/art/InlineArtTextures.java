@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.time.Duration;
@@ -171,7 +170,7 @@ public final class InlineArtTextures {
     private static Prepared prepare(byte[] bytes, int scale) {
         try {
             BufferedImage source = ImageDecoder.decode(bytes);
-            BufferedImage trimmed = trim(source);
+            BufferedImage trimmed = trim(nativePixels(source));
             float fit = Math.min(1.0F, (float) ICON_SIDE / Math.max(source.getWidth(), source.getHeight()));
             int iconWidth = Math.max(1, Math.round(source.getWidth() * fit));
             int iconHeight = Math.max(1, Math.round(source.getHeight() * fit));
@@ -237,16 +236,86 @@ public final class InlineArtTextures {
 
     /** The image drawn at the size given, at that place of a canvas that is transparent around it. */
     private static Pixels scale(BufferedImage source, int width, int height, int drawnWidth, int drawnHeight, int x, int y) {
-        BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D canvas = scaled.createGraphics();
-        try {
-            canvas.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            canvas.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            canvas.drawImage(source, x, y, drawnWidth, drawnHeight, null);
-        } finally {
-            canvas.dispose();
+        int sourceWidth = source.getWidth();
+        int sourceHeight = source.getHeight();
+        int[] from = source.getRGB(0, 0, sourceWidth, sourceHeight, null, 0, sourceWidth);
+        int[] out = new int[width * height];
+        for (int dy = 0; dy < drawnHeight; dy++) {
+            double top = dy * (double) sourceHeight / drawnHeight;
+            double bottom = (dy + 1) * (double) sourceHeight / drawnHeight;
+            for (int dx = 0; dx < drawnWidth; dx++) {
+                double left = dx * (double) sourceWidth / drawnWidth;
+                double right = (dx + 1) * (double) sourceWidth / drawnWidth;
+                out[(y + dy) * width + x + dx] = average(from, sourceWidth, sourceHeight, left, right, top, bottom);
+            }
         }
-        return new Pixels(width, height, scaled.getRGB(0, 0, width, height, null, 0, width));
+        return new Pixels(width, height, out);
+    }
+
+    /**
+     * The mean of the source pixels under one box, weighted by how much of each the box covers and by their opacity. A plain mean of the
+     * colors would pull the color of transparent pixels into the edges, a dark fringe around the art.
+     */
+    private static int average(int[] pixels, int width, int height, double left, double right, double top, double bottom) {
+        double alpha = 0;
+        double red = 0;
+        double green = 0;
+        double blue = 0;
+        double area = 0;
+        for (int sy = (int) Math.floor(top); sy < Math.min(height, Math.ceil(bottom)); sy++) {
+            double rowWeight = Math.min(bottom, sy + 1) - Math.max(top, sy);
+            for (int sx = (int) Math.floor(left); sx < Math.min(width, Math.ceil(right)); sx++) {
+                double weight = rowWeight * (Math.min(right, sx + 1) - Math.max(left, sx));
+                int argb = pixels[sy * width + sx];
+                double opacity = (argb >>> 24) * weight;
+                alpha += opacity;
+                red += ((argb >> 16) & 0xFF) * opacity;
+                green += ((argb >> 8) & 0xFF) * opacity;
+                blue += (argb & 0xFF) * opacity;
+                area += weight;
+            }
+        }
+        if (alpha <= 0 || area <= 0) {
+            return 0;
+        }
+        return (Math.round((float) (alpha / area)) << 24) | (Math.round((float) (red / alpha)) << 16)
+                | (Math.round((float) (green / alpha)) << 8) | Math.round((float) (blue / alpha));
+    }
+
+    /**
+     * The art as it was drawn, when the picture is a hand-made small image enlarged by whole pixels (a 32 pixel icon exported at 128):
+     * one pixel per block, so shrinking it works from the real pixels and not from their blurred enlargement. Any other picture is
+     * returned as it is.
+     */
+    private static BufferedImage nativePixels(BufferedImage source) {
+        int width = source.getWidth();
+        int height = source.getHeight();
+        int[] pixels = source.getRGB(0, 0, width, height, null, 0, width);
+        for (int block = 8; block >= 2; block--) {
+            if (width % block == 0 && height % block == 0 && isEnlargedBy(pixels, width, height, block)) {
+                BufferedImage small = new BufferedImage(width / block, height / block, BufferedImage.TYPE_INT_ARGB);
+                for (int y = 0; y < small.getHeight(); y++) {
+                    for (int x = 0; x < small.getWidth(); x++) {
+                        small.setRGB(x, y, pixels[y * block * width + x * block]);
+                    }
+                }
+                return small;
+            }
+        }
+        return source;
+    }
+
+    private static boolean isEnlargedBy(int[] pixels, int width, int height, int block) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int corner = pixels[(y - y % block) * width + (x - x % block)];
+                int here = pixels[y * width + x];
+                if (here != corner && !((here >>> 24) == 0 && (corner >>> 24) == 0)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static Identifier register(Minecraft client, String path, Pixels pixels) {
