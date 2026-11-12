@@ -11,6 +11,7 @@ import com.panita.enriquecraft.profile.message.ProfileMessages;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,9 +47,10 @@ public final class ProfileConfig implements ModConfig {
                 "The edition whose emblems this server shows. The emblems of any other edition, and those of no edition, are ignored.",
                 value -> ID.matcher(value).matches(), "must be 1 to 64 letters, digits, - or _");
         pranks = builder.custom("pranks", defaultPranks(),
-                "The prank levels, lowest first. Every player shows one before their name and can change it to any other, waiting\n"
-                        + "prankCooldownSeconds between changes; the first level is the one they start at. The levels belong to the server, not to the\n"
-                        + "Panita API: an emblem of the API with the id of a level is never offered as an ordinary emblem. A level has an id, a title,\n"
+                "The prank levels, lowest first. Every player shows one before their name. The first level is only where they start: it\n"
+                        + "cannot be chosen, and a player who has left it cannot return. They can change to any other level, waiting\n"
+                        + "prankCooldownSeconds between changes. The levels belong to the server, not to the Panita API: an emblem of the API with\n"
+                        + "the id of a level is never offered as an ordinary emblem. A level has an id, a title,\n"
                         + "a description (may be empty), an icon and a color for players without the client mod, and an image (an https address on a\n"
                         + "trusted image host, or empty).",
                 new PranksType());
@@ -87,16 +89,19 @@ public final class ProfileConfig implements ModConfig {
 
     /** Four levels, each plain and plus, with the images and the colors (white, yellow, gold, red) the server was designed with. */
     private static List<PrankLevel> defaultPranks() {
-        List<String> titles = List.of(ProfileMessages.Prank.ZERO, ProfileMessages.Prank.ZERO_PLUS, ProfileMessages.Prank.ONE,
-                ProfileMessages.Prank.ONE_PLUS, ProfileMessages.Prank.TWO, ProfileMessages.Prank.TWO_PLUS, ProfileMessages.Prank.THREE,
-                ProfileMessages.Prank.THREE_PLUS);
+        Iterator<String> titles = List.of(ProfileMessages.Prank.ZERO, ProfileMessages.Prank.ONE, ProfileMessages.Prank.ONE_PLUS,
+                ProfileMessages.Prank.TWO, ProfileMessages.Prank.TWO_PLUS, ProfileMessages.Prank.THREE, ProfileMessages.Prank.THREE_PLUS)
+                .iterator();
         List<PrankLevel> levels = new ArrayList<>();
         for (int level = 0; level < PRANK_WORDS.size(); level++) {
             String color = PRANK_COLORS.get(level);
             String image = PRANK_IMAGES + "prank_level_" + PRANK_WORDS.get(level);
-            levels.add(new PrankLevel("enrique6_prank_" + level, titles.get(level * 2), "", new EmblemLook("☠", color), image + ".png"));
-            levels.add(new PrankLevel("enrique6_prank_" + level + "_plus", titles.get(level * 2 + 1), "", new EmblemLook("☠⁺", color),
-                    image + "_plus.png"));
+            levels.add(new PrankLevel("enrique6_prank_" + level, titles.next(), "", new EmblemLook("☠", color), image + ".png"));
+            // Level zero is only where players start, so it has no plus variant
+            if (level > 0) {
+                levels.add(new PrankLevel("enrique6_prank_" + level + "_plus", titles.next(), "", new EmblemLook("☠⁺", color),
+                        image + "_plus.png"));
+            }
         }
         return List.copyOf(levels);
     }

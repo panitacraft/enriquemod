@@ -42,7 +42,6 @@ public final class ProfileMessages {
 
     public static final class Prank {
         public static final String ZERO = "Pranks: Nivel Cero";
-        public static final String ZERO_PLUS = "Pranks+: Nivel Cero";
         public static final String ONE = "Pranks: Nivel Uno";
         public static final String ONE_PLUS = "Pranks+: Nivel Uno";
         public static final String TWO = "Pranks: Nivel Dos";
@@ -61,6 +60,7 @@ public final class ProfileMessages {
         public static final String TITLE = "Tus emblemas";
         public static final String PRANK_SHOWN = "<green>Es tu nivel de Pranks y se muestra antes de tu nombre.";
         public static final String PRANK_OTHER = "<gray>Un nivel de Pranks. Cambiarlo tiene un tiempo de espera.";
+        public static final String PRANK_LOCKED = "<gray>Es el nivel inicial. Una vez que eliges otro nivel no puedes volver a este.";
         public static final String PRANK_CHOOSE = "elegir este nivel";
         public static final String EMPTY_TITLE = "Espacio vacío";
         public static final String EMPTY_DESCRIPTION = "Aún no elegiste un emblema para este espacio. Elígelo en tu perfil.";

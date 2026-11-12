@@ -44,7 +44,7 @@ class ProfileConfigTest {
         assertEquals("enriquecraft6", config.editionId.get());
         assertEquals(3, config.loreMax.get());
         assertEquals(604_800, config.prankCooldownSeconds.get());
-        assertEquals(8, config.pranks.get().size());
+        assertEquals(7, config.pranks.get().size());
         assertEquals("enrique6_prank_0", config.pranks.get().getFirst().id());
         assertEquals(new EmblemLook("☠⁺", "red"), config.pranks.get().getLast().look());
         assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522697/panita-extra/pranks/prank_level_three_plus.png",

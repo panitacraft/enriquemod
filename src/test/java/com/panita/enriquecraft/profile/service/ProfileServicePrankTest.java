@@ -74,12 +74,19 @@ class ProfileServicePrankTest {
     }
 
     @Test
-    void goingBackToTheFirstLevelIsAChangeLikeAnyOther() {
+    void theStartingLevelCanNeverBeChosenAgainNotEvenAfterTheWaitOrWithTheBypass() {
         change("enrique6_prank_2", false);
-
-        assertEquals(ProfileService.PrankChange.Status.COOLDOWN, change("enrique6_prank_0", false));
         now.set(now.get().plus(WEEK));
-        assertEquals(ProfileService.PrankChange.Status.CHANGED, change("enrique6_prank_0", false));
+
+        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0", false));
+        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0", true));
+        assertEquals(Optional.of("enrique6_prank_2"), shown());
+    }
+
+    @Test
+    void thereIsNoZeroPlusLevelToChoose() {
+        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0_plus", false));
+        assertEquals(Optional.empty(), shown());
     }
 
     @Test

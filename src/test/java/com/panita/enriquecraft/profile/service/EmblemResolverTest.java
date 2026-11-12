@@ -58,10 +58,10 @@ class EmblemResolverTest {
     }
 
     @Test
-    void everyLevelCanBeChosenInTheConfigsOrder() {
+    void theLevelsAreListedInTheConfigsOrderWithoutAZeroPlus() {
         PlayerEmblems emblems = resolve(profile(), Optional.empty());
 
-        assertEquals(List.of("enrique6_prank_0", "enrique6_prank_0_plus", "enrique6_prank_1", "enrique6_prank_1_plus", "enrique6_prank_2",
+        assertEquals(List.of("enrique6_prank_0", "enrique6_prank_1", "enrique6_prank_1_plus", "enrique6_prank_2",
                 "enrique6_prank_2_plus", "enrique6_prank_3", "enrique6_prank_3_plus"), ids(emblems.pranks()));
     }
 
@@ -92,7 +92,7 @@ class EmblemResolverTest {
     @Test
     void theApisEmblemsForThePrankLevelsAreNeverOfferedAsOrdinaryOnes() {
         PlayerEmblems emblems = resolve(profile(
-                emblem("enrique6_prank_3", EmblemCategory.LOCAL_EMBLEM, 1), emblem("enrique6_prank_0_plus", EmblemCategory.EMBLEM, 2),
+                emblem("enrique6_prank_3", EmblemCategory.LOCAL_EMBLEM, 1), emblem("enrique6_prank_1_plus", EmblemCategory.EMBLEM, 2),
                 emblem("hero", EmblemCategory.EMBLEM, 3)), Optional.empty());
 
         assertEquals(List.of("hero"), ids(emblems.selectable()));

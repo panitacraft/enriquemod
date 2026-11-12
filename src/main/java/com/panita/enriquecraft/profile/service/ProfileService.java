@@ -26,7 +26,7 @@ public final class ProfileService {
 
         public enum Status {
             CHANGED,
-            /** The player is already at that level, or it is not a level. */
+            /** The player is already at that level, or it is not a level, or it is the starting level, which cannot be chosen. */
             UNCHANGED,
             /** The last change was too recent; {@code remaining} says how long is left. */
             COOLDOWN,
@@ -92,7 +92,8 @@ public final class ProfileService {
 
     /**
      * Changes the prank level of the player, unless the last change was less than the configured wait ago. The first change has no
-     * wait, and going back to the first level counts as a change like any other.
+     * wait. The first level is only where players start: nobody can choose it, and once a player has left it they cannot return,
+     * not even with the wait ignored.
      *
      * @param bypass whether the wait is ignored
      */
@@ -104,7 +105,7 @@ public final class ProfileService {
         EmblemSelections selections = read.get();
         Optional<EmblemSelections.Prank> current = selections.prankOf(userId);
         String shown = current.map(EmblemSelections.Prank::level).filter(resolver::isPrank).orElseGet(resolver::defaultPrankId);
-        if (!resolver.isPrank(level) || shown.equals(level)) {
+        if (!resolver.isPrank(level) || level.equals(resolver.defaultPrankId()) || shown.equals(level)) {
             return PrankChange.of(PrankChange.Status.UNCHANGED);
         }
         if (!bypass && current.isPresent()) {
