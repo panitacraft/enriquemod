@@ -27,15 +27,15 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Where a player chooses which emblems show next to their name and in which order. The system emblems come first and cannot be changed
- * here; the player's own can be shown or put away with a click, and the shown ones are dragged into the order they want. What a
- * player chooses is the mod's own, so it applies at once.
+ * Where a player chooses which emblems show after their name and in which order. The prank level comes first and cannot be changed
+ * here; every other emblem, the nationality and the staff emblem included, can be shown or put away with a click, and the shown ones
+ * are dragged into the order they want. What a player chooses is the mod's own, so it applies at once.
  */
 final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
 
     /** What kind of place an emblem has on the screen. */
     enum Kind {
-        /** Shown with the system emblems; the player cannot change it. */
+        /** The prank level; shown before the name, and the player cannot change it. */
         SYSTEM,
         /** One the player chose to show. */
         CHOSEN,
@@ -84,9 +84,9 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
     protected List<Slot> entries() {
         openMenus.seen(viewer().getUUID(), this);
         PlayerEmblems emblems = profiles.emblemsOf(viewer().getUUID());
-        tooltip.announce(viewer(), Stream.concat(emblems.system().stream(), emblems.selectable().stream()).toList());
+        tooltip.announce(viewer(), Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).toList());
         List<Slot> slots = new ArrayList<>();
-        emblems.system().forEach(emblem -> slots.add(new Slot(emblem, Kind.SYSTEM)));
+        slots.add(new Slot(emblems.prank(), Kind.SYSTEM));
         emblems.chosen().forEach(emblem -> slots.add(new Slot(emblem, Kind.CHOSEN)));
         emblems.selectable().stream().filter(emblem -> emblems.chosen().stream().noneMatch(chosen -> chosen.id().equals(emblem.id())))
                 .forEach(emblem -> slots.add(new Slot(emblem, Kind.OTHER)));

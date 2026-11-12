@@ -22,9 +22,8 @@ public final class ProfileConfig implements ModConfig {
     private static final List<String> CATEGORIES = List.of("system", "emblem", "local_emblem");
 
     public final ConfigValue<String> editionId;
+    public final ConfigValue<String> prankPrefix;
     public final ConfigValue<String> systemPrefixes;
-    public final ConfigValue<String> systemIds;
-    public final ConfigValue<Integer> systemMax;
     public final ConfigValue<Integer> loreMax;
     public final ConfigValue<Integer> refreshCooldownSeconds;
     public final ConfigValue<Integer> cacheSeconds;
@@ -36,15 +35,16 @@ public final class ProfileConfig implements ModConfig {
         editionId = builder.string("editionId", "enriquecraft6",
                 "The edition whose emblems this server shows. The emblems of any other edition, and those of no edition, are ignored.",
                 value -> ID.matcher(value).matches(), "must be 1 to 64 letters, digits, - or _");
+        prankPrefix = builder.string("prankPrefix", "enrique6_prank_",
+                "The start of the id of the prank emblems, which end in the level and, for the plus variant, _plus (enrique6_prank_2 and\n"
+                        + "enrique6_prank_2_plus). Every player shows one before their name: the highest level they hold, or level 0 when they hold\n"
+                        + "none. They are not part of what a player chooses.",
+                value -> ID.matcher(value).matches(), "must be 1 to 64 letters, digits, - or _");
         systemPrefixes = builder.string("systemPrefixes", "nationality_",
-                "System emblems of the Panita API this server shows, by the start of their id, separated by commas. Empty shows none.",
+                "System emblems of the Panita API players can choose to show, by the start of their id, separated by commas. Empty offers\n"
+                        + "none.",
                 ProfileConfig::isIdList, "must be ids made of letters, digits, - or _, separated by commas");
-        systemIds = builder.string("systemIds", "enriquecraft6_staff",
-                "Emblems of the edition that are shown with the system emblems, before the nationality: they are always shown, cannot be\n"
-                        + "chosen or put away, and count toward systemMax. Ids separated by commas. Empty promotes none.",
-                ProfileConfig::isIdList, "must be ids made of letters, digits, - or _, separated by commas");
-        systemMax = builder.intRange("systemMax", 2, 0, 10, "The most system emblems shown next to a name.");
-        loreMax = builder.intRange("loreMax", 3, 0, 10, "The most emblems a player can choose to show next to their name.");
+        loreMax = builder.intRange("loreMax", 3, 0, 10, "The most emblems a player can choose to show next to their name, after it.");
         refreshCooldownSeconds = builder.intRange("refreshCooldownSeconds", 60, 0, 86_400,
                 "Seconds a player must wait before refreshing their own profile again with /profile refresh. 0 turns the wait off.");
         cacheSeconds = builder.intRange("cacheSeconds", 1_800, 0, 604_800,

@@ -40,8 +40,8 @@ import java.util.stream.Stream;
  * can read their emblems again from Panitacraft and go to the screen where they choose them. The data is read again on every redraw,
  * so it follows a refresh that finishes while the menu is open.
  * <p>
- * The client companion's screen has the player and their facts on top, then the system emblems and below them the player's other
- * emblems, each as a small square with its image. A chest keeps to a row of cards, since it has no room for more.
+ * The client companion's screen has the player and their facts on top, then the prank level and below it the emblems the player can
+ * choose, each as a small square with its image. A chest keeps to a row of cards, since it has no room for more.
  */
 final class ProfileMenu extends UiMenu {
 
@@ -93,7 +93,7 @@ final class ProfileMenu extends UiMenu {
         UUID id = player.getUUID();
         openMenus.seen(id, this);
         PlayerEmblems emblems = profiles.emblemsOf(id);
-        tooltip.announce(player, Stream.concat(emblems.system().stream(), emblems.selectable().stream()).toList());
+        tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).toList());
 
         UiElement.Detail model = new UiElement.Detail(PlayerModels.ofViewer(PlayerHeads.item(player.getGameProfile())), Component.empty(), List.of());
         List<UiElement> lines = new ArrayList<>();
@@ -107,11 +107,8 @@ final class ProfileMenu extends UiMenu {
         body.add(identity);
         body.add(new UiElement.Divider());
         body.add(new UiElement.Label(factory().text(ProfileMessages.Menu.EMBLEMS_HEADER)));
-        if (!emblems.system().isEmpty()) {
-            List<UiElement> system = emblems.system().stream().map(emblem -> square(builder, emblem, "")).toList();
-            body.add(new UiElement.Grid(system.size(), 1, system));
-            body.add(new UiElement.Rule());
-        }
+        body.add(new UiElement.Grid(1, 1, List.of(square(builder, emblems.prank(), ""))));
+        body.add(new UiElement.Rule());
         List<EmblemView> chosen = emblems.chosen();
         List<UiElement> squares = emblems.selectable().stream()
                 .map(emblem -> square(builder, emblem, chosen.stream().anyMatch(shown -> shown.id().equals(emblem.id())) ? "✔" : ""))
@@ -131,7 +128,7 @@ final class ProfileMenu extends UiMenu {
         ServerPlayer player = viewer();
         openMenus.seen(player.getUUID(), this);
         PlayerEmblems emblems = profiles.emblemsOf(player.getUUID());
-        tooltip.announce(player, Stream.concat(emblems.system().stream(), emblems.chosen().stream()).toList());
+        tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.chosen().stream()).toList());
         UiElement.Detail detail = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
                 Component.literal(player.getGameProfile().name()), factLines(player, profiles.profileOf(player.getUUID())));
         return new UiElement.Column(List.of(detail, cards(builder, emblems), controls(builder)));
@@ -171,7 +168,7 @@ final class ProfileMenu extends UiMenu {
 
     /** The emblems that show next to the player's name, as cards of a chest; the row keeps its place when there are none. */
     private UiElement cards(UiBuilder builder, PlayerEmblems emblems) {
-        List<EmblemView> shown = Stream.concat(emblems.system().stream(), emblems.chosen().stream()).limit(ROW_WIDTH).toList();
+        List<EmblemView> shown = Stream.concat(Stream.of(emblems.prank()), emblems.chosen().stream()).limit(ROW_WIDTH).toList();
         List<UiElement> cards = new ArrayList<>();
         for (EmblemView emblem : shown) {
             List<Component> lines = new ArrayList<>(tooltip.description(emblem));
