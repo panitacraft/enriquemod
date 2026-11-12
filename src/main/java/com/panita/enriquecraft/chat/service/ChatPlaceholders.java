@@ -49,12 +49,16 @@ public final class ChatPlaceholders {
 
     /**
      * The rank of a player: the prefix LuckPerms gives them, and in place of it, for a client that draws art, the image whose address is
-     * in the meta of their group. A rank with no image is only the prefix.
+     * in the meta of their group. A rank with no image is only the prefix. Like the emblem placeholders it brings its own space, so a
+     * player with no rank leaves no gap before their name.
      */
     private Component rank(ServerPlaceholderContext context) {
         Component prefix = luckperms(context, "prefix", null).orElse(Component.empty());
         String icon = luckperms(context, "meta", rankIconMeta.get()).map(value -> value.getString().strip()).orElse("");
-        return icon.isEmpty() ? prefix : arts.wrap(prefix, icon);
+        if (icon.isEmpty()) {
+            return prefix.getString().isBlank() ? Component.empty() : Component.empty().append(prefix).append(Component.literal(" "));
+        }
+        return Component.empty().append(arts.wrap(prefix, icon)).append(Component.literal(" "));
     }
 
     /** What a LuckPerms placeholder says for the player of the context, which Placeholder API holds under its name; empty when it says nothing. */
