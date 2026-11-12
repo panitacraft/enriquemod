@@ -41,6 +41,9 @@ public final class InlineArtTextures {
 
     /** The height of a glyph in GUI pixels, a little more than the text (see InlineArtGlyph). Its texture has one pixel per screen pixel, so nothing is resampled. */
     private static final int HEIGHT = 10;
+    /** Art at least this many times wider than tall (a rank's label) is drawn only as tall as the text, since its width already covers more of the line than an emblem does. */
+    private static final int WIDE_RATIO = 2;
+    private static final int WIDE_HEIGHT = 8;
     private static final int MAX_WIDTH = 64;
     /** Pixels this transparent or more count as empty when the margins of an image are cut. */
     private static final int MARGIN_ALPHA = 8;
@@ -211,9 +214,10 @@ public final class InlineArtTextures {
         return scale(source, ICON_SIDE, ICON_SIDE, width, height, (ICON_SIDE - width) / 2, (ICON_SIDE - height) / 2);
     }
 
-    /** The glyph's pixels: as tall as the text is on screen, so one texture pixel is one screen pixel at this GUI scale. */
+    /** The glyph's pixels: as tall as it is drawn on screen, so one texture pixel is one screen pixel at this GUI scale. */
     private static Pixels glyphPixels(BufferedImage trimmed, int scale) {
-        int height = HEIGHT * scale;
+        boolean wide = trimmed.getWidth() >= WIDE_RATIO * trimmed.getHeight();
+        int height = (wide ? WIDE_HEIGHT : HEIGHT) * scale;
         int width = Math.max(1, Math.min(MAX_WIDTH * scale, Math.round(trimmed.getWidth() * (float) height / trimmed.getHeight())));
         return scale(trimmed, width, height, width, height, 0, 0);
     }
@@ -375,7 +379,7 @@ public final class InlineArtTextures {
         }
         entry.scale = scale;
         entry.texture = register(client, "inline_art/" + id + "_x" + scale, pixels);
-        entry.glyph.show(entry.texture, pixels.width() / (float) scale);
+        entry.glyph.show(entry.texture, pixels.width() / (float) scale, pixels.height() / (float) scale);
         // The lines that hold the glyph were laid out before it had its width
         client.gui.hud.getChat().rescaleChat();
     }
