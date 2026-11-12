@@ -14,6 +14,7 @@ import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
+import com.panita.enriquecraft.profile.message.ProfileView;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 import com.panita.enriquecraft.profile.service.EmblemSelection;
 import com.panita.enriquecraft.profile.service.EmblemView;
@@ -65,15 +66,17 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
     private final EmblemTooltip tooltip;
     private final ProfileConfig config;
     private final Messenger messenger;
+    private final ProfileView view;
     private final OpenMenus openMenus;
 
     EmblemsMenu(UiService ui, ProfileService profiles, EmblemTooltip tooltip, ProfileConfig config, Messenger messenger,
-                OpenMenus openMenus, UiMenu previous) {
+                ProfileView view, OpenMenus openMenus, UiMenu previous) {
         super(ui, previous);
         this.profiles = profiles;
         this.tooltip = tooltip;
         this.config = config;
         this.messenger = messenger;
+        this.view = view;
         this.openMenus = openMenus;
     }
 
@@ -192,7 +195,8 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
         ProfileService.PrankChange change = profiles.choosePrank(player, level.id(), ProfilePermissions.canBypassPrankCooldown(player));
         switch (change.status()) {
             case CHANGED -> {
-                messenger.send(player, Message.success(ProfileMessages.Prank.CHANGED).prefixed().with("level", level.title()));
+                // Everyone is told, the player included
+                view.prankChanged(player, level.title());
                 refresh();
             }
             case COOLDOWN -> messenger.send(player, Message.warning(ProfileMessages.Prank.COOLDOWN).prefixed()

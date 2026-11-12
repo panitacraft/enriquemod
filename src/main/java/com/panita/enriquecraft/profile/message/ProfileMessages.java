@@ -48,7 +48,7 @@ public final class ProfileMessages {
         public static final String TWO_PLUS = "Pranks+: Nivel Dos";
         public static final String THREE = "Pranks: Nivel Tres";
         public static final String THREE_PLUS = "Pranks+: Nivel Tres";
-        public static final String CHANGED = "Tu nivel de Pranks ahora es <white>{level}</white>.";
+        public static final String CHANGED = "<yellow>{player}</yellow> cambió su nivel de Pranks a <white>{level}</white>.";
         public static final String COOLDOWN = "Podrás cambiar tu nivel de Pranks de nuevo en <white>{time}</white>.";
         public static final String NOT_LINKED = "Tu cuenta no está vinculada a Panitacraft, así que no se puede guardar tu nivel de Pranks.";
 

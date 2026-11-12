@@ -11,7 +11,10 @@ public final class CoreEvents {
     private CoreEvents() {
     }
 
-    /** Staff sent a message to everyone with {@code /broadcast}. Called on the server thread, with the text as they wrote it. */
+    /**
+     * A message was sent to everyone: staff's {@code /broadcast}, or a module's announcement such as a prank level change. Called on
+     * the server thread, with the text as it was written, which may carry text tags.
+     */
     public static final Event<Broadcast> BROADCAST = EventFactory.createArrayBacked(Broadcast.class,
             listeners -> text -> {
                 for (Broadcast listener : listeners) {
