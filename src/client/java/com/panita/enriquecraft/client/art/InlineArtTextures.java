@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,6 +70,8 @@ public final class InlineArtTextures {
         /** The GUI scale the glyph texture was made for. */
         int scale;
         boolean rebuilding;
+        /** How tall the address asked for the art to be drawn, in GUI pixels, if it did. */
+        OptionalInt size = OptionalInt.empty();
     }
 
     private record Pixels(int width, int height, int[] argb) {
@@ -142,11 +145,12 @@ public final class InlineArtTextures {
             return;
         }
         entry.requested = true;
+        entry.size = ArtLinks.sizeOf(url);
         entry.attempts++;
         Minecraft client = Minecraft.getInstance();
         int scale = guiScale(client);
-        FETCHER.fetch(URI.create(url))
-                .thenApplyAsync(bytes -> prepare(bytes, scale), WORKER)
+        FETCHER.fetch(URI.create(ArtLinks.withoutSize(url)))
+                .thenApplyAsync(bytes -> prepare(bytes, scale, entry.size), WORKER)
                 .whenComplete((prepared, failure) -> client.execute(() -> {
                     if (failure != null) {
                         LOGGER.warn("The art {} ({}) could not be loaded (attempt {}): {}", id, url, entry.attempts,
@@ -186,12 +190,12 @@ public final class InlineArtTextures {
      * On the worker: decode, then scale once for the glyph, from the image without its transparent margins, and once to the picture of
      * an item, which keeps them. Both keep the proportions.
      */
-    private static Prepared prepare(byte[] bytes, int scale) {
+    private static Prepared prepare(byte[] bytes, int scale, OptionalInt size) {
         try {
             BufferedImage source = ImageDecoder.decode(bytes);
             BufferedImage original = nativePixels(source);
             BufferedImage trimmed = trim(original);
-            return new Prepared(glyphPixels(trimmed, scale), iconPixels(source, original), trimmed, scale);
+            return new Prepared(glyphPixels(trimmed, scale, size), iconPixels(source, original), trimmed, scale);
         } catch (ImageDecoder.DecodeException e) {
             throw new IllegalStateException(e.failure().name(), e);
         }
@@ -215,9 +219,9 @@ public final class InlineArtTextures {
     }
 
     /** The glyph's pixels: as tall as it is drawn on screen, so one texture pixel is one screen pixel at this GUI scale. */
-    private static Pixels glyphPixels(BufferedImage trimmed, int scale) {
+    private static Pixels glyphPixels(BufferedImage trimmed, int scale, OptionalInt size) {
         boolean wide = trimmed.getWidth() >= WIDE_RATIO * trimmed.getHeight();
-        int height = (wide ? WIDE_HEIGHT : HEIGHT) * scale;
+        int height = size.orElse(wide ? WIDE_HEIGHT : HEIGHT) * scale;
         int width = Math.max(1, Math.min(MAX_WIDTH * scale, Math.round(trimmed.getWidth() * (float) height / trimmed.getHeight())));
         return scale(trimmed, width, height, width, height, 0, 0);
     }
@@ -260,7 +264,7 @@ public final class InlineArtTextures {
         }
         entry.rebuilding = true;
         BufferedImage trimmed = entry.trimmed;
-        CompletableFuture.supplyAsync(() -> glyphPixels(trimmed, scale), WORKER).whenComplete((pixels, failure) -> client.execute(() -> {
+        CompletableFuture.supplyAsync(() -> glyphPixels(trimmed, scale, entry.size), WORKER).whenComplete((pixels, failure) -> client.execute(() -> {
             entry.rebuilding = false;
             if (failure == null && ENTRIES.get(id) == entry) {
                 showGlyph(client, id, entry, pixels, scale);
