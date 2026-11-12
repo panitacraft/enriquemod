@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.client.art;
 
 import com.panita.enriquecraft.core.art.InlineArts;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.component.DataComponents;
@@ -23,23 +24,29 @@ public final class ArtItems {
     }
 
     public static void draw(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y) {
-        Optional<InlineArtTextures.Icon> art = artOf(stack);
+        Optional<InlineArtTextures.Icon> art = artOf(stack, screenSide(graphics));
         if (art.isEmpty()) {
             graphics.item(stack, x, y);
             return;
         }
-        // The pose scales the sixteen pixels of an item to the size of the icon; the texture is a square the picture is fitted into
-        int side = art.get().side();
-        graphics.blit(RenderPipelines.GUI_TEXTURED, art.get().texture(), x, y, 0.0F, 0.0F, SIZE, SIZE, side, side, side, side,
+        // The texture was made at the size the picture takes on the screen, so it is drawn one pixel to one pixel
+        graphics.blit(RenderPipelines.GUI_TEXTURED, art.get().texture(), x, y, 0.0F, 0.0F, SIZE, SIZE, art.get().side(), art.get().side(), art.get().side(), art.get().side(),
                 ARGB.white(1.0F));
     }
 
-    private static Optional<InlineArtTextures.Icon> artOf(ItemStack stack) {
+
+    /** The size the picture takes on the screen: the item's 16 pixels, times what the pose scales them by, times the GUI scale. */
+    private static int screenSide(GuiGraphicsExtractor graphics) {
+        double poseScale = Math.hypot(graphics.pose().m00(), graphics.pose().m01());
+        return (int) Math.round(SIZE * poseScale * Minecraft.getInstance().getWindow().getGuiScale());
+    }
+
+    private static Optional<InlineArtTextures.Icon> artOf(ItemStack stack, int screenSide) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         if (data == null) {
             return Optional.empty();
         }
         String id = data.copyTag().getStringOr(InlineArts.ITEM_KEY, "");
-        return id.isEmpty() ? Optional.empty() : InlineArtTextures.icon(id);
+        return id.isEmpty() ? Optional.empty() : InlineArtTextures.icon(id, screenSide);
     }
 }

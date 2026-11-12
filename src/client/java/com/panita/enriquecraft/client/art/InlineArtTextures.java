@@ -58,8 +58,9 @@ public final class InlineArtTextures {
         boolean requested;
         int attempts;
         Identifier texture;
-        Identifier iconTexture;
-        int iconSide;
+        /** The picture of an item, a square; its textures are made at the sizes it is drawn at. */
+        BufferedImage iconSource;
+        final Map<Integer, Identifier> icons = new HashMap<>();
         /** The image without its transparent margins, kept to make the glyph again when the GUI scale changes. */
         BufferedImage trimmed;
         /** The GUI scale the glyph texture was made for. */
@@ -106,10 +107,22 @@ public final class InlineArtTextures {
         return cause.getClass().getSimpleName() + ": " + cause.getMessage();
     }
 
-    /** The picture an item marked with this id is drawn as, once it is ready. */
-    public static Optional<Icon> icon(String id) {
+    /**
+     * The picture an item marked with this id is drawn as, once it is ready, as a texture of exactly {@code screenSide} pixels: the size
+     * it takes on the screen, so one texture pixel is one screen pixel and the screen does not resample it unevenly.
+     */
+    public static Optional<Icon> icon(String id, int screenSide) {
         Entry entry = ENTRIES.get(id);
-        return entry == null || entry.iconTexture == null ? Optional.empty() : Optional.of(new Icon(entry.iconTexture, entry.iconSide));
+        if (entry == null || entry.iconSource == null) {
+            return Optional.empty();
+        }
+        int side = Math.max(4, Math.min(512, screenSide));
+        Identifier texture = entry.icons.get(side);
+        if (texture == null) {
+            texture = register(Minecraft.getInstance(), "inline_art/" + id + "_icon" + side, scale(entry.iconSource, side, side, side, side, 0, 0));
+            entry.icons.put(side, texture);
+        }
+        return Optional.of(new Icon(texture, side));
     }
 
     /** The texture of an item's picture and the side of its square, in texture pixels. */
@@ -152,9 +165,7 @@ public final class InlineArtTextures {
             if (entry.texture != null) {
                 client.getTextureManager().release(entry.texture);
             }
-            if (entry.iconTexture != null) {
-                client.getTextureManager().release(entry.iconTexture);
-            }
+            entry.icons.values().forEach(client.getTextureManager()::release);
         });
         ENTRIES.values().forEach(entry -> entry.glyph.hide());
         ENTRIES.clear();
@@ -352,8 +363,9 @@ public final class InlineArtTextures {
     /** On the client thread: the textures are made here, and the glyph starts drawing its. */
     private static void show(Minecraft client, String id, Entry entry, Prepared prepared) {
         entry.trimmed = prepared.trimmed();
-        entry.iconSide = prepared.icon().width();
-        entry.iconTexture = register(client, "inline_art/" + id + "_icon", prepared.icon());
+        Pixels icon = prepared.icon();
+        entry.iconSource = new BufferedImage(icon.width(), icon.height(), BufferedImage.TYPE_INT_ARGB);
+        entry.iconSource.setRGB(0, 0, icon.width(), icon.height(), icon.argb(), 0, icon.width());
         showGlyph(client, id, entry, prepared.glyph(), prepared.scale());
     }
 
