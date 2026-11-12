@@ -43,7 +43,7 @@ public final class EmblemPlaceholders {
     }
 
     /** The emblem followed by a space, so the text that comes next stands apart. */
-    Component system(EmblemView emblem) {
+    public Component system(EmblemView emblem) {
         return Component.empty().append(drawn(emblem)).append(Component.literal(" "));
     }
 
@@ -51,7 +51,7 @@ public final class EmblemPlaceholders {
      * The emblems the player chose, then a stand-in for each place they have not filled, each preceded by a space so they stand apart
      * from the name before them.
      */
-    Component lore(PlayerEmblems emblems) {
+    public Component lore(PlayerEmblems emblems) {
         MutableComponent text = Component.empty();
         for (EmblemView emblem : Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList()) {
             text.append(Component.literal(" ")).append(drawn(emblem));

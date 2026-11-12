@@ -75,6 +75,20 @@ public final class ProfileService {
                 .orElseGet(() -> resolver.withoutProfile(prank));
     }
 
+    /**
+     * The emblems of the player with this Minecraft name, who may not be online: what is known of their account, their prank level
+     * and the emblems they chose. A name that is not on the list, or an account the API has told nothing of, has the first prank level
+     * and nothing chosen.
+     */
+    public PlayerEmblems emblemsOf(String name) {
+        EmblemSelections selections = read.get();
+        Optional<Integer> account = linked.byName(name).map(player -> player.userId());
+        Optional<String> prank = account.flatMap(selections::prankOf).map(EmblemSelections.Prank::level);
+        return account.flatMap(cache::byAccount)
+                .map(profile -> resolver.resolve(profile, selections.of(profile.userId()), prank))
+                .orElseGet(() -> resolver.withoutProfile(prank));
+    }
+
     /** The Panita account of a player, if they are on the list. */
     public Optional<Integer> accountOf(ServerPlayer player) {
         return linked.byName(player.getGameProfile().name()).map(account -> account.userId());

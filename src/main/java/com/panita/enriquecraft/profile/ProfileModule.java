@@ -58,7 +58,9 @@ public final class ProfileModule implements EnriquecraftModule {
         RefreshCooldown cooldown = new RefreshCooldown(config.refreshCooldownSeconds::get, Instant::now);
 
         EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get, services.get(InlineArts.class));
-        new EmblemPlaceholders(profiles, tooltip, services.get(InlineArts.class)).register();
+        EmblemPlaceholders placeholders = new EmblemPlaceholders(profiles, tooltip, services.get(InlineArts.class));
+        placeholders.register();
+        services.register(EmblemPlaceholders.class, placeholders);
 
         OpenMenus openMenus = new OpenMenus();
         profiles.onUpdated(player -> openMenus.refresh(player.getUUID()));
