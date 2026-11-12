@@ -1,0 +1,11 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "enriquecraft:font/discord_head.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [""]
+    }
+  ]
+}

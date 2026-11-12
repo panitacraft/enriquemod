@@ -3,18 +3,12 @@ package com.panita.enriquecraft.discord.service;
 import com.panita.enriquecraft.chat.channel.ChannelDefinition;
 import com.panita.enriquecraft.chat.channel.ChannelRegistry;
 import com.panita.enriquecraft.chat.service.ChatService;
-import com.panita.enriquecraft.core.message.Message;
-import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
-import com.panita.enriquecraft.discord.message.DiscordMessages;
+import com.panita.enriquecraft.discord.message.AuthorView;
 import com.panita.enriquecraft.discord.message.MediaView;
-import com.panita.enriquecraft.discord.message.ReplyView;
 import com.panita.enriquecraft.discord.protocol.InFrame;
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -30,21 +24,19 @@ public final class DiscordDelivery {
 
     private final ChatService chat;
     private final ChannelRegistry channels;
-    private final MessageFormatter formatter;
     private final DiscordConfig config;
     private final MediaView media;
     private final MediaPreviews previews;
-    private final ReplyView replies;
+    private final AuthorView authors;
 
-    public DiscordDelivery(ChatService chat, ChannelRegistry channels, MessageFormatter formatter, DiscordConfig config, MediaView media,
-                           MediaPreviews previews, ReplyView replies) {
+    public DiscordDelivery(ChatService chat, ChannelRegistry channels, DiscordConfig config, MediaView media, MediaPreviews previews,
+                           AuthorView authors) {
         this.chat = chat;
         this.channels = channels;
-        this.formatter = formatter;
         this.config = config;
         this.media = media;
         this.previews = previews;
-        this.replies = replies;
+        this.authors = authors;
     }
 
     /** Called on the server thread. A message for a channel this server does not have, or with nothing to say, is dropped. */
@@ -59,19 +51,9 @@ public final class DiscordDelivery {
             return;
         }
         // Whose message it answers goes between the name and the text, so the reply reads in one line
-        Component sender = sender(frame.ign(), config.showReplies.get() ? frame.reply() : Optional.empty());
+        Component sender = authors.sender(server, frame.ign(), config.showReplies.get() ? frame.reply() : Optional.empty());
         List<ServerPlayer> readers = chat.deliverExternal(server, channel.get(), sender, text, images);
         // The client companion draws the image itself, but only one from a host it trusts on its own
         previews.send(readers, allowed.stream().filter(MediaLinks::isTrusted).toList());
-    }
-
-    private Component sender(String ign, Optional<InFrame.Reply> reply) {
-        Component hover = formatter.format(Message.plain(DiscordMessages.Delivery.HOVER));
-        MutableComponent sender = Component.empty()
-                .append(formatter.format(Message.plain(config.deliveryPrefix.get())))
-                .append(Component.literal(" "))
-                .append(Component.literal(ign).withStyle(ChatFormatting.WHITE));
-        reply.ifPresent(answered -> sender.append(Component.literal(" ")).append(replies.line(answered)));
-        return sender.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover)));
     }
 }

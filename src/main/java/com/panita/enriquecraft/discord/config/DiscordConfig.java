@@ -35,7 +35,7 @@ public final class DiscordConfig implements ModConfig {
         url = builder.string("url", "",
                 "The address of the bridge of the Panita Bot, such as \"wss://bot.example.com/bridge\". Empty keeps the connection off.",
                 DiscordConfig::isBridgeUrl, "must be empty, or a wss address (ws is only allowed for localhost)");
-        deliveryPrefix = builder.text("deliveryPrefix", "<blue>[Discord]",
+        deliveryPrefix = builder.text("deliveryPrefix", "<bold><color:#5662f6>[DISCORD]",
                 "What is shown before the name of a Discord member in the game chat, written exactly as it should look: text tags, colors and fonts are allowed, and nothing is added around it, so a custom glyph needs no brackets.");
         showReplies = builder.bool("showReplies", true,
                 "Whether a Discord reply shows, before it, a line saying which message it answers. Applies at the next connection to the bot.");
