@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.ObjectContents;
 import net.minecraft.network.chat.contents.objects.PlayerSprite;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.component.ResolvableProfile;
 
@@ -22,15 +23,20 @@ import java.util.function.BooleanSupplier;
  * <p>
  * Only the {@code textures} property travels, without its signature: the client does not check it to draw a head, and it is
  * about a kilobyte that would otherwise repeat in every line to every reader.
+ * <p>
+ * Someone who is not online, such as the author of a Discord message, has the skin the server last saw on them ({@link SkinMemory}),
+ * and when it never saw them the client is left to look the name up, which finds the skin of a Microsoft account.
  */
 public final class ChatHeads {
 
     private static final String TEXTURES = "textures";
 
     private final BooleanSupplier enabled;
+    private final SkinMemory skins;
 
-    public ChatHeads(BooleanSupplier enabled) {
+    public ChatHeads(BooleanSupplier enabled, SkinMemory skins) {
         this.enabled = enabled;
+        this.skins = skins;
     }
 
     /** The head and the space after it, which start a line; empty when heads are turned off. */
@@ -38,8 +44,27 @@ public final class ChatHeads {
         return enabled.getAsBoolean() ? Optional.of(of(player.getGameProfile())) : Optional.empty();
     }
 
+    /**
+     * The head of the player with this name, who may not be online: the skin they have now, the one last seen of them, or else the
+     * one the client finds by name. Empty when heads are turned off.
+     */
+    public Optional<Component> of(MinecraftServer server, String name) {
+        if (!enabled.getAsBoolean()) {
+            return Optional.empty();
+        }
+        ServerPlayer online = server.getPlayerList().getPlayerByName(name);
+        if (online != null) {
+            return Optional.of(of(online.getGameProfile()));
+        }
+        return Optional.of(skins.profileOf(name).map(ChatHeads::of).orElseGet(() -> head(ResolvableProfile.createUnresolved(name))));
+    }
+
     static Component of(GameProfile profile) {
-        MutableComponent head = MutableComponent.create(new ObjectContents(new PlayerSprite(ResolvableProfile.createResolved(slim(profile)), true), Optional.empty()));
+        return head(ResolvableProfile.createResolved(slim(profile)));
+    }
+
+    private static Component head(ResolvableProfile profile) {
+        MutableComponent head = MutableComponent.create(new ObjectContents(new PlayerSprite(profile, true), Optional.empty()));
         return Component.empty().append(head).append(Component.literal(" "));
     }
 
