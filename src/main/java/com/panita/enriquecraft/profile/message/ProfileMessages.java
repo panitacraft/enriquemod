@@ -50,7 +50,10 @@ public final class ProfileMessages {
 
     public static final class Emblems {
         public static final String TITLE = "Tus emblemas";
-        public static final String SYSTEM = "Es tu nivel de Pranks: se muestra siempre antes de tu nombre y no se puede quitar.";
+        public static final String PRANK_DEFAULT = "Es tu nivel de Pranks por defecto y se muestra antes de tu nombre. Elige uno de tus otros niveles para mostrarlo en su lugar.";
+        public static final String PRANK_SHOWN = "<green>Es tu nivel de Pranks y se muestra antes de tu nombre.";
+        public static final String PRANK_HIDDEN = "<gray>Es uno de tus niveles de Pranks.";
+        public static final String PRANK_RESET = "volver al nivel por defecto";
         public static final String SHOWN = "<green>Se muestra junto a tu nombre.";
         public static final String HIDDEN = "<gray>No se muestra.";
         public static final String HIDE = "ocultarlo";

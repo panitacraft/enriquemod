@@ -18,8 +18,9 @@ import java.util.Set;
  * Decides which of the emblems the API says a player holds this server shows, and in which place. The API only filters by edition:
  * which emblem is the prank level, which system emblems can be chosen and how many fit are this server's rules, in the config.
  * <p>
- * Every player has a prank emblem, the only one that is not up to them: the highest level they hold, or level zero when they hold none.
- * Everything else they hold, the nationality and the staff emblem included, is theirs to choose.
+ * Every player shows one prank emblem before their name: the level they chose among those they hold, or level zero, which is where
+ * everyone starts and is not a choice itself. It does not count toward the emblems after the name, which are everything else they
+ * hold, the nationality and the staff emblem included.
  */
 public final class EmblemResolver {
 
@@ -56,19 +57,25 @@ public final class EmblemResolver {
 
     /** What a player the API has said nothing of shows: the default prank level, as text only, and nothing to choose from. */
     public PlayerEmblems withoutProfile() {
-        return new PlayerEmblems(defaultPrank(), List.of(), List.of());
+        return new PlayerEmblems(defaultPrank(), List.of(), List.of(), List.of());
     }
 
     /**
-     * @param chosen the ids the player chose, in order; empty when they never chose, in which case the first emblems they hold are
-     *               shown
+     * @param chosen      the ids the player chose, in order; empty when they never chose, in which case the first emblems they hold are
+     *                    shown
+     * @param chosenPrank the prank emblem the player chose; empty when they never did, or when they no longer hold it, which shows the
+     *                    default level
      */
-    public PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen) {
+    public PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen, Optional<String> chosenPrank) {
         List<String> prefixes = ProfileConfig.idsOf(config.systemPrefixes.get());
 
-        EmblemView prank = profile.emblems().stream()
-                .filter(emblem -> prankOf(emblem).isPresent())
-                .max(Comparator.comparing(emblem -> prankOf(emblem).orElse(PrankLevel.DEFAULT)))
+        // The default level is what everyone starts at, so it is shown when nothing else is chosen and is not a choice itself
+        List<ApiEmblem> pranks = profile.emblems().stream()
+                .filter(emblem -> prankOf(emblem).filter(level -> !level.equals(PrankLevel.DEFAULT)).isPresent())
+                .sorted(Comparator.comparing(emblem -> prankOf(emblem).orElse(PrankLevel.DEFAULT)))
+                .toList();
+        EmblemView prank = chosenPrank.flatMap(id -> pranks.stream().filter(emblem -> emblem.id().equals(id)).findFirst())
+                .or(() -> profile.emblems().stream().filter(emblem -> prankOf(emblem).filter(PrankLevel.DEFAULT::equals).isPresent()).findFirst())
                 .map(this::view)
                 .orElseGet(this::defaultPrank);
 
@@ -77,7 +84,7 @@ public final class EmblemResolver {
                         || (emblem.category() == EmblemCategory.SYSTEM && prefixes.stream().anyMatch(emblem.id()::startsWith)))
                 .toList();
 
-        return new PlayerEmblems(prank, chosenFrom(selectable, chosen).stream().map(this::view).toList(),
+        return new PlayerEmblems(prank, pranks.stream().map(this::view).toList(), chosenFrom(selectable, chosen).stream().map(this::view).toList(),
                 selectable.stream().map(this::view).toList());
     }
 

@@ -41,38 +41,64 @@ class EmblemResolverTest {
         resolver = new EmblemResolver(new ConfigManager(directory).bind("profile", ProfileConfig.class));
     }
 
-    @Test
-    void theHighestPrankLevelHeldIsTheSystemEmblem() {
-        PlayerEmblems emblems = resolver.resolve(profile(
-                emblem("enrique6_prank_1", EmblemCategory.LOCAL_EMBLEM, 1),
-                emblem("enrique6_prank_3", EmblemCategory.LOCAL_EMBLEM, 2),
-                emblem("enrique6_prank_2_plus", EmblemCategory.LOCAL_EMBLEM, 3)), Optional.empty());
+    /** Resolves a player who chose no prank level. */
+    private PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen) {
+        return resolver.resolve(profile, chosen, Optional.empty());
+    }
 
-        assertEquals("enrique6_prank_3", emblems.prank().id());
+    private static ModProfile pranksHeld() {
+        return profile(
+                emblem("enrique6_prank_2_plus", EmblemCategory.LOCAL_EMBLEM, 1),
+                emblem("enrique6_prank_1", EmblemCategory.LOCAL_EMBLEM, 2),
+                emblem("enrique6_prank_3", EmblemCategory.LOCAL_EMBLEM, 3),
+                emblem("enrique6_prank_2", EmblemCategory.LOCAL_EMBLEM, 4),
+                emblem("enrique6_prank_0", EmblemCategory.LOCAL_EMBLEM, 5));
     }
 
     @Test
-    void atTheSameLevelThePlusVariantWins() {
-        PlayerEmblems emblems = resolver.resolve(profile(
-                emblem("enrique6_prank_2_plus", EmblemCategory.LOCAL_EMBLEM, 1),
-                emblem("enrique6_prank_2", EmblemCategory.LOCAL_EMBLEM, 2)), Optional.empty());
+    void withoutAChoiceThePrankIsTheDefaultLevelWhateverTheyHold() {
+        PlayerEmblems emblems = resolver.resolve(pranksHeld(), Optional.empty(), Optional.empty());
+
+        assertEquals("enrique6_prank_0", emblems.prank().id());
+        assertEquals(Optional.of("https://res.cloudinary.com/x/enrique6_prank_0.png"), emblems.prank().iconUrl());
+    }
+
+    @Test
+    void thePrankLevelsToChooseFromAreTheHeldOnesLowestFirstWithoutTheDefault() {
+        PlayerEmblems emblems = resolver.resolve(pranksHeld(), Optional.empty(), Optional.empty());
+
+        assertEquals(List.of("enrique6_prank_1", "enrique6_prank_2", "enrique6_prank_2_plus", "enrique6_prank_3"), ids(emblems.pranks()));
+    }
+
+    @Test
+    void aChosenPrankIsTheOneShown() {
+        PlayerEmblems emblems = resolver.resolve(pranksHeld(), Optional.empty(), Optional.of("enrique6_prank_2_plus"));
 
         assertEquals("enrique6_prank_2_plus", emblems.prank().id());
     }
 
     @Test
+    void aPrankTheyDoNotHoldOrTheDefaultCannotBeChosen() {
+        assertEquals("enrique6_prank_0", resolver.resolve(pranksHeld(), Optional.empty(), Optional.of("enrique6_prank_9")).prank().id());
+        assertEquals("enrique6_prank_0", resolver.resolve(pranksHeld(), Optional.empty(), Optional.of("hero")).prank().id());
+        assertEquals("enrique6_prank_0", resolver.resolve(profile(emblem("enrique6_prank_1", EmblemCategory.LOCAL_EMBLEM, 1)),
+                Optional.empty(), Optional.of("enrique6_prank_0")).prank().id());
+    }
+
+    @Test
     void aPlayerWithNoPrankEmblemIsAtLevelZeroWithoutAnImage() {
-        PlayerEmblems emblems = resolver.resolve(profile(emblem("hero", EmblemCategory.EMBLEM, 1)), Optional.empty());
+        PlayerEmblems emblems = resolve(profile(emblem("hero", EmblemCategory.EMBLEM, 1)), Optional.empty());
 
         assertEquals("enrique6_prank_0", emblems.prank().id());
         assertEquals(Optional.empty(), emblems.prank().iconUrl());
+        assertEquals(List.of(), emblems.pranks());
         assertEquals(emblems.prank(), resolver.withoutProfile().prank());
         assertEquals(List.of(), resolver.withoutProfile().selectable());
     }
 
     @Test
     void pranksAreNeverSelectableOrChosen() {
-        PlayerEmblems emblems = resolver.resolve(profile(
+        PlayerEmblems emblems = resolve(profile(
                 emblem("enrique6_prank_1", EmblemCategory.LOCAL_EMBLEM, 1), emblem("hero", EmblemCategory.EMBLEM, 2)), Optional.empty());
 
         assertEquals(List.of("hero"), ids(emblems.selectable()));
@@ -81,7 +107,7 @@ class EmblemResolverTest {
 
     @Test
     void anIdThatIsNotALevelIsAnOrdinaryEmblem() {
-        PlayerEmblems emblems = resolver.resolve(profile(
+        PlayerEmblems emblems = resolve(profile(
                 emblem("enrique6_prank_max", EmblemCategory.LOCAL_EMBLEM, 1), emblem("enrique6_prank_2_plus_x", EmblemCategory.EMBLEM, 2)),
                 Optional.empty());
 
@@ -91,7 +117,7 @@ class EmblemResolverTest {
 
     @Test
     void theStaffEmblemAndTheNationalityAreChosenLikeAnyOther() {
-        PlayerEmblems emblems = resolver.resolve(profile(
+        PlayerEmblems emblems = resolve(profile(
                 emblem("nationality_co", EmblemCategory.SYSTEM, 1),
                 emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 2),
                 emblem("hero", EmblemCategory.EMBLEM, 3),
@@ -103,7 +129,7 @@ class EmblemResolverTest {
 
     @Test
     void aSystemEmblemTheServerDoesNotAcceptNeverShows() {
-        PlayerEmblems emblems = resolver.resolve(profile(
+        PlayerEmblems emblems = resolve(profile(
                 emblem("veterano", EmblemCategory.SYSTEM, 1),
                 emblem("master_of_lens", EmblemCategory.SYSTEM, 2)), Optional.empty());
 
@@ -113,7 +139,7 @@ class EmblemResolverTest {
 
     @Test
     void withoutAChoiceTheFirstEmblemsShowUpToTheLimit() {
-        PlayerEmblems emblems = resolver.resolve(profile(
+        PlayerEmblems emblems = resolve(profile(
                 emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.LOCAL_EMBLEM, 2),
                 emblem("c", EmblemCategory.EMBLEM, 3), emblem("d", EmblemCategory.EMBLEM, 4)), Optional.empty());
 
@@ -125,15 +151,15 @@ class EmblemResolverTest {
     void aChoiceIsShownInItsOrderAndAnEmptyChoiceShowsNothing() {
         ModProfile held = profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.EMBLEM, 2), emblem("c", EmblemCategory.EMBLEM, 3));
 
-        assertEquals(List.of("c", "a"), ids(resolver.resolve(held, Optional.of(List.of("c", "a"))).chosen()));
-        assertEquals(List.of(), ids(resolver.resolve(held, Optional.of(List.of())).chosen()));
+        assertEquals(List.of("c", "a"), ids(resolve(held, Optional.of(List.of("c", "a"))).chosen()));
+        assertEquals(List.of(), ids(resolve(held, Optional.of(List.of())).chosen()));
     }
 
     @Test
     void whatThePlayerNoLongerHoldsDropsOutOfTheirChoice() {
         ModProfile held = profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("enrique6_prank_2", EmblemCategory.LOCAL_EMBLEM, 2));
 
-        PlayerEmblems emblems = resolver.resolve(held, Optional.of(List.of("gone", "a", "enrique6_prank_2", "a")));
+        PlayerEmblems emblems = resolve(held, Optional.of(List.of("gone", "a", "enrique6_prank_2", "a")));
 
         assertEquals(List.of("a"), ids(emblems.chosen()));
     }
@@ -143,12 +169,12 @@ class EmblemResolverTest {
         ModProfile held = profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.EMBLEM, 2),
                 emblem("c", EmblemCategory.EMBLEM, 3), emblem("d", EmblemCategory.EMBLEM, 4));
 
-        assertEquals(List.of("d", "c", "b"), ids(resolver.resolve(held, Optional.of(List.of("d", "c", "b", "a"))).chosen()));
+        assertEquals(List.of("d", "c", "b"), ids(resolve(held, Optional.of(List.of("d", "c", "b", "a"))).chosen()));
     }
 
     @Test
     void titlesAreNeverShownOrChosen() {
-        PlayerEmblems emblems = resolver.resolve(profile(emblem("rey", EmblemCategory.TITLE, 1), emblem("a", EmblemCategory.EMBLEM, 2)),
+        PlayerEmblems emblems = resolve(profile(emblem("rey", EmblemCategory.TITLE, 1), emblem("a", EmblemCategory.EMBLEM, 2)),
                 Optional.empty());
 
         assertEquals(List.of("a"), ids(emblems.chosen()));

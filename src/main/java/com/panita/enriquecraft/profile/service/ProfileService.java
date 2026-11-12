@@ -40,7 +40,10 @@ public final class ProfileService {
 
     /** The emblems of the player as this server shows them; only the default prank level for a player the API has not said anything of. */
     public PlayerEmblems emblemsOf(UUID player) {
-        return cache.get(player).map(profile -> resolver.resolve(profile, read.get().of(profile.userId()))).orElseGet(resolver::withoutProfile);
+        return cache.get(player).map(profile -> {
+            EmblemSelections selections = read.get();
+            return resolver.resolve(profile, selections.of(profile.userId()), selections.prankOf(profile.userId()));
+        }).orElseGet(resolver::withoutProfile);
     }
 
     /** The Panita account of a player, if they are on the list. */
@@ -53,9 +56,14 @@ public final class ProfileService {
         accountOf(player).ifPresent(userId -> write.accept(read.get().with(userId, emblems)));
     }
 
-    /** Back to the default: the first emblems the player holds. The prank level is never part of the choice. */
+    /** Back to the default: the first emblems the player holds. The prank level is a choice of its own and is kept. */
     public void resetChoice(ServerPlayer player) {
         accountOf(player).ifPresent(userId -> write.accept(read.get().without(userId)));
+    }
+
+    /** Remembers which prank level the player wants shown, or, with none, goes back to the default level. A level they do not hold is ignored when read. */
+    public void choosePrank(ServerPlayer player, Optional<String> emblem) {
+        accountOf(player).ifPresent(userId -> write.accept(emblem.map(id -> read.get().withPrank(userId, id)).orElseGet(() -> read.get().withoutPrank(userId))));
     }
 
     /** Called on the server thread, with the player, whenever their data was replaced by a newer read. */
