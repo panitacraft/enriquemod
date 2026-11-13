@@ -27,18 +27,19 @@ final class InlineArtGlyph implements GlyphSource, BakedGlyph {
 
     /** The width of a glyph whose image is not ready. */
     private static final float PLACEHOLDER_ADVANCE = 8.0F;
-    /** Taller than the text (8) and raised by RAISE, so it reaches a little above and below the line without moving the text. */
-    private static final float HEIGHT = 10.0F;
-    private static final float RAISE = 1.0F;
+    /** The height of a line of text; a glyph taller than this is centered on the line, so it reaches above and below it without moving the text. */
+    private static final float TEXT_HEIGHT = 8.0F;
 
     private @Nullable Identifier texture;
     private float advance = PLACEHOLDER_ADVANCE;
+    private float height = TEXT_HEIGHT;
     private @Nullable GlyphRenderTypes renderTypes;
 
-    /** Makes the glyph draw the texture, whose width at the height of the text is {@code width}. */
-    void show(Identifier texture, float width) {
+    /** Makes the glyph draw the texture at the given size, in GUI pixels. */
+    void show(Identifier texture, float width, float height) {
         this.texture = texture;
         this.advance = width;
+        this.height = height;
         this.renderTypes = GlyphRenderTypes.createForColorTexture(texture);
     }
 
@@ -46,6 +47,7 @@ final class InlineArtGlyph implements GlyphSource, BakedGlyph {
     void hide() {
         texture = null;
         advance = PLACEHOLDER_ADVANCE;
+        height = TEXT_HEIGHT;
         renderTypes = null;
     }
 
@@ -70,27 +72,22 @@ final class InlineArtGlyph implements GlyphSource, BakedGlyph {
         if (texture == null || renderTypes == null) {
             return null;
         }
-        return new Instance(texture, renderTypes, advance, x, y, color, shadowColor, shadowOffset, style);
+        return new Instance(texture, renderTypes, advance, height, x, y, color, shadowColor, shadowOffset, style);
     }
 
-    private record Instance(Identifier texture, GlyphRenderTypes renderTypes, float width, float x, float y, int color, int shadowColor,
-                            float shadowOffset, Style style) implements PlainTextRenderable {
+    private record Instance(Identifier texture, GlyphRenderTypes renderTypes, float width, float height, float x, float y, int color,
+                            int shadowColor, float shadowOffset, Style style) implements PlainTextRenderable {
 
         @Override
         public void renderSprite(Matrix4fc pose, VertexConsumer buffer, int packedLightCoords, float offsetX, float offsetY, float z, int color) {
             float x0 = offsetX + left();
             float x1 = offsetX + right();
-            float y0 = offsetY + top() - RAISE;
-            float y1 = y0 + HEIGHT;
+            float y0 = offsetY + top() - (height - TEXT_HEIGHT) / 2;
+            float y1 = y0 + height;
             buffer.addVertex(pose, x0, y0, z).setUv(0, 0).setColor(color).setLight(packedLightCoords);
             buffer.addVertex(pose, x0, y1, z).setUv(0, 1).setColor(color).setLight(packedLightCoords);
             buffer.addVertex(pose, x1, y1, z).setUv(1, 1).setColor(color).setLight(packedLightCoords);
             buffer.addVertex(pose, x1, y0, z).setUv(1, 0).setColor(color).setLight(packedLightCoords);
-        }
-
-        @Override
-        public float height() {
-            return HEIGHT;
         }
 
         @Override

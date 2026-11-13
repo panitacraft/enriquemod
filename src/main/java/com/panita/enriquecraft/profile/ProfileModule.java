@@ -52,12 +52,15 @@ public final class ProfileModule implements EnriquecraftModule {
         ProfileCache cache = new ProfileCache(Instant::now, cached::get, cached::set);
         EmblemResolver resolver = new EmblemResolver(config);
         LinkedPlayers linked = services.get(LinkedPlayers.class);
-        ProfileService profiles = new ProfileService(cache, resolver, linked, selections::get, selections::set);
+        ProfileService profiles = new ProfileService(cache, resolver, linked, selections::get, selections::set, Instant::now,
+                config.prankCooldownSeconds::get);
         ProfileLoader loader = new ProfileLoader(new HttpEmblemApi(services.get(ApiAccess.class)), linked, cache, config.editionId::get);
         RefreshCooldown cooldown = new RefreshCooldown(config.refreshCooldownSeconds::get, Instant::now);
 
         EmblemTooltip tooltip = new EmblemTooltip(config.tooltipWidth::get, services.get(InlineArts.class));
-        new EmblemPlaceholders(profiles, tooltip, services.get(InlineArts.class)).register();
+        EmblemPlaceholders placeholders = new EmblemPlaceholders(profiles, tooltip, services.get(InlineArts.class));
+        placeholders.register();
+        services.register(EmblemPlaceholders.class, placeholders);
 
         OpenMenus openMenus = new OpenMenus();
         profiles.onUpdated(player -> openMenus.refresh(player.getUUID()));

@@ -36,6 +36,14 @@ public final class ProfileCache {
         return entry == null ? Optional.empty() : entry.profile();
     }
 
+    /** What the API last said of a Panita account, whoever is online: the cache is by player, and a player has one account. */
+    public synchronized Optional<ModProfile> byAccount(int userId) {
+        return read.get().entries().values().stream()
+                .flatMap(entry -> entry.profile().stream())
+                .filter(profile -> profile.userId() == userId)
+                .findFirst();
+    }
+
     /** Stores what the API said of the player, now. */
     public synchronized void put(UUID player, ModProfile profile) {
         set(player, new CachedProfiles.Entry(Optional.of(profile), clock.get()));

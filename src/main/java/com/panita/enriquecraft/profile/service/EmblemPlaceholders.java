@@ -9,16 +9,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * The placeholders that put a player's emblems around their name, for every text that resolves them (the lines of chat, and mods
  * that read Placeholder API's, such as a tab list mod): {@code %enriquecraft:emblems_system%} and
- * {@code %enriquecraft:emblems_lore%}. Each emblem is its character in its color, and pointing at it shows its tooltip. They are
- * placeholders, not part of the chat code, because the administrator's format decides where they stand relative to the rank.
+ * {@code %enriquecraft:emblems_lore%}. The system emblem is the prank level, which goes before the rank; the lore emblems are the
+ * ones the player chose, which go after the name. Each emblem is its character in its color, and pointing at it shows its tooltip.
+ * They are placeholders, not part of the chat code, because the administrator's format decides where they stand relative to the
+ * rank.
  * <p>
- * Each one brings its own space, after the system emblems and before the lore ones, so a player with none leaves no gap in the
- * line.
+ * Each one brings its own space, after the system emblem and before the lore ones, so a player with none leaves no gap in the line.
  */
 public final class EmblemPlaceholders {
 
@@ -34,26 +35,25 @@ public final class EmblemPlaceholders {
 
     public void register() {
         Placeholders.registerServer(id("emblems_system"), (context, argument) -> context.hasServerPlayer()
-                ? PlaceholderResult.value(system(profiles.emblemsOf(context.serverPlayer().getUUID()).system()))
+                ? PlaceholderResult.value(system(profiles.emblemsOf(context.serverPlayer()).prank()))
                 : PlaceholderResult.invalid("No player"));
         Placeholders.registerServer(id("emblems_lore"), (context, argument) -> context.hasServerPlayer()
-                ? PlaceholderResult.value(lore(profiles.emblemsOf(context.serverPlayer().getUUID()).chosen()))
+                ? PlaceholderResult.value(lore(profiles.emblemsOf(context.serverPlayer())))
                 : PlaceholderResult.invalid("No player"));
     }
 
-    /** The characters each followed by a space, so the text that comes next stands apart. */
-    Component system(List<EmblemView> emblems) {
-        MutableComponent text = Component.empty();
-        for (EmblemView emblem : emblems) {
-            text.append(drawn(emblem)).append(Component.literal(" "));
-        }
-        return text;
+    /** The emblem followed by a space, so the text that comes next stands apart. */
+    public Component system(EmblemView emblem) {
+        return Component.empty().append(drawn(emblem)).append(Component.literal(" "));
     }
 
-    /** The characters each preceded by a space, so they stand apart from the name before them. */
-    Component lore(List<EmblemView> emblems) {
+    /**
+     * The emblems the player chose, then a stand-in for each place they have not filled, each preceded by a space so they stand apart
+     * from the name before them.
+     */
+    public Component lore(PlayerEmblems emblems) {
         MutableComponent text = Component.empty();
-        for (EmblemView emblem : emblems) {
+        for (EmblemView emblem : Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList()) {
             text.append(Component.literal(" ")).append(drawn(emblem));
         }
         return text;
@@ -68,7 +68,7 @@ public final class EmblemPlaceholders {
         if (emblem.iconUrl().isEmpty()) {
             return glyph;
         }
-        return arts.wrap(glyph, emblem.iconUrl().get()).copy().withStyle(style -> style.withHoverEvent(tooltip.hoverEvent(emblem)));
+        return arts.wrap(glyph, emblem.iconUrl().get()).copy().withStyle(tooltip.pointedStyle(emblem));
     }
 
     private static Identifier id(String path) {

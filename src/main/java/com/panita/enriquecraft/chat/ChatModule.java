@@ -4,10 +4,13 @@ import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.channel.ChannelRegistry;
 import com.panita.enriquecraft.chat.channel.ChannelSelection;
 import com.panita.enriquecraft.chat.config.ChatConfig;
+import com.panita.enriquecraft.chat.data.KnownSkins;
 import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.chat.message.ChatView;
+import com.panita.enriquecraft.chat.message.HeadTooltip;
 import com.panita.enriquecraft.chat.message.NicknameView;
 import com.panita.enriquecraft.chat.message.PrivateMessageView;
+import com.panita.enriquecraft.chat.message.RankTooltip;
 import com.panita.enriquecraft.chat.message.SenderNameView;
 import com.panita.enriquecraft.chat.message.SudoView;
 import com.panita.enriquecraft.chat.message.SystemMessageView;
@@ -20,6 +23,7 @@ import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.ReplyTracker;
+import com.panita.enriquecraft.chat.service.SkinMemory;
 import com.panita.enriquecraft.chat.service.SudoService;
 import com.panita.enriquecraft.chat.service.SystemMessageClassifier;
 import com.panita.enriquecraft.chat.service.SystemMessages;
@@ -44,6 +48,8 @@ import java.util.Optional;
  */
 public final class ChatModule implements EnriquecraftModule {
 
+    private static final String SKINS_FILE = "known_skins.snbt";
+
     @Override
     public Optional<Class<?>> messages() {
         return Optional.of(ChatMessages.class);
@@ -63,7 +69,10 @@ public final class ChatModule implements EnriquecraftModule {
         NicknameService nicknames = new NicknameService(services.get(WorldData.class), parser, config, Instant::now);
         Messenger messenger = services.get(Messenger.class);
         SenderNameView names = new SenderNameView(messenger, nicknames);
-        ChatView view = new ChatView(messenger, names, new ChatHeads(config.heads::get), services.get(InlineArts.class));
+        var knownSkins = services.get(WorldData.class).register(SKINS_FILE, KnownSkins.CODEC, KnownSkins.EMPTY);
+        SkinMemory skins = new SkinMemory(knownSkins::get, knownSkins::set);
+        ChatHeads heads = new ChatHeads(config.heads::get, skins, new HeadTooltip(formatter));
+        ChatView view = new ChatView(messenger, names, heads, services.get(InlineArts.class));
         HeldPlayers held = services.get(HeldPlayers.class);
         ChatService chat = new ChatService(parser, view, held, selection);
         ReplyTracker replies = new ReplyTracker();
@@ -72,6 +81,8 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(ChatTextParser.class, parser);
         services.register(ChannelRegistry.class, channels);
         services.register(ChannelSelection.class, selection);
+        services.register(SkinMemory.class, skins);
+        services.register(ChatHeads.class, heads);
         services.register(ChatView.class, view);
         services.register(ChatService.class, chat);
         services.register(ReplyTracker.class, replies);
@@ -80,7 +91,8 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(NicknameView.class, new NicknameView(messenger, config));
         services.register(ClientNames.class, new ClientNames());
         services.register(KnownPlayers.class, new KnownPlayers());
-        new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config.rankIconMeta::get).register();
+        new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config,
+                new RankTooltip(config.tooltipWidth::get)).register();
         SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));

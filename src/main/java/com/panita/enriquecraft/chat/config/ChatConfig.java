@@ -16,6 +16,9 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Map<String, String>> emojis;
     public final ConfigValue<Boolean> heads;
     public final ConfigValue<String> rankIconMeta;
+    public final ConfigValue<String> rankTitleMeta;
+    public final ConfigValue<String> rankDescriptionMeta;
+    public final ConfigValue<Integer> tooltipWidth;
     public final ConfigValue<Integer> nicknameMinLength;
     public final ConfigValue<Integer> nicknameMaxLength;
     public final ConfigValue<Integer> nicknameCooldownSeconds;
@@ -48,6 +51,17 @@ public final class ChatConfig implements ModConfig {
                         + "/lp group <group> meta set <key> <address>). Players with the client mod see that image in place of the prefix of the\n"
                         + "group, and everyone else sees the prefix. Used by %enriquecraft:rank%.",
                 value -> value.matches("[A-Za-z0-9_.-]{1,32}"), "must be 1 to 32 letters, digits, ., - or _");
+        rankTitleMeta = builder.string("rankTitleMeta", "rank_title",
+                "The LuckPerms meta key whose value is the title shown when pointing at a rank (set it on the group with\n"
+                        + "/lp group <group> meta set <key> <title>). It is shown on its own, with the colors and styles it sets (legacy codes\n"
+                        + "such as &a and text tags such as <bold>), independent of the color of the rank. Used by %enriquecraft:rank%.",
+                value -> value.matches("[A-Za-z0-9_.-]{1,32}"), "must be 1 to 32 letters, digits, ., - or _");
+        rankDescriptionMeta = builder.string("rankDescriptionMeta", "rank_description",
+                "The LuckPerms meta key whose value is the description shown under the title when pointing at a rank. It accepts the same\n"
+                        + "colors and styles as the title, and is gray where it sets none. A rank with neither shows nothing.",
+                value -> value.matches("[A-Za-z0-9_.-]{1,32}"), "must be 1 to 32 letters, digits, ., - or _");
+        tooltipWidth = builder.intRange("tooltipWidth", 40, 16, 120,
+                "The most characters on a line of the description in the tooltip of a rank before it continues on the next line.");
         nicknameMinLength = builder.intRange("nickname.minLength", 3, 1, 32,
                 "The fewest characters a nickname can have, not counting its colors and styles.");
         nicknameMaxLength = builder.intRange("nickname.maxLength", 16, 1, 16,

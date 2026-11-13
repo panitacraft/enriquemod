@@ -48,6 +48,6 @@ public final class ProfileMenus {
     }
 
     UiMenu emblemsMenu(UiMenu profileMenu) {
-        return new EmblemsMenu(ui, profiles, tooltip, config, messenger, openMenus, profileMenu);
+        return new EmblemsMenu(ui, profiles, tooltip, config, messenger, view, openMenus, profileMenu);
     }
 }
