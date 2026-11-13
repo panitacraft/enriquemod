@@ -63,9 +63,10 @@ public final class ChatPlaceholders {
             return Component.empty();
         }
         Component drawn = icon.isEmpty() ? prefix : arts.wrap(prefix, icon);
-        // Pointing at the rank shows its title and description, when the group has them
-        Optional<Style> tooltip = tooltips.styleOf(prefix, icon.isEmpty() ? Optional.empty() : Optional.of(icon),
-                meta(context, config.rankTitleMeta.get()), meta(context, config.rankDescriptionMeta.get()));
+        // Pointing at the rank shows its title and description, when the group has them. LuckPerms gives them already read, with the colors
+        // and styles their text asks for, so they are kept as they are and not turned back into plain text.
+        Optional<Style> tooltip = tooltips.styleOf(luckperms(context, "meta", config.rankTitleMeta.get()).orElse(Component.empty()),
+                luckperms(context, "meta", config.rankDescriptionMeta.get()).orElse(Component.empty()));
         return Component.empty().append(tooltip.<Component>map(style -> drawn.copy().withStyle(style)).orElse(drawn)).append(Component.literal(" "));
     }
 

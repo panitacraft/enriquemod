@@ -16,7 +16,6 @@ import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
-import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.discord.message.AuthorView;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.DiscordView;
@@ -104,8 +103,7 @@ public final class DiscordModule implements EnriquecraftModule {
         MediaPreviews previews = new MediaPreviews(services.get(ClientCapabilities.class));
         AuthorView authors = new AuthorView(services.get(MessageFormatter.class), config, new ReplyView(services.get(MessageFormatter.class)),
                 services.get(ChatHeads.class), services.get(ProfileService.class), services.get(EmblemPlaceholders.class),
-                services.get(LinkedPlayers.class), new RankTooltip(services.get(MessageFormatter.class), services.get(InlineArts.class),
-                services.get(ChatConfig.class).tooltipWidth::get));
+                services.get(LinkedPlayers.class), new RankTooltip(services.get(ChatConfig.class).tooltipWidth::get));
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class), config,
                 mediaView, previews, authors);
         PlayerInfos playerInfos = new PlayerInfos(nicknames);

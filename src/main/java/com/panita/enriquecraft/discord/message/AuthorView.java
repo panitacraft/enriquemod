@@ -75,7 +75,7 @@ public final class AuthorView {
         Style headStyle = heads.tooltipStyle(server, ign, mode);
         Optional<Component> head = heads.of(server, ign, mode).map(skin -> withBotHead(skin).withStyle(headStyle));
         Component prefix = formatter.format(Message.plain(config.deliveryPrefix.get()));
-        Component rank = rankTooltip.styleOf(prefix, Optional.empty(), formatter.format(Message.plain(DiscordMessages.Delivery.RANK_TITLE)),
+        Component rank = rankTooltip.styleOf(formatter.format(Message.plain(DiscordMessages.Delivery.RANK_TITLE)),
                 formatter.format(Message.plain(DiscordMessages.Delivery.RANK_DESCRIPTION))).<Component>map(style -> prefix.copy().withStyle(style)).orElse(prefix);
         Component line = compose(head, emblems.system(author.prank()), rank, ign, emblems.lore(author), reply.map(replies::line));
         Component hover = formatter.format(Message.plain(DiscordMessages.Delivery.HOVER));
