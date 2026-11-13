@@ -78,14 +78,14 @@ class ProfileServicePrankTest {
         change("enrique6_prank_2", false);
         now.set(now.get().plus(WEEK));
 
-        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0", false));
-        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0", true));
+        assertEquals(ProfileService.PrankChange.Status.LOCKED, change("enrique6_prank_0", false));
+        assertEquals(ProfileService.PrankChange.Status.LOCKED, change("enrique6_prank_0", true));
         assertEquals(Optional.of("enrique6_prank_2"), shown());
     }
 
     @Test
     void thereIsNoZeroPlusLevelToChoose() {
-        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0_plus", false));
+        assertEquals(ProfileService.PrankChange.Status.UNKNOWN, change("enrique6_prank_0_plus", false));
         assertEquals(Optional.empty(), shown());
     }
 
@@ -98,12 +98,12 @@ class ProfileServicePrankTest {
     }
 
     @Test
-    void theLevelAPlayerIsAlreadyAtOrOneThatDoesNotExistChangesNothing() {
-        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_0", false));
-        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("not_a_level", false));
+    void theLevelAPlayerIsAlreadyAtIsTheSameAndOneThatDoesNotExistIsUnknown() {
+        assertEquals(ProfileService.PrankChange.Status.SAME, change("enrique6_prank_0", false));
+        assertEquals(ProfileService.PrankChange.Status.UNKNOWN, change("not_a_level", false));
         assertEquals(Optional.empty(), shown());
 
         change("enrique6_prank_1", false);
-        assertEquals(ProfileService.PrankChange.Status.UNCHANGED, change("enrique6_prank_1", false));
+        assertEquals(ProfileService.PrankChange.Status.SAME, change("enrique6_prank_1", false));
     }
 }

@@ -26,8 +26,12 @@ public final class ProfileService {
 
         public enum Status {
             CHANGED,
-            /** The player is already at that level, or it is not a level, or it is the starting level, which cannot be chosen. */
-            UNCHANGED,
+            /** The player is already at that level. */
+            SAME,
+            /** The id is not one of the levels. */
+            UNKNOWN,
+            /** The level is the starting one, which cannot be chosen, so a player who has left it cannot return. */
+            LOCKED,
             /** The last change was too recent; {@code remaining} says how long is left. */
             COOLDOWN,
             /** The player has no Panita account to keep the choice under. */
@@ -94,6 +98,11 @@ public final class ProfileService {
         return linked.byName(player.getGameProfile().name()).map(account -> account.userId());
     }
 
+    /** Every prank level, lowest first; the first is where players start and cannot be chosen. */
+    public List<EmblemView> prankLevels() {
+        return resolver.levels();
+    }
+
     /** Remembers which emblems the player wants shown, in order. Ids that are not selectable are dropped when read. */
     public void choose(ServerPlayer player, List<String> emblems) {
         accountOf(player).ifPresent(userId -> write.accept(read.get().with(userId, emblems)));
@@ -119,8 +128,14 @@ public final class ProfileService {
         EmblemSelections selections = read.get();
         Optional<EmblemSelections.Prank> current = selections.prankOf(userId);
         String shown = current.map(EmblemSelections.Prank::level).filter(resolver::isPrank).orElseGet(resolver::defaultPrankId);
-        if (!resolver.isPrank(level) || level.equals(resolver.defaultPrankId()) || shown.equals(level)) {
-            return PrankChange.of(PrankChange.Status.UNCHANGED);
+        if (!resolver.isPrank(level)) {
+            return PrankChange.of(PrankChange.Status.UNKNOWN);
+        }
+        if (shown.equals(level)) {
+            return PrankChange.of(PrankChange.Status.SAME);
+        }
+        if (level.equals(resolver.defaultPrankId())) {
+            return PrankChange.of(PrankChange.Status.LOCKED);
         }
         if (!bypass && current.isPresent()) {
             Duration remaining = Duration.between(clock.get(), current.get().changedAt().plusSeconds(prankCooldownSeconds.getAsInt()));

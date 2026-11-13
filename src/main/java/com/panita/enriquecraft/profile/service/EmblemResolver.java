@@ -62,6 +62,11 @@ public final class EmblemResolver {
         return config.pranks.get().stream().anyMatch(level -> level.id().equals(id));
     }
 
+    /** Every prank level, lowest first. */
+    public List<EmblemView> levels() {
+        return config.pranks.get().stream().map(this::view).toList();
+    }
+
     /** The level a player is at until they choose one. */
     public String defaultPrankId() {
         return config.pranks.get().getFirst().id();
@@ -88,7 +93,7 @@ public final class EmblemResolver {
     }
 
     private PlayerEmblems assemble(List<ApiEmblem> selectable, Optional<List<String>> chosen, Optional<String> prank) {
-        List<EmblemView> levels = config.pranks.get().stream().map(this::view).toList();
+        List<EmblemView> levels = levels();
         EmblemView shown = prank.flatMap(id -> levels.stream().filter(level -> level.id().equals(id)).findFirst()).orElse(levels.getFirst());
         List<EmblemView> shownEmblems = chosenFrom(selectable, chosen).stream().map(this::view).toList();
         List<EmblemView> empty = Collections.nCopies(Math.max(0, config.loreMax.get() - shownEmblems.size()), emptySlot());

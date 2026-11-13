@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.profile.gui;
 
-import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.profile.ProfilePermissions;
 import com.panita.enriquecraft.core.message.Messenger;
@@ -193,16 +192,9 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
 
     private void choosePrank(ServerPlayer player, EmblemView level) {
         ProfileService.PrankChange change = profiles.choosePrank(player, level.id(), ProfilePermissions.canBypassPrankCooldown(player));
-        switch (change.status()) {
-            case CHANGED -> {
-                // Everyone is told, the player included
-                view.prankChanged(player, level.title());
-                refresh();
-            }
-            case COOLDOWN -> messenger.send(player, Message.warning(ProfileMessages.Prank.COOLDOWN).prefixed()
-                    .with("time", Durations.format(change.remaining())));
-            case NOT_LINKED -> messenger.send(player, Message.warning(ProfileMessages.Prank.NOT_LINKED).prefixed());
-            case UNCHANGED -> { }
+        view.prankResult(player, level.title(), change);
+        if (change.status() == ProfileService.PrankChange.Status.CHANGED) {
+            refresh();
         }
     }
 

@@ -13,6 +13,8 @@ public final class ProfileMessages {
         public static final String PROFILE_DESCRIPTION = "Muestra tu perfil y tus emblemas";
         public static final String REFRESH_DESCRIPTION = "Actualiza tus emblemas desde Panitacraft";
         public static final String REFRESH_ALL_DESCRIPTION = "Actualiza los emblemas de todos los jugadores conectados";
+        public static final String PRANK_DESCRIPTION = "Muestra tu nivel de Pranks y los que puedes elegir";
+        public static final String PRANK_SET_DESCRIPTION = "Cambia tu nivel de Pranks";
 
         private Commands() {
         }
@@ -51,6 +53,13 @@ public final class ProfileMessages {
         public static final String CHANGED = "<yellow>{player}</yellow> cambió su nivel de Pranks a <white>{level}</white>.";
         public static final String COOLDOWN = "Podrás cambiar tu nivel de Pranks de nuevo en <white>{time}</white>.";
         public static final String NOT_LINKED = "Tu cuenta no está vinculada a Panitacraft, así que no se puede guardar tu nivel de Pranks.";
+        public static final String SAME = "Ya estás en el nivel <white>{level}</white>.";
+        public static final String LOCKED = "El nivel inicial no se puede elegir: solo es el punto de partida.";
+        public static final String UNKNOWN = "<white>{level}</white> no es un nivel de Pranks. Usa <white>/prank</white> para ver los que hay.";
+        public static final String LIST_CURRENT = "Tu nivel de Pranks es <white>{level}</white>.";
+        public static final String LIST_HEADER = "<gray>Niveles que puedes elegir (haz clic para escribir el comando):";
+        public static final String LIST_ENTRY = "<gray>- <white>{title}</white> <dark_gray>({id})";
+        public static final String LIST_HOVER = "Escribe <white>/prank set</white> con este nivel";
 
         private Prank() {
         }
