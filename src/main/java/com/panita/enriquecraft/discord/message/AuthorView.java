@@ -35,6 +35,8 @@ public final class AuthorView {
     /** The font of the companion that has the icon of the bot as its one glyph. */
     static final Identifier HEAD_FONT = Identifier.fromNamespaceAndPath(Enriquecraft.MOD_ID, "discord_head");
     private static final String HEAD_GLYPH = "";
+    /** A glyph with an advance of -1: a bitmap font leaves a pixel after each glyph that the head of a player does not, which this takes back. */
+    private static final String HEAD_PULL_BACK = "";
 
     private final MessageFormatter formatter;
     private final DiscordConfig config;
@@ -73,10 +75,13 @@ public final class AuthorView {
 
     /** The skin head for a client without the companion, which has no such translation, and the icon of the bot for the companion. */
     static Component withBotHead(Component skinHead) {
-        MutableComponent glyph = Component.literal(HEAD_GLYPH)
-                .withStyle(style -> style.withFont(new FontDescription.Resource(HEAD_FONT)).withColor(0xFFFFFF));
+        MutableComponent glyph = inHeadFont(HEAD_GLYPH);
         // The space is outside the glyph, which would give it the font of the icon
-        Component icon = Component.empty().append(glyph).append(Component.literal(" "));
+        Component icon = Component.empty().append(glyph).append(inHeadFont(HEAD_PULL_BACK)).append(Component.literal(" "));
         return Component.translatableWithFallback(HEAD_KEY, "%1$s", skinHead, icon);
+    }
+
+    private static MutableComponent inHeadFont(String text) {
+        return Component.literal(text).withStyle(style -> style.withFont(new FontDescription.Resource(HEAD_FONT)).withColor(0xFFFFFF));
     }
 }

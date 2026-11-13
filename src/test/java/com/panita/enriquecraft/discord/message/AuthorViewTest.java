@@ -63,8 +63,11 @@ class AuthorViewTest {
         Style glyphStyle = icon.getSiblings().get(0).getStyle();
         assertEquals(new FontDescription.Resource(AuthorView.HEAD_FONT), glyphStyle.getFont());
         assertEquals("", icon.getSiblings().get(0).getString());
+        // A pixel the font leaves after the icon is taken back, so what follows lines up with the head of a player
+        assertEquals("", icon.getSiblings().get(1).getString());
+        assertEquals(glyphStyle.getFont(), icon.getSiblings().get(1).getStyle().getFont());
         // The space after the icon is not in the font of the icon, which has no space
-        assertNotEquals(glyphStyle.getFont(), icon.getSiblings().get(1).getStyle().getFont());
+        assertNotEquals(glyphStyle.getFont(), icon.getSiblings().get(2).getStyle().getFont());
     }
 
     @Test
