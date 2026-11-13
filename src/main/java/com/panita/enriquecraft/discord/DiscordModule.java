@@ -3,6 +3,8 @@ package com.panita.enriquecraft.discord;
 import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.channel.ChannelRegistry;
 import com.panita.enriquecraft.chat.channel.ChannelSelection;
+import com.panita.enriquecraft.chat.config.ChatConfig;
+import com.panita.enriquecraft.chat.message.RankTooltip;
 import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.KnownPlayers;
@@ -14,6 +16,7 @@ import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.network.ClientCapabilities;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
+import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.discord.message.AuthorView;
 import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.DiscordView;
@@ -21,6 +24,7 @@ import com.panita.enriquecraft.discord.message.ImageView;
 import com.panita.enriquecraft.discord.message.MediaView;
 import com.panita.enriquecraft.discord.message.ReplyView;
 import com.panita.enriquecraft.discord.message.ShareView;
+import com.panita.enriquecraft.link.service.LinkedPlayers;
 import com.panita.enriquecraft.profile.service.EmblemPlaceholders;
 import com.panita.enriquecraft.profile.service.ProfileService;
 import com.panita.enriquecraft.discord.protocol.Protocol;
@@ -99,7 +103,9 @@ public final class DiscordModule implements EnriquecraftModule {
         MediaView mediaView = new MediaView(services.get(MessageFormatter.class), tokens);
         MediaPreviews previews = new MediaPreviews(services.get(ClientCapabilities.class));
         AuthorView authors = new AuthorView(services.get(MessageFormatter.class), config, new ReplyView(services.get(MessageFormatter.class)),
-                services.get(ChatHeads.class), services.get(ProfileService.class), services.get(EmblemPlaceholders.class));
+                services.get(ChatHeads.class), services.get(ProfileService.class), services.get(EmblemPlaceholders.class),
+                services.get(LinkedPlayers.class), new RankTooltip(services.get(MessageFormatter.class), services.get(InlineArts.class),
+                services.get(ChatConfig.class).tooltipWidth::get));
         DiscordDelivery delivery = new DiscordDelivery(services.get(ChatService.class), services.get(ChannelRegistry.class), config,
                 mediaView, previews, authors);
         PlayerInfos playerInfos = new PlayerInfos(nicknames);

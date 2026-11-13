@@ -37,6 +37,10 @@ public final class DiscordMessages {
 
     public static final class Delivery {
         public static final String HOVER = "<gray>Mensaje desde Discord";
+        /** The title shown when pointing at the Discord rank, after the rank itself. */
+        public static final String RANK_TITLE = "Chat de Discord";
+        /** What is shown under the title when pointing at the Discord rank; empty shows none. */
+        public static final String RANK_DESCRIPTION = "Este mensaje viene del chat de Discord de Panitacraft.";
         /** What a reply adds after the name of the member, before the text: whose message it answers. */
         public static final String REPLY_TO = "<gray><i>(responde a {author})";
 

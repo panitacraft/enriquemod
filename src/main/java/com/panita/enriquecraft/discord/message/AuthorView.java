@@ -1,11 +1,15 @@
 package com.panita.enriquecraft.discord.message;
 
 import com.panita.enriquecraft.Enriquecraft;
+import com.panita.enriquecraft.auth.data.AuthMode;
+import com.panita.enriquecraft.chat.message.RankTooltip;
 import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.protocol.InFrame;
+import com.panita.enriquecraft.link.client.LinkedPlayer;
+import com.panita.enriquecraft.link.service.LinkedPlayers;
 import com.panita.enriquecraft.profile.service.EmblemPlaceholders;
 import com.panita.enriquecraft.profile.service.PlayerEmblems;
 import com.panita.enriquecraft.profile.service.ProfileService;
@@ -14,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 
@@ -44,24 +49,38 @@ public final class AuthorView {
     private final ChatHeads heads;
     private final ProfileService profiles;
     private final EmblemPlaceholders emblems;
+    private final LinkedPlayers linked;
+    private final RankTooltip rankTooltip;
 
     public AuthorView(MessageFormatter formatter, DiscordConfig config, ReplyView replies, ChatHeads heads, ProfileService profiles,
-                      EmblemPlaceholders emblems) {
+                      EmblemPlaceholders emblems, LinkedPlayers linked, RankTooltip rankTooltip) {
         this.formatter = formatter;
         this.config = config;
         this.replies = replies;
         this.heads = heads;
         this.profiles = profiles;
         this.emblems = emblems;
+        this.linked = linked;
+        this.rankTooltip = rankTooltip;
     }
 
-    /** The author as the start of a line, hovering shows where it came from. Called on the server thread. */
+    /**
+     * The author as the start of a line. Pointing at the head says whether the account is premium, at the rank says what it is, and
+     * at anything else where the message came from. Called on the server thread.
+     */
     public Component sender(MinecraftServer server, String ign, Optional<InFrame.Reply> reply) {
         PlayerEmblems author = profiles.emblemsOf(ign);
-        Component line = compose(heads.of(server, ign).map(AuthorView::withBotHead), emblems.system(author.prank()),
-                formatter.format(Message.plain(config.deliveryPrefix.get())), ign, emblems.lore(author), reply.map(replies::line));
+        Optional<AuthMode> mode = linked.byName(ign).flatMap(LinkedPlayer::mode);
+        // The icon of the bot is drawn by the companion in place of the skin, so it needs the tooltip of the head too
+        Style headStyle = heads.tooltipStyle(server, ign, mode);
+        Optional<Component> head = heads.of(server, ign, mode).map(skin -> withBotHead(skin).withStyle(headStyle));
+        Component prefix = formatter.format(Message.plain(config.deliveryPrefix.get()));
+        Component rank = rankTooltip.styleOf(prefix, Optional.empty(), formatter.format(Message.plain(DiscordMessages.Delivery.RANK_TITLE)),
+                formatter.format(Message.plain(DiscordMessages.Delivery.RANK_DESCRIPTION))).<Component>map(style -> prefix.copy().withStyle(style)).orElse(prefix);
+        Component line = compose(head, emblems.system(author.prank()), rank, ign, emblems.lore(author), reply.map(replies::line));
         Component hover = formatter.format(Message.plain(DiscordMessages.Delivery.HOVER));
-        return line.copy().withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover)));
+        // What a part already shows stays as it is; the rest tells where the message came from
+        return Component.empty().withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(hover))).append(line);
     }
 
     /** The pieces in their places, each bringing its own space as the emblem placeholders do. */
@@ -74,7 +93,7 @@ public final class AuthorView {
     }
 
     /** The skin head for a client without the companion, which has no such translation, and the icon of the bot for the companion. */
-    static Component withBotHead(Component skinHead) {
+    static MutableComponent withBotHead(Component skinHead) {
         MutableComponent glyph = inHeadFont(HEAD_GLYPH);
         // The space is outside the glyph, which would give it the font of the icon
         Component icon = Component.empty().append(glyph).append(inHeadFont(HEAD_PULL_BACK)).append(Component.literal(" "));
