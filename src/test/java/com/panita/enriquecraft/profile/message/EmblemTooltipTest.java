@@ -25,6 +25,15 @@ class EmblemTooltipTest {
     }
 
     @Test
+    void anEmblemShowsItsTooltipAndHasAClickThatDoesNothingSoTheCursorIsAPointer() {
+        net.minecraft.network.chat.Style style = tooltip.glyph(emblem(Optional.of("Runs the server"))).getStyle();
+
+        assertInstanceOf(HoverEvent.ShowText.class, style.getHoverEvent());
+        net.minecraft.network.chat.ClickEvent.Custom click = assertInstanceOf(net.minecraft.network.chat.ClickEvent.Custom.class, style.getClickEvent());
+        assertEquals("enriquecraft:none", click.id().toString());
+    }
+
+    @Test
     void theTitleLineHasTheCharacterAndTheTitleInTheColorOfTheEmblem() {
         Component title = tooltip.title(emblem(Optional.empty()));
 

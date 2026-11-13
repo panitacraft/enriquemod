@@ -1,12 +1,14 @@
 package com.panita.enriquecraft.profile.message;
 
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.message.PointerClick;
 import com.panita.enriquecraft.core.message.TextWrap;
 import com.panita.enriquecraft.profile.service.EmblemView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -87,7 +89,11 @@ public final class EmblemTooltip {
 
     /** The character of the emblem in its color, which shows the tooltip when pointed at. */
     public Component glyph(EmblemView emblem) {
-        return Component.literal(emblem.look().icon()).withColor(emblem.look().textColor().getValue())
-                .withStyle(style -> style.withHoverEvent(hoverEvent(emblem)));
+        return Component.literal(emblem.look().icon()).withColor(emblem.look().textColor().getValue()).withStyle(pointedStyle(emblem));
+    }
+
+    /** What pointing at the emblem shows, and a click that does nothing so the game shows a pointing cursor over it. */
+    public Style pointedStyle(EmblemView emblem) {
+        return Style.EMPTY.withHoverEvent(hoverEvent(emblem)).withClickEvent(PointerClick.NOTHING);
     }
 }

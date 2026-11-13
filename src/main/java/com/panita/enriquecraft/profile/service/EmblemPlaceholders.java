@@ -68,7 +68,7 @@ public final class EmblemPlaceholders {
         if (emblem.iconUrl().isEmpty()) {
             return glyph;
         }
-        return arts.wrap(glyph, emblem.iconUrl().get()).copy().withStyle(style -> style.withHoverEvent(tooltip.hoverEvent(emblem)));
+        return arts.wrap(glyph, emblem.iconUrl().get()).copy().withStyle(tooltip.pointedStyle(emblem));
     }
 
     private static Identifier id(String path) {
