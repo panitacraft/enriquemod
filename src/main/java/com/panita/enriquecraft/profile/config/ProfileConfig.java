@@ -28,8 +28,8 @@ public final class ProfileConfig implements ModConfig {
     private static final String PRANK_IMAGES = "https://res.cloudinary.com/panita/image/upload/v1794522697/panita-extra/pranks/";
     private static final List<String> PRANK_WORDS = List.of("zero", "one", "two", "three");
     private static final List<String> PRANK_COLORS = List.of("white", "yellow", "gold", "red");
-    /** The ending asks the client companion to draw it 8 GUI pixels tall, 16 pixels at the usual GUI scale, smaller than the 10 of the other art. */
-    private static final String EMPTY_EMBLEM_IMAGE = "https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=8";
+    /** The ending asks the client companion to draw it 3 GUI pixels tall, a third of the 10 of the other art, as a small dot. */
+    private static final String EMPTY_EMBLEM_IMAGE = "https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=3";
 
     public final ConfigValue<String> editionId;
     public final ConfigValue<List<PrankLevel>> pranks;
@@ -59,7 +59,7 @@ public final class ProfileConfig implements ModConfig {
                 "Seconds a player must wait before changing their prank level again. The first choice has no wait. 0 turns the wait off.");
         emptyEmblemImage = builder.string("emptyEmblemImage", EMPTY_EMBLEM_IMAGE,
                 "The image shown in place of an emblem the player has not chosen for one of their loreMax places: an https address on a\n"
-                        + "trusted image host, or empty for text only. Ending it in #size=<n> (4 to 12) draws it n GUI pixels tall; ordinary\n"
+                        + "trusted image host, or empty for text only. Ending it in #size=<n> (2 to 12) draws it n GUI pixels tall; ordinary\n"
                         + "emblems are 10 and the text is 8.",
                 value -> value.isEmpty() || ArtLinks.isTrusted(value), "must be empty or an https address on a trusted image host");
         systemPrefixes = builder.string("systemPrefixes", "nationality_",

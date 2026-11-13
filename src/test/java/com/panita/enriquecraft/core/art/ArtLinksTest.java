@@ -16,9 +16,9 @@ class ArtLinksTest {
     void anAddressMayAskForASizeWithinTheLimits() {
         assertTrue(ArtLinks.isTrusted(IMAGE));
         assertTrue(ArtLinks.isTrusted(IMAGE + "#size=8"));
-        assertTrue(ArtLinks.isTrusted(IMAGE + "#size=4"));
+        assertTrue(ArtLinks.isTrusted(IMAGE + "#size=2"));
         assertTrue(ArtLinks.isTrusted(IMAGE + "#size=12"));
-        assertFalse(ArtLinks.isTrusted(IMAGE + "#size=3"));
+        assertFalse(ArtLinks.isTrusted(IMAGE + "#size=1"));
         assertFalse(ArtLinks.isTrusted(IMAGE + "#size=13"));
         assertFalse(ArtLinks.isTrusted(IMAGE + "#size=8x"));
         assertFalse(ArtLinks.isTrusted(IMAGE + "#anything"));

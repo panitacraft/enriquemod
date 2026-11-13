@@ -49,7 +49,7 @@ class ProfileConfigTest {
         assertEquals(new EmblemLook("☠⁺", "red"), config.pranks.get().getLast().look());
         assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522697/panita-extra/pranks/prank_level_three_plus.png",
                 config.pranks.get().getLast().image());
-        assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=8", config.emptyEmblemImage.get());
+        assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=3", config.emptyEmblemImage.get());
         assertEquals(new EmblemLook("★", "#ff5555"), config.looks.get().get("enriquecraft6_staff"));
         assertEquals(new EmblemLook("●", "gold"), config.categoryLooks.get().get("system"));
         assertEquals(new EmblemLook("○", "gray"), config.categoryLooks.get().get("emblem"));

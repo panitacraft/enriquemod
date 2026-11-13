@@ -26,7 +26,7 @@ public final class ArtLinks {
     /** The longest address the server announces and the client accepts. */
     public static final int MAX_URL = 1024;
     /** The smallest and the tallest an address may ask its art to be drawn, in GUI pixels; text is 8 and ordinary art 10. */
-    public static final int MIN_SIZE = 4;
+    public static final int MIN_SIZE = 2;
     public static final int MAX_SIZE = 12;
 
     private ArtLinks() {
