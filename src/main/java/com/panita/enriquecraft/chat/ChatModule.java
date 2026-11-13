@@ -7,8 +7,10 @@ import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.data.KnownSkins;
 import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.chat.message.ChatView;
+import com.panita.enriquecraft.chat.message.HeadTooltip;
 import com.panita.enriquecraft.chat.message.NicknameView;
 import com.panita.enriquecraft.chat.message.PrivateMessageView;
+import com.panita.enriquecraft.chat.message.RankTooltip;
 import com.panita.enriquecraft.chat.message.SenderNameView;
 import com.panita.enriquecraft.chat.message.SudoView;
 import com.panita.enriquecraft.chat.message.SystemMessageView;
@@ -69,7 +71,7 @@ public final class ChatModule implements EnriquecraftModule {
         SenderNameView names = new SenderNameView(messenger, nicknames);
         var knownSkins = services.get(WorldData.class).register(SKINS_FILE, KnownSkins.CODEC, KnownSkins.EMPTY);
         SkinMemory skins = new SkinMemory(knownSkins::get, knownSkins::set);
-        ChatHeads heads = new ChatHeads(config.heads::get, skins);
+        ChatHeads heads = new ChatHeads(config.heads::get, skins, new HeadTooltip(formatter));
         ChatView view = new ChatView(messenger, names, heads, services.get(InlineArts.class));
         HeldPlayers held = services.get(HeldPlayers.class);
         ChatService chat = new ChatService(parser, view, held, selection);
@@ -89,7 +91,8 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(NicknameView.class, new NicknameView(messenger, config));
         services.register(ClientNames.class, new ClientNames());
         services.register(KnownPlayers.class, new KnownPlayers());
-        new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config.rankIconMeta::get).register();
+        new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config,
+                new RankTooltip(formatter, services.get(InlineArts.class), config.tooltipWidth::get)).register();
         SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));

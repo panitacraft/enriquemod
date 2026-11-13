@@ -28,6 +28,15 @@ public final class ChatMessages {
         }
     }
 
+    /** What pointing at the head of a player says: whether their account is a Microsoft one. */
+    public static final class Head {
+        public static final String PREMIUM = "<green>Cuenta premium";
+        public static final String NO_PREMIUM = "<gray>Cuenta no premium";
+
+        private Head() {
+        }
+    }
+
     /** The lines the game's messages about players turn into. {@code {player}} is the name the player shows. */
     public static final class Events {
         public static final String JOIN = "<dark_gray>[<green>+</green>]</dark_gray> <gray>{player} entró al servidor";
