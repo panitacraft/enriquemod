@@ -38,6 +38,7 @@ import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.message.Messenger;
+import com.panita.enriquecraft.moderation.service.MuteService;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -74,9 +75,10 @@ public final class ChatModule implements EnriquecraftModule {
         ChatHeads heads = new ChatHeads(config.heads::get, skins, new HeadTooltip(formatter));
         ChatView view = new ChatView(messenger, names, heads, services.get(InlineArts.class));
         HeldPlayers held = services.get(HeldPlayers.class);
-        ChatService chat = new ChatService(parser, view, held, selection);
+        MuteService mutes = services.get(MuteService.class);
+        ChatService chat = new ChatService(parser, view, held, selection, mutes);
         ReplyTracker replies = new ReplyTracker();
-        PrivateMessages privateMessages = new PrivateMessages(parser, new PrivateMessageView(messenger, names), replies, held);
+        PrivateMessages privateMessages = new PrivateMessages(parser, new PrivateMessageView(messenger, names), replies, held, mutes);
 
         services.register(ChatTextParser.class, parser);
         services.register(ChannelRegistry.class, channels);

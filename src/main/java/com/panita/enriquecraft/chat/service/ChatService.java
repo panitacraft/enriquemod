@@ -7,6 +7,7 @@ import com.panita.enriquecraft.chat.channel.ChannelSelection;
 import com.panita.enriquecraft.chat.event.ChatEvents;
 import com.panita.enriquecraft.chat.message.ChatView;
 import com.panita.enriquecraft.chat.text.ChatTextParser;
+import com.panita.enriquecraft.moderation.service.MuteService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -19,7 +20,8 @@ import java.util.function.BiFunction;
 
 /**
  * What happens when a player writes in a channel: their text is read as far as their permissions allow, and the line
- * goes to everyone who may read the channel. A player who has not entered their PIN yet neither writes nor reads.
+ * goes to everyone who may read the channel. A player who has not entered their PIN yet neither writes nor reads, and a muted
+ * player writes only in the staff channel.
  */
 public final class ChatService {
 
@@ -27,12 +29,14 @@ public final class ChatService {
     private final ChatView view;
     private final HeldPlayers held;
     private final ChannelSelection selection;
+    private final MuteService mutes;
 
-    public ChatService(ChatTextParser parser, ChatView view, HeldPlayers held, ChannelSelection selection) {
+    public ChatService(ChatTextParser parser, ChatView view, HeldPlayers held, ChannelSelection selection, MuteService mutes) {
         this.parser = parser;
         this.view = view;
         this.held = held;
         this.selection = selection;
+        this.mutes = mutes;
     }
 
     /**
@@ -95,6 +99,10 @@ public final class ChatService {
         }
         if (!channel.canUse(sender)) {
             view.channelDenied(sender, channel);
+            return false;
+        }
+        // The staff channel stays open to a muted player: it is how they answer staff, and only staff can use it.
+        if (!channel.id().equals(ChannelDefinition.STAFF) && mutes.blocks(sender)) {
             return false;
         }
         Component text = parser.parse(raw, ChatPermissions.capabilitiesOf(sender));
