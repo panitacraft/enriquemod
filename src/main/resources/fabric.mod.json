@@ -21,6 +21,7 @@
     "enriquecraft.auth.mixins.json",
     "enriquecraft.chat.mixins.json",
     "enriquecraft.discord.mixins.json",
+    "enriquecraft.moderation.mixins.json",
     {
       "config": "enriquecraft.client.mixins.json",
       "environment": "client"

@@ -6,6 +6,7 @@ import com.panita.enriquecraft.chat.ChatPermissions;
 import com.panita.enriquecraft.chat.message.PrivateMessageView;
 import com.panita.enriquecraft.chat.text.ChatCapability;
 import com.panita.enriquecraft.chat.text.ChatTextParser;
+import com.panita.enriquecraft.moderation.service.MuteService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +19,8 @@ import java.util.Set;
 
 /**
  * Private messages: {@code /msg}, {@code /tell} and {@code /w} go through here, and so does {@code /r}. The text is read as
- * far as the sender's permissions allow, like chat, and a player who has not entered their PIN yet receives nothing.
+ * far as the sender's permissions allow, like chat, a player who has not entered their PIN yet receives nothing, and a muted
+ * player sends nothing.
  */
 public final class PrivateMessages {
 
@@ -26,12 +28,14 @@ public final class PrivateMessages {
     private final PrivateMessageView view;
     private final ReplyTracker replies;
     private final HeldPlayers held;
+    private final MuteService mutes;
 
-    public PrivateMessages(ChatTextParser parser, PrivateMessageView view, ReplyTracker replies, HeldPlayers held) {
+    public PrivateMessages(ChatTextParser parser, PrivateMessageView view, ReplyTracker replies, HeldPlayers held, MuteService mutes) {
         this.parser = parser;
         this.view = view;
         this.replies = replies;
         this.held = held;
+        this.mutes = mutes;
     }
 
     /**
@@ -41,12 +45,15 @@ public final class PrivateMessages {
      * @return how many players the message reached, as a command reports
      */
     public int send(CommandSourceStack source, Collection<ServerPlayer> targets, String typedTarget, String raw) {
+        ServerPlayer sender = source.getPlayer();
+        if (sender != null && mutes.blocks(sender)) {
+            return 0;
+        }
         List<ServerPlayer> reachable = targets.stream().filter(target -> !held.isHeld(target)).toList();
         if (reachable.isEmpty()) {
             view.notAvailable(source);
             return 0;
         }
-        ServerPlayer sender = source.getPlayer();
         Set<ChatCapability> capabilities = sender == null ? EnumSet.allOf(ChatCapability.class) : ChatPermissions.capabilitiesOf(sender);
         Component text = parser.parse(raw, capabilities);
         if (text.getString().isBlank()) {
