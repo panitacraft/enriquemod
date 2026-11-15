@@ -175,7 +175,7 @@ final class ProfileMenu extends UiMenu {
     /** The viewer sees themselves as the model of their own player; anyone else is shown by their head, with the skin the server knows. */
     private UiElement portrait(ProfileSubject subject) {
         ItemStack head = subject.skin().map(PlayerHeads::item).orElseGet(() -> PlayerHeads.item(subject.id()));
-        return new UiElement.Detail(isSelf() ? PlayerModels.ofViewer(head) : head, Component.empty(), List.of());
+        return new UiElement.Detail(isSelf() ? PlayerModels.ofViewer(head) : PlayerModels.ofPlayer(head), Component.empty(), List.of());
     }
 
     /** Wrapped, since a screen only keeps the colors of the parts of a text, and draws the text itself in its own gray. */

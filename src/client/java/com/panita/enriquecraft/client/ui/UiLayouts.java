@@ -12,8 +12,10 @@ import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
 import com.panita.enriquecraft.core.ui.PlayerModels;
 
 import java.util.ArrayList;
@@ -311,7 +313,7 @@ final class UiLayouts {
         if (!detail.icon().isEmpty()) {
             int size = largeIconSize(detail.icon());
             LayoutElement icon = PlayerModels.isModel(detail.icon())
-                    ? new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT)
+                    ? model(detail.icon())
                     : detail.iconId() == UiElement.Detail.NOT_PRESSABLE
                     ? new UiItemWidget(detail.icon(), size)
                     : UiButtonWidget.big(font, detail.icon(), size, detail.iconTooltip(),
@@ -325,6 +327,15 @@ final class UiLayouts {
         }
         detail.lines().forEach(line -> column.addChild(new UiLineWidget(font, line), settings -> settings.alignHorizontallyCenter()));
         return column;
+    }
+
+    /** The model of the viewer, or of the player whose profile the head holds; the head's item when that profile is missing. */
+    private LayoutElement model(ItemStack head) {
+        if (PlayerModels.isViewer(head)) {
+            return new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT);
+        }
+        ResolvableProfile profile = head.get(DataComponents.PROFILE);
+        return profile == null ? new UiItemWidget(head, COMPACT_ICON) : new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT, profile);
     }
 
     /** A title that is a text field once clicked, with a check beside it that appears when the value changed. */
