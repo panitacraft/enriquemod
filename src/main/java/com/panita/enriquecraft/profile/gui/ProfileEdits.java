@@ -58,6 +58,10 @@ final class ProfileEdits {
         view.saved(player, details.setBio(player, text), Message.success(ProfileMessages.Edit.BIO_SAVED));
     }
 
+    void pronouns(ServerPlayer player, String text) {
+        view.saved(player, details.setPronouns(player, text), Message.success(ProfileMessages.Edit.PRONOUNS_SAVED));
+    }
+
     void markBase(ServerPlayer player) {
         ProfileDetailsService.Outcome outcome = details.markBase(player);
         view.saved(player, outcome, ProfileView.baseMarked(CoordinateView.position(player.getX(), player.getY(), player.getZ())));

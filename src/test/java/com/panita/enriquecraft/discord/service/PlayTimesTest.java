@@ -39,6 +39,16 @@ class PlayTimesTest {
     }
 
     @Test
+    void deathsAreReadFromTheSameFile(@TempDir Path folder) throws IOException {
+        UUID player = UUID.randomUUID();
+        assertEquals(OptionalLong.empty(), PlayTimes.deathsOf(folder, player));
+        Files.writeString(folder.resolve(player + ".json"), STATS.replace("\"minecraft:jump\":5", "\"minecraft:deaths\":7"));
+        assertEquals(OptionalLong.of(7), PlayTimes.deathsOf(folder, player));
+        Files.writeString(folder.resolve(player + ".json"), STATS);
+        assertEquals(OptionalLong.empty(), PlayTimes.deathsOf(folder, player));
+    }
+
+    @Test
     void aLiveStatisticInTicksIsSeconds() {
         assertEquals(60, PlayTimes.secondsOfTicks(1200));
         assertEquals(0, PlayTimes.secondsOfTicks(-3));

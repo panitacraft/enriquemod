@@ -22,7 +22,8 @@ import java.util.Set;
  * Every player shows one prank level before their name. The levels are the server's own, from the config, and the player may pick
  * any of them; the first is where they start. Every global or local emblem the API says they hold, the staff emblem included, is
  * theirs to choose to show after the name, except the emblems the API has for the prank levels, which would show the same thing twice.
- * The system emblems of the API (veteran, awards) are never shown by this server.
+ * The system emblems of the API (veteran, awards) are never shown by this server, except the nationality, which the profile shows
+ * beside the name and the player cannot change in game.
  */
 public final class EmblemResolver {
 
@@ -75,7 +76,7 @@ public final class EmblemResolver {
 
     /** What a player the API has said nothing of shows: the prank level and the empty places, and nothing to choose from. */
     public PlayerEmblems withoutProfile(Optional<String> prank) {
-        return assemble(List.of(), Optional.empty(), prank);
+        return assemble(List.of(), Optional.empty(), Optional.empty(), prank);
     }
 
     /**
@@ -86,15 +87,19 @@ public final class EmblemResolver {
      */
     public PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen, Optional<String> prank) {
         List<ApiEmblem> selectable = profile.emblems().stream().filter(emblem -> isPlain(emblem) && !isPrank(emblem.id())).toList();
-        return assemble(selectable, chosen, prank);
+        String prefix = config.nationalityPrefix.get();
+        Optional<ApiEmblem> nationality = prefix.isEmpty() ? Optional.empty() : profile.emblems().stream()
+                .filter(emblem -> emblem.category() == EmblemCategory.SYSTEM && emblem.id().startsWith(prefix)).findFirst();
+        return assemble(selectable, nationality, chosen, prank);
     }
 
-    private PlayerEmblems assemble(List<ApiEmblem> selectable, Optional<List<String>> chosen, Optional<String> prank) {
+    private PlayerEmblems assemble(List<ApiEmblem> selectable, Optional<ApiEmblem> held, Optional<List<String>> chosen, Optional<String> prank) {
+        Optional<EmblemView> nationality = held.map(this::view);
         List<EmblemView> levels = levels();
         EmblemView shown = prank.flatMap(id -> levels.stream().filter(level -> level.id().equals(id)).findFirst()).orElse(levels.getFirst());
         List<EmblemView> shownEmblems = chosenFrom(selectable, chosen).stream().map(this::view).toList();
         List<EmblemView> empty = Collections.nCopies(Math.max(0, config.loreMax.get() - shownEmblems.size()), emptySlot());
-        return new PlayerEmblems(shown, levels, shownEmblems, empty, selectable.stream().map(this::view).toList());
+        return new PlayerEmblems(nationality, shown, levels, shownEmblems, empty, selectable.stream().map(this::view).toList());
     }
 
     private static boolean isPlain(ApiEmblem emblem) {

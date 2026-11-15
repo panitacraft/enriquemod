@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.profile.gui;
 
 import com.panita.enriquecraft.core.dialog.DialogService;
+import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.core.ui.UiMenu;
 import com.panita.enriquecraft.core.ui.UiService;
@@ -13,6 +14,7 @@ import com.panita.enriquecraft.profile.service.ProfileDetailsService;
 import com.panita.enriquecraft.profile.service.ProfileRefresher;
 import com.panita.enriquecraft.profile.service.ProfileService;
 import com.panita.enriquecraft.profile.service.ProfileSubjects;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
@@ -77,6 +79,15 @@ public final class ProfileMenus {
 
     UiMenu emblemsMenu(UiMenu profileMenu) {
         return new EmblemsMenu(ui, profiles, tooltip, config, messenger, openMenus, profileMenu);
+    }
+
+    UiMenu pranksMenu(UiMenu profileMenu) {
+        return new PranksMenu(ui, edits, tooltip, profileMenu);
+    }
+
+    /** The rank the player shows in chat, which is empty for a player with none. */
+    Component rankOf(ServerPlayer player) {
+        return messenger.format(Message.plain("%enriquecraft:rank%"), player);
     }
 
     UiMenu emblemDetail(UiMenu profileMenu, EmblemView emblem) {

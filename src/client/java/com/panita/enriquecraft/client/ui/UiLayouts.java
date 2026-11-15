@@ -39,8 +39,8 @@ final class UiLayouts {
     private static final int MIN_SCROLL_HEIGHT = 30;
     private static final int COMPACT_ICON = 32;
     /** The box of the player's model, as tall as a player is in the inventory screen is. */
-    private static final int MODEL_WIDTH = 80;
-    private static final int MODEL_HEIGHT = 140;
+    private static final int MODEL_WIDTH = 64;
+    private static final int MODEL_HEIGHT = 112;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -218,7 +218,8 @@ final class UiLayouts {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
                 case LARGE_GRID -> UiButtonWidget.tile(font, button, actions);
                 case FOOTER -> footerButton(button);
-                default -> UiButtonWidget.action(font, button, actions);
+                default -> button.role() == ButtonRole.EMBLEM ? UiButtonWidget.emblem(font, button, actions)
+                        : UiButtonWidget.action(font, button, actions);
             };
             // Grid cells keep their size so the grid stays aligned; elsewhere a spacer is just a gap.
             case UiElement.Spacer ignored -> switch (place) {

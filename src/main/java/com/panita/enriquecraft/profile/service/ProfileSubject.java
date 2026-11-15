@@ -20,9 +20,10 @@ import java.util.UUID;
  * @param emblems     the emblems they show and hold
  * @param details     what they wrote about themselves, their base and their locator choice
  * @param playSeconds how long they have played, when it is known
+ * @param deaths      how many times they died, when it is known
  */
 public record ProfileSubject(String name, UUID id, boolean online, Optional<GameProfile> skin, Optional<ModProfile> profile,
-                             PlayerEmblems emblems, ProfileDetails details, OptionalLong playSeconds) {
+                             PlayerEmblems emblems, ProfileDetails details, OptionalLong playSeconds, OptionalLong deaths) {
 
     /** Whether the name belongs to a Microsoft account, which only staff are told. */
     public AuthMode mode() {

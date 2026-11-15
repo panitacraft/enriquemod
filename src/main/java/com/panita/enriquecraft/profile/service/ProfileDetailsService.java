@@ -21,6 +21,8 @@ public final class ProfileDetailsService {
         SAVED,
         /** The text is longer than {@link ProfileDetails#BIO_MAX}. */
         TOO_LONG,
+        /** The pronouns are longer than {@link ProfileDetails#PRONOUNS_MAX}. */
+        PRONOUNS_TOO_LONG,
         /** The player has no Panita account to keep the details under. */
         NOT_LINKED
     }
@@ -53,6 +55,16 @@ public final class ProfileDetailsService {
     Outcome setBio(String name, String raw) {
         Optional<String> bio = BioText.clean(raw);
         return bio.isEmpty() ? Outcome.TOO_LONG : change(name, details -> details.withBio(bio.get()));
+    }
+
+    /** Saves the pronouns the player chose to show, cleaned by {@link BioText}. */
+    public Outcome setPronouns(ServerPlayer player, String raw) {
+        return setPronouns(player.getGameProfile().name(), raw);
+    }
+
+    Outcome setPronouns(String name, String raw) {
+        Optional<String> pronouns = BioText.pronouns(raw);
+        return pronouns.isEmpty() ? Outcome.PRONOUNS_TOO_LONG : change(name, details -> details.withPronouns(pronouns.get()));
     }
 
     /** Marks the block the player stands on, in the dimension they are in, as their base. */

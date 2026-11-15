@@ -21,7 +21,7 @@ class ProfileDetailsBookTest {
     }
 
     private static ProfileDetails sample() {
-        return new ProfileDetails(Optional.of(new ProfileDetails.Base(Level.NETHER, 159, 62, -231)), "Hola\nque tal", false);
+        return new ProfileDetails(Optional.of(new ProfileDetails.Base(Level.NETHER, 159, 62, -231)), "Hola\nque tal", "ella", false);
     }
 
     @Test

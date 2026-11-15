@@ -113,7 +113,7 @@ class EmblemResolverTest {
     }
 
     @Test
-    void aSystemEmblemNeverShows() {
+    void aSystemEmblemNeverShowsExceptTheNationalityWhichStandsApart() {
         PlayerEmblems emblems = resolve(profile(
                 emblem("nationality_co", EmblemCategory.SYSTEM, 1),
                 emblem("veterano", EmblemCategory.SYSTEM, 1),
@@ -121,6 +121,7 @@ class EmblemResolverTest {
 
         assertEquals(List.of(), ids(emblems.selectable()));
         assertEquals(List.of(), ids(emblems.chosen()));
+        assertEquals(Optional.of("nationality_co"), emblems.nationality().map(EmblemView::id));
     }
 
     @Test

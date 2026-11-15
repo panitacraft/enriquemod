@@ -46,6 +46,9 @@ final class UiButtonWidget extends AbstractButton {
     private static final int CARD_MARGIN = 8;
     private static final int CARD_TITLE_GAP = 7;
 
+    static final int EMBLEM_SIZE = 56;
+    private static final int EMBLEM_ICON = 48;
+    private static final int DOT_RADIUS = 5;
     private static final int BIG_PADDING = 8;
     private static final int ICON_SIZE = 16;
     private static final int PADDING = 5;
@@ -57,7 +60,7 @@ final class UiButtonWidget extends AbstractButton {
     private static final int LABEL_COLOR = 0xFFFFFFFF;
 
     private enum Look {
-        CELL, TOOL, CARD, LABELED, ACTION, GLYPH, BIG
+        CELL, TOOL, CARD, LABELED, ACTION, GLYPH, BIG, EMBLEM, STATUS
     }
 
     /** What happens when the button is pressed. */
@@ -113,6 +116,24 @@ final class UiButtonWidget extends AbstractButton {
         widget.elementId = button.id();
         widget.draggable = button.draggable();
         widget.cellIcon = iconSize;
+        widget.describe(button, true);
+        return widget;
+    }
+
+    /** One picture drawn large with nothing behind it, that shows a surface when hovered. */
+    static UiButtonWidget emblem(Font font, UiElement.Button button, UiActions actions) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.EMBLEM, UiTheme.Tone.ACTION, EMBLEM_SIZE, EMBLEM_SIZE,
+                shownLabel(button), button.icon(), null, button.badge(), false,
+                (mouse, shift) -> actions.press(button.id(), mouse, shift));
+        widget.bigIcon = EMBLEM_ICON;
+        widget.describe(button, true);
+        return widget;
+    }
+
+    /** A filled dot in the button's tint that only tells a state; pressing it does nothing. */
+    static UiButtonWidget status(Font font, UiElement.Button button) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.STATUS, UiTheme.Tone.of(button.tint()), GLYPH_SIZE, GLYPH_SIZE,
+                button.label(), ItemStack.EMPTY, null, "", false, (mouse, shift) -> { });
         widget.describe(button, true);
         return widget;
     }
@@ -352,6 +373,26 @@ final class UiButtonWidget extends AbstractButton {
                 int color = !active ? UiTheme.DISABLED : hovered ? UiTheme.TEXT : UiTheme.MUTED;
                 graphics.text(font, glyph, getX() + (getWidth() - font.width(glyph)) / 2,
                         getY() + (getHeight() - font.lineHeight) / 2 + 1, color);
+            }
+            case EMBLEM -> {
+                if (hovered) {
+                    surface(graphics, true);
+                }
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(getX() + (getWidth() - bigIcon) / 2.0F, getY() + (getHeight() - bigIcon) / 2.0F);
+                graphics.pose().scale(bigIcon / (float) ICON_SIZE, bigIcon / (float) ICON_SIZE);
+                ArtItems.draw(graphics, icon, 0, 0);
+                graphics.pose().popMatrix();
+            }
+            case STATUS -> {
+                int centerX = getX() + getWidth() / 2;
+                int centerY = getY() + getHeight() / 2;
+                int color = tone.border();
+                // A disc drawn row by row, since a rectangle is all the screen can fill
+                for (int dy = -DOT_RADIUS; dy <= DOT_RADIUS; dy++) {
+                    int half = (int) Math.round(Math.sqrt(DOT_RADIUS * DOT_RADIUS + 0.5 - dy * dy));
+                    graphics.fill(centerX - half, centerY + dy, centerX + half + 1, centerY + dy + 1, color);
+                }
             }
             case BIG -> {
                 surface(graphics, hovered);

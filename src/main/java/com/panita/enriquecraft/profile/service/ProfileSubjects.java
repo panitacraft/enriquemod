@@ -37,7 +37,8 @@ public final class ProfileSubjects {
     public ProfileSubject of(ServerPlayer player) {
         long seconds = PlayTimes.secondsOfTicks(player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)));
         return new ProfileSubject(player.getGameProfile().name(), player.getUUID(), true, Optional.of(player.getGameProfile()),
-                profiles.profileOf(player.getUUID()), profiles.emblemsOf(player), details.detailsOf(player), OptionalLong.of(seconds));
+                profiles.profileOf(player.getUUID()), profiles.emblemsOf(player), details.detailsOf(player), OptionalLong.of(seconds),
+                OptionalLong.of(Math.max(0, player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS)))));
     }
 
     /** The player with that name, whatever its capitalization; empty when nobody on the server has it. */
@@ -50,8 +51,9 @@ public final class ProfileSubjects {
         return whitelisted(server, name).map(user -> {
             Optional<GameProfile> skin = skins.profileOf(user.name());
             OptionalLong seconds = PlayTimes.secondsOf(server.getWorldPath(LevelResource.PLAYER_STATS_DIR), user.id());
+            OptionalLong deaths = PlayTimes.deathsOf(server.getWorldPath(LevelResource.PLAYER_STATS_DIR), user.id());
             return new ProfileSubject(user.name(), user.id(), false, skin, profiles.profileOf(user.name()), profiles.emblemsOf(user.name()),
-                    details.detailsOf(user.name()), seconds);
+                    details.detailsOf(user.name()), seconds, deaths);
         });
     }
 

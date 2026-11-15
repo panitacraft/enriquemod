@@ -37,6 +37,14 @@ class BioTextTest {
     }
 
     @Test
+    void pronounsAreOneLineAndNineCharactersAtMost() {
+        assertEquals(Optional.of("ella / el"), BioText.pronouns("ella\n/ el"));
+        assertEquals(Optional.of(""), BioText.pronouns("  "));
+        assertEquals(Optional.of("a".repeat(ProfileDetails.PRONOUNS_MAX)), BioText.pronouns("a".repeat(ProfileDetails.PRONOUNS_MAX)));
+        assertEquals(Optional.empty(), BioText.pronouns("a".repeat(ProfileDetails.PRONOUNS_MAX + 1)));
+    }
+
+    @Test
     void aTextOverTheLimitIsRefusedRatherThanCut() {
         assertEquals(Optional.of("a".repeat(ProfileDetails.BIO_MAX)), BioText.clean("a".repeat(ProfileDetails.BIO_MAX)));
         assertEquals(Optional.empty(), BioText.clean("a".repeat(ProfileDetails.BIO_MAX + 1)));

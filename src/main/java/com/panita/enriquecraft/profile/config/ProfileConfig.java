@@ -34,6 +34,7 @@ public final class ProfileConfig implements ModConfig {
     public final ConfigValue<List<PrankLevel>> pranks;
     public final ConfigValue<Integer> prankCooldownSeconds;
     public final ConfigValue<String> emptyEmblemImage;
+    public final ConfigValue<String> nationalityPrefix;
     public final ConfigValue<Integer> loreMax;
     public final ConfigValue<Integer> refreshCooldownSeconds;
     public final ConfigValue<Integer> cacheSeconds;
@@ -60,6 +61,10 @@ public final class ProfileConfig implements ModConfig {
                         + "trusted image host, or empty for text only. Ending it in #size=<n> (2 to 12) draws it n GUI pixels tall; ordinary\n"
                         + "emblems are 10 and the text is 8.",
                 value -> value.isEmpty() || ArtLinks.isTrusted(value), "must be empty or an https address on a trusted image host");
+        nationalityPrefix = builder.string("nationalityPrefix", "nationality_",
+                "The start of the id of the nationality emblem of the Panita API, which the profile shows beside the name. A player cannot\n"
+                        + "change it in game. Empty shows none.",
+                value -> value.isEmpty() || ID.matcher(value).matches(), "must be empty or made of letters, digits, - or _");
         loreMax = builder.intRange("loreMax", 3, 0, 10, "The most emblems a player can choose to show next to their name, after it.");
         refreshCooldownSeconds = builder.intRange("refreshCooldownSeconds", 60, 0, 86_400,
                 "Seconds a player must wait before refreshing their own profile again with /profile refresh. 0 turns the wait off.");

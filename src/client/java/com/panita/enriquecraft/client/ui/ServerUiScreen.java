@@ -227,8 +227,11 @@ final class ServerUiScreen extends Screen implements UiActions {
         // Refresh and edit are small icons beside close, in the order the server gave them.
         LinearLayout headerEnd = LinearLayout.horizontal().spacing(4);
         for (UiElement.Button action : parts.headerActions()) {
-            headerEnd.addChild(UiButtonWidget.glyph(font, action.role() == ButtonRole.REFRESH ? "↻" : "✎", action.label(), false, true,
-                    (mouse, shift) -> press(action.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
+            UiButtonWidget widget = action.role() == ButtonRole.STATUS
+                    ? UiButtonWidget.status(font, action)
+                    : UiButtonWidget.glyph(font, action.role() == ButtonRole.REFRESH ? "⟳" : "✎", action.label(), false, true,
+                            (mouse, shift) -> press(action.id(), mouse, shift));
+            headerEnd.addChild(widget, settings -> settings.alignVerticallyMiddle());
         }
         if (close != null) {
             headerEnd.addChild(close, settings -> settings.alignVerticallyMiddle());

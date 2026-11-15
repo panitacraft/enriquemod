@@ -42,7 +42,15 @@ class ProfileDetailsServiceTest {
         assertEquals(ProfileDetailsService.Outcome.SAVED, service.setBase("Alex", Optional.of(base)));
         assertEquals(ProfileDetailsService.Outcome.SAVED, service.setShareLocation("ALEX", false));
 
-        assertEquals(new ProfileDetails(Optional.of(base), "hola\nmundo", false), service.detailsOf("Alex"));
+        assertEquals(new ProfileDetails(Optional.of(base), "hola\nmundo", "", false), service.detailsOf("Alex"));
+    }
+
+    @Test
+    void pronounsAreSavedOrRefusedWhenTooLong() {
+        assertEquals(ProfileDetailsService.Outcome.SAVED, service.setPronouns("Alex", "ella"));
+        assertEquals("ella", service.detailsOf("Alex").pronouns());
+        assertEquals(ProfileDetailsService.Outcome.PRONOUNS_TOO_LONG, service.setPronouns("Alex", "demasiado largo"));
+        assertEquals("ella", service.detailsOf("Alex").pronouns());
     }
 
     @Test

@@ -43,6 +43,7 @@ final class ProfileDialogs {
     private static final String PRANK = "prank";
     private static final String LOCATOR = "locator";
     private static final String BIO = "bio";
+    private static final String PRONOUNS = "pronouns";
     private static final int BIO_LINES = 6;
 
     private final DialogService dialogs;
@@ -134,6 +135,7 @@ final class ProfileDialogs {
                 .body(joined(List.of(menu.baseLine(subject.details()), menu.birthdayLine(subject), factory.text(ProfileMessages.Edit.BIRTHDAY_NOTE)), "\n"))
                 .field(new DialogField.Choice(PRANK, factory.text(ProfileMessages.Edit.PRANK), levels, emblems.prank().id()))
                 .field(new DialogField.Toggle(LOCATOR, factory.text(ProfileMessages.Edit.LOCATOR), subject.details().shareLocation()))
+                .field(new DialogField.Text(PRONOUNS, factory.text(ProfileMessages.Edit.PRONOUNS), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX, 1))
                 .field(new DialogField.Text(BIO, factory.text(ProfileMessages.Edit.BIO), subject.details().bio(), ProfileDetails.BIO_MAX, BIO_LINES))
                 .button(new DialogButton(MARK_BASE, factory.text(ProfileMessages.Edit.BASE_MARK), Optional.of(factory.text(ProfileMessages.Edit.BASE_MARK_LORE))))
                 .button(new DialogButton(CLEAR_BASE, factory.text(ProfileMessages.Edit.BASE_CLEAR)))
@@ -173,6 +175,9 @@ final class ProfileDialogs {
         }
         if (values.toggle(LOCATOR) != saved.shareLocation()) {
             edits.locator(player, values.toggle(LOCATOR));
+        }
+        if (!values.text(PRONOUNS).equals(saved.pronouns())) {
+            edits.pronouns(player, values.text(PRONOUNS));
         }
         if (!values.text(BIO).equals(saved.bio())) {
             edits.bio(player, values.text(BIO));

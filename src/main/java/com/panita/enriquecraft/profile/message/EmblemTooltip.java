@@ -47,6 +47,12 @@ public final class EmblemTooltip {
         return Component.empty().append(drawn).append(Component.literal(" " + emblem.title()).withColor(color));
     }
 
+    /** Only the emblem's picture, or its character for a client that draws no art, with the tooltip when pointed at. */
+    public Component picture(EmblemView emblem) {
+        Component icon = Component.literal(emblem.look().icon()).withColor(emblem.look().textColor().getValue()).withStyle(pointedStyle(emblem));
+        return emblem.iconUrl().map(url -> arts.wrap(icon, url)).orElse(icon);
+    }
+
     /** The name tag that stands for the emblem in a menu: its image, for a client that draws art. */
     public ItemStack icon(EmblemView emblem) {
         ItemStack tag = new ItemStack(Items.NAME_TAG);

@@ -97,6 +97,7 @@ public final class ProfileView {
         messenger.send(player, switch (outcome) {
             case SAVED -> success.prefixed();
             case TOO_LONG -> Message.warning(ProfileMessages.Edit.BIO_TOO_LONG).prefixed().with("max", ProfileDetails.BIO_MAX);
+            case PRONOUNS_TOO_LONG -> Message.warning(ProfileMessages.Edit.PRONOUNS_TOO_LONG).prefixed().with("max", ProfileDetails.PRONOUNS_MAX);
             case NOT_LINKED -> Message.warning(ProfileMessages.Edit.NOT_LINKED).prefixed();
         });
     }
