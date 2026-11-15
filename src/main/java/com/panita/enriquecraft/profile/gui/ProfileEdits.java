@@ -11,7 +11,9 @@ import com.panita.enriquecraft.profile.service.ProfileService;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * What a player changes in the edit view, whether they do it in the client companion's screen or in a dialog: each change is saved,
@@ -41,6 +43,11 @@ final class ProfileEdits {
         return profiles.emblemsOf(player).prank().id();
     }
 
+    /** How long the player must wait to change their prank level; empty when they may now, as holders of the bypass always may. */
+    Optional<Duration> prankWait(ServerPlayer player) {
+        return ProfilePermissions.canBypassPrankCooldown(player) ? Optional.empty() : profiles.prankWait(player);
+    }
+
     void prank(ServerPlayer player, String levelId) {
         String title = levels().stream().filter(level -> level.id().equals(levelId)).map(EmblemView::title).findFirst().orElse(levelId);
         view.prankResult(player, title, profiles.choosePrank(player, levelId, ProfilePermissions.canBypassPrankCooldown(player)));
@@ -54,11 +61,18 @@ final class ProfileEdits {
         view.saved(player, outcome, ProfileView.locatorChanged(shared));
     }
 
+    /** A change that is not one says nothing: a form sends every field, the ones that did not change too. */
     void bio(ServerPlayer player, String text) {
+        if (details.detailsOf(player).bio().equals(text)) {
+            return;
+        }
         view.saved(player, details.setBio(player, text), Message.success(ProfileMessages.Edit.BIO_SAVED));
     }
 
     void pronouns(ServerPlayer player, String text) {
+        if (details.detailsOf(player).pronouns().equals(text)) {
+            return;
+        }
         view.saved(player, details.setPronouns(player, text), Message.success(ProfileMessages.Edit.PRONOUNS_SAVED));
     }
 

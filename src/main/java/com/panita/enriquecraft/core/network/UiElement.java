@@ -72,6 +72,16 @@ public sealed interface UiElement {
     }
 
     /**
+     * Several lines of text the client companion draws in a smaller size, for a long text that is not the main thing on the screen,
+     * such as a description. The server breaks it into lines; a chest has no place for it.
+     */
+    record Note(List<Component> lines) implements UiElement {
+        public Note {
+            lines = List.copyOf(lines);
+        }
+    }
+
+    /**
      * Something the player can press. The icon may be empty, in which case no item is drawn. A button
      * with an icon but no label stands for the item itself, and shows its name and tooltip, followed by
      * the extra tooltip lines.

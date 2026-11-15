@@ -18,6 +18,12 @@ interface UiActions {
     void submit(int elementId, String text);
 
     /**
+     * Confirms a form: every field's value, in the order of the fields. The server answers one action at a time, so they are sent a
+     * moment apart.
+     */
+    void submitAll(java.util.List<java.util.Map.Entry<Integer, String>> fields);
+
+    /**
      * @param elementId the id the server gave the dropdown
      * @param option    the position of the option the player chose
      */

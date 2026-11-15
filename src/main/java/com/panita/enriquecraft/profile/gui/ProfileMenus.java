@@ -77,8 +77,8 @@ public final class ProfileMenus {
         }
     }
 
-    UiMenu emblemsMenu(UiMenu profileMenu) {
-        return new EmblemsMenu(ui, profiles, tooltip, config, messenger, openMenus, profileMenu);
+    UiMenu emblemsMenu(UiMenu profileMenu, int slot) {
+        return new EmblemsMenu(ui, profiles, tooltip, config, openMenus, profileMenu, slot);
     }
 
     UiMenu pranksMenu(UiMenu profileMenu) {
@@ -92,6 +92,11 @@ public final class ProfileMenus {
 
     UiMenu emblemDetail(UiMenu profileMenu, EmblemView emblem) {
         return new EmblemDetailMenu(ui, tooltip, profileMenu, emblem);
+    }
+
+    /** How many emblems a player shows after their name. */
+    int slots() {
+        return config.loreMax.get();
     }
 
     UiService ui() {

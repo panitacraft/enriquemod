@@ -25,8 +25,8 @@ final class UiElementCodecFormTest {
     }
 
     @Test
-    void theProtocolVersionIsFourteen() {
-        assertEquals(14, NetworkProtocol.VERSION);
+    void theProtocolVersionIsFifteen() {
+        assertEquals(15, NetworkProtocol.VERSION);
     }
 
     @Test
@@ -105,6 +105,13 @@ final class UiElementCodecFormTest {
 
             assertEquals(role, assertInstanceOf(UiElement.Button.class, roundTrip(button)).role());
         }
+    }
+
+    @Test
+    void aNoteKeepsItsLinesInOrder() {
+        UiElement note = new UiElement.Note(List.of(Component.literal("uno"), Component.literal("dos")));
+
+        assertEquals(note, roundTrip(note));
     }
 
     @Test

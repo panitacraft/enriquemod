@@ -181,7 +181,8 @@ final class UiButtonWidget extends AbstractButton {
     static UiButtonWidget action(Font font, UiElement.Button button, UiActions actions) {
         Component label = shownLabel(button);
         int iconSpace = button.icon().isEmpty() ? 0 : ICON_SIZE + PADDING;
-        int width = Math.max(MIN_ACTION_WIDTH, PADDING + iconSpace + font.width(label) + PADDING);
+        int width = button.icon().isEmpty() ? Math.max(ACTION_HEIGHT, font.width(label) + 2 * PADDING)
+                : Math.max(MIN_ACTION_WIDTH, PADDING + iconSpace + font.width(label) + PADDING);
         UiButtonWidget widget = new UiButtonWidget(font, Look.ACTION, UiTheme.Tone.ACTION, width, ACTION_HEIGHT, label,
                 button.icon(), null, button.badge(), false, (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.describe(button, false);
@@ -355,7 +356,7 @@ final class UiButtonWidget extends AbstractButton {
             }
             case ACTION -> {
                 surface(graphics, hovered);
-                int textX = getX() + PADDING;
+                int textX = icon.isEmpty() ? getX() + (getWidth() - font.width(getMessage())) / 2 : getX() + PADDING;
                 if (!icon.isEmpty()) {
                     int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
                     ArtItems.draw(graphics, icon, textX, iconY);

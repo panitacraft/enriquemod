@@ -74,13 +74,13 @@ public final class ProfileMessages {
         public static final String BASE_CLEAR = "<red>Quitar ubicación";
         public static final String BIRTHDAY_NOTE = "<gray>Tu cumpleaños se cambia en la web de Panitacraft.";
         public static final String BIRTHDAY_NONE = "sin definir";
-        public static final String LOCATOR = "Mostrarme en la barra de localización";
+        public static final String LOCATOR = "Compartir mi ubicación";
         public static final String LOCATOR_LORE = "<gray>Si lo apagas, los demás no te ven en su barra de localización.";
         public static final String BIO = "Descripción";
-        public static final String BIO_SAVE = "Guardar descripción";
+        public static final String SAVE = "Guardar cambios";
+        public static final String PRANK_WAIT = "<dark_gray>Podrás cambiarlo en {time}";
         public static final String PRONOUNS = "Pronombres";
         public static final String PRONOUNS_HINT = "Pronombres";
-        public static final String PRONOUNS_SAVE = "Guardar pronombres";
         public static final String PRONOUNS_SAVED = "Pronombres guardados.";
         public static final String PRONOUNS_TOO_LONG = "Tus pronombres tienen más de <white>{max}</white> caracteres. Acórtalos e inténtalo de nuevo.";
         public static final String EMBLEM_CHANGE = "cambiar este emblema";
@@ -153,18 +153,13 @@ public final class ProfileMessages {
 
     public static final class Emblems {
         public static final String TITLE = "Tus emblemas";
+        public static final String HERE = "<green>Está en este lugar.";
+        public static final String ELSEWHERE = "<gray>Ya lo muestras en otro lugar.";
+        public static final String PUT = "ponerlo en este lugar";
+        public static final String REMOVE = "quitarlo de este lugar";
+        public static final String SWAP = "intercambiar lugares";
         public static final String EMPTY_TITLE = "Espacio vacío";
         public static final String EMPTY_DESCRIPTION = "Aún no elegiste un emblema para este espacio. Elígelo en tu perfil.";
-        public static final String SHOWN = "<green>Se muestra junto a tu nombre.";
-        public static final String HIDDEN = "<gray>No se muestra.";
-        public static final String HIDE = "ocultarlo";
-        public static final String SHOW = "mostrarlo";
-        public static final String FULL = "Solo puedes mostrar <white>{max}</white> emblema(s) junto a tu nombre. Oculta uno primero.";
-        public static final String RESET = "<red>Restablecer";
-        public static final String RESET_LORE = "<gray>Vuelve a mostrar tus primeros emblemas, sin el orden que elegiste.";
-        public static final String RESET_TITLE = "Restablecer emblemas";
-        public static final String RESET_HEADLINE = "<yellow>¿Restablecer tus emblemas?";
-        public static final String RESET_WARNING = "<gray>Perderás la selección y el orden que elegiste.";
 
         private Emblems() {
         }

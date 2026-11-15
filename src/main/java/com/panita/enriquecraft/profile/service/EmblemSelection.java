@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.profile.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,46 +10,34 @@ import java.util.List;
  */
 public final class EmblemSelection {
 
-    /** What toggling an emblem did. */
-    public enum Change {
-        ADDED,
-        REMOVED,
-        /** The list is already as long as it may be, so nothing changed. */
-        FULL
-    }
-
-    /**
-     * @param emblems the list after the step
-     * @param change  what the step did
-     */
-    public record Toggled(List<String> emblems, Change change) {
-    }
-
     private EmblemSelection() {
     }
 
-    /** Puts an emblem away when it is shown, and adds it to the end when it is not and there is room. */
-    public static Toggled toggle(List<String> chosen, String id, int max) {
+    /**
+     * What choosing an emblem for a place does. A place that holds the emblem gives it up; a place that holds another emblem takes it,
+     * and when the emblem was already shown in another place the two places trade; an empty place takes it at the end of the list, and
+     * an emblem that was already shown moves to the end.
+     *
+     * @param chosen the ids shown now, in order
+     * @param slot   the place the player is changing, counted from 0; a place past the end of the list is an empty one
+     * @param max    the most emblems that can be shown
+     */
+    public static List<String> place(List<String> chosen, int slot, String id, int max) {
         List<String> updated = new ArrayList<>(chosen);
-        if (updated.remove(id)) {
-            return new Toggled(updated, Change.REMOVED);
+        int at = updated.indexOf(id);
+        if (slot < updated.size()) {
+            if (at == slot) {
+                updated.remove(slot);
+            } else if (at >= 0) {
+                Collections.swap(updated, slot, at);
+            } else {
+                updated.set(slot, id);
+            }
+        } else if (at >= 0) {
+            updated.add(updated.remove(at));
+        } else if (updated.size() < max) {
+            updated.add(id);
         }
-        if (updated.size() >= max) {
-            return new Toggled(updated, Change.FULL);
-        }
-        updated.add(id);
-        return new Toggled(updated, Change.ADDED);
-    }
-
-    /** The dragged emblem takes the place of the one it is dropped on; the others keep their order. */
-    public static List<String> move(List<String> chosen, String dragged, String onto) {
-        int from = chosen.indexOf(dragged);
-        int to = chosen.indexOf(onto);
-        if (from < 0 || to < 0 || from == to) {
-            return List.copyOf(chosen);
-        }
-        List<String> updated = new ArrayList<>(chosen);
-        updated.add(to, updated.remove(from));
         return updated;
     }
 }

@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  * a refresh that finishes while the menu is open.
  * <p>
  * The client companion's screen has the player and their identity on top (name and nationality, rank, the three emblems they show,
- * and a dot at the right end of the name's line that says whether they are online), then two columns of facts, each as a label with its value under it:
+ * and a dot above the model that says whether they are online), then two columns of facts, each as a label with its value under it:
  * the personal ones on the left and the ones about the game on the right. The edit view is the same screen with the fields that can
  * change turned into controls: the emblems and the prank level open their lists, the pronouns and the description are fields.
  * Players without the companion see the facts as dialogs ({@link ProfileDialogs}); a chest is only the last resort.
@@ -47,18 +47,18 @@ import java.util.stream.Stream;
 final class ProfileMenu extends UiMenu {
 
     private static final int BIO_LINE = 56;
-    private static final int COLUMN_BIO_LINE = 26;
-    private static final int BIO_SCROLL = 56;
+    private static final int COLUMN_BIO_LINE = 36;
+    private static final int NOTE_LINES = 9;
     private static final int AREA_WIDTH = 190;
     private static final int AREA_LINES = 5;
+    private static final int VALUE_COLOR = 0x8E8E8E;
     private static final int ONLINE_COLOR = 0x3FCF6B;
     private static final int OFFLINE_COLOR = 0x7A7A7A;
 
     private final ProfileMenus menus;
     private final Optional<String> target;
     private boolean editing;
-    // The two fields of the edit view, kept while the screen is described so the controls can confirm them
-    private UiElement.TextInput pronounsInput;
+    // The description field of the edit view, kept while the screen is described so the save button can confirm the form
     private UiElement.TextArea bioArea;
 
     /**
@@ -100,8 +100,14 @@ final class ProfileMenu extends UiMenu {
         new ProfileMenu(menus, target, editing).open(player);
     }
 
+    /** Opens the list of emblems for the first place that is empty, or the first place when all are filled. */
     void openEmblems(ServerPlayer player) {
-        menus.emblemsMenu(this).open(player);
+        int shown = menus.subjects().of(player).emblems().chosen().size();
+        openEmblems(player, shown < menus.slots() ? shown : 0);
+    }
+
+    private void openEmblems(ServerPlayer player, int slot) {
+        menus.emblemsMenu(this, slot).open(player);
     }
 
     @Override
@@ -151,7 +157,10 @@ final class ProfileMenu extends UiMenu {
                 emblems.empty().stream()).flatMap(all -> all).toList());
 
         List<UiElement> body = new ArrayList<>();
-        body.add(new UiElement.Row(List.of(portrait(subject), new UiElement.Column(identity(builder, subject, emblems), UiElement.Align.START))));
+        body.add(new UiElement.Row(List.of(
+                new UiElement.Column(List.of(status(builder, subject), portrait(subject)), UiElement.Align.START),
+                new UiElement.Spacer(),
+                new UiElement.Column(identity(builder, subject, emblems), UiElement.Align.START))));
         body.add(new UiElement.Divider());
         body.add(new UiElement.Row(List.of(
                 new UiElement.Column(personalColumn(builder, subject), UiElement.Align.START),
@@ -167,22 +176,25 @@ final class ProfileMenu extends UiMenu {
         return new UiElement.Detail(isSelf() ? PlayerModels.ofViewer(head) : head, Component.empty(), List.of());
     }
 
+    /** Wrapped, since a screen only keeps the colors of the parts of a text, and draws the text itself in its own gray. */
     private static UiElement.Label label(Component text) {
-        return new UiElement.Label(text);
+        return new UiElement.Label(Component.empty().append(text));
     }
 
-    /** The name with the nationality beside it, the rank under it, and the emblems the player shows under that. */
+    /** The rank, the name and the nationality on one line, and the emblems the player shows under it. */
     private List<UiElement> identity(UiBuilder builder, ProfileSubject subject, PlayerEmblems emblems) {
         List<UiElement> lines = new ArrayList<>();
         List<UiElement> nameLine = new ArrayList<>();
-        // Wrapped, since a screen only keeps the color of a text's parts, not the color of the text itself
-        nameLine.add(label(Component.empty().append(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD))));
+        rank(subject).ifPresent(rank -> nameLine.add(label(rank)));
+        nameLine.add(label(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE)));
         emblems.nationality().ifPresent(nationality -> nameLine.add(label(menus.tooltip().picture(nationality))));
-        nameLine.add(status(builder, subject));
         lines.add(new UiElement.Row(nameLine));
-        rank(subject).ifPresent(rank -> lines.add(label(rank)));
         List<EmblemView> shown = Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList();
-        lines.add(new UiElement.Row(shown.stream().map(emblem -> emblemTile(builder, emblem)).toList()));
+        List<UiElement> tiles = new ArrayList<>();
+        for (int place = 0; place < shown.size(); place++) {
+            tiles.add(emblemTile(builder, shown.get(place), Math.min(place, emblems.chosen().size())));
+        }
+        lines.add(new UiElement.Row(tiles));
         return lines;
     }
 
@@ -196,17 +208,19 @@ final class ProfileMenu extends UiMenu {
         return rank.getString().isBlank() ? Optional.empty() : Optional.of(rank);
     }
 
-    /** One emblem the player shows, large, with nothing behind it. Looking at it opens it in full; editing, the list to change it. */
-    private UiElement emblemTile(UiBuilder builder, EmblemView emblem) {
+    /** One emblem the player shows, large, with nothing behind it. Looking at it opens it in full; editing, the list to change its place. */
+    private UiElement emblemTile(UiBuilder builder, EmblemView emblem, int place) {
         List<Component> lines = new ArrayList<>(menus.tooltip().description(emblem));
-        lines.add(Component.empty());
+        if (!lines.isEmpty()) {
+            lines.add(Component.empty());
+        }
         lines.add(ClickHints.left(factory(), editing ? ProfileMessages.Edit.EMBLEM_CHANGE : ProfileMessages.Menu.EMBLEM_DETAIL));
         return builder.button(ButtonRole.EMBLEM, menus.tooltip().icon(emblem), menus.tooltip().title(emblem), lines, click -> {
             if (!click.isLeft()) {
                 return;
             }
             if (editing) {
-                openEmblems(click.player());
+                openEmblems(click.player(), place);
             } else {
                 menus.emblemDetail(this, emblem).open(click.player());
             }
@@ -231,7 +245,7 @@ final class ProfileMenu extends UiMenu {
         List<UiElement> lines = new ArrayList<>();
         if (editing) {
             lines.add(label(factory().text(ProfileMessages.Menu.FIELD_PRONOUNS)));
-            pronounsInput = builder.input(factory().text(ProfileMessages.Edit.PRONOUNS_HINT), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX,
+            UiElement.TextInput pronounsInput = builder.input(factory().text(ProfileMessages.Edit.PRONOUNS_HINT), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX,
                     submit -> {
                         menus.edits().pronouns(submit.player(), submit.text());
                         refresh();
@@ -257,8 +271,7 @@ final class ProfileMenu extends UiMenu {
         } else if (subject.details().bio().isEmpty()) {
             lines.add(label(none()));
         } else {
-            List<UiElement> text = bioLines(subject.details().bio(), COLUMN_BIO_LINE).stream().map(line -> (UiElement) label(line)).toList();
-            lines.add(new UiElement.Scroll(new UiElement.Column(text, UiElement.Align.START), BIO_SCROLL));
+            lines.add(new UiElement.Note(bioNote(subject.details().bio())));
         }
         return lines;
     }
@@ -278,7 +291,9 @@ final class ProfileMenu extends UiMenu {
         }
         lines.add(new UiElement.Spacer());
         lines.add(label(factory().text(ProfileMessages.Menu.FIELD_PRANK)));
-        lines.add(editing ? prankButton(builder, emblems.prank()) : label(menus.tooltip().title(emblems.prank())));
+        Optional<Duration> wait = editing ? menus.edits().prankWait(viewer()) : Optional.empty();
+        lines.add(editing && wait.isEmpty() ? prankButton(builder, emblems.prank()) : label(menus.tooltip().title(emblems.prank())));
+        wait.ifPresent(remaining -> lines.add(label(factory().text(Message.plain(ProfileMessages.Edit.PRANK_WAIT).with("time", Durations.format(remaining))))));
         if (editing) {
             lines.add(new UiElement.Spacer());
             lines.add(builder.toggle(factory().text(ProfileMessages.Edit.LOCATOR), subject.details().shareLocation(), toggle -> {
@@ -318,7 +333,9 @@ final class ProfileMenu extends UiMenu {
     /** The prank level as a button with its picture, which opens the list of levels to change it. */
     private UiElement prankButton(UiBuilder builder, EmblemView prank) {
         List<Component> lines = new ArrayList<>(menus.tooltip().description(prank));
-        lines.add(Component.empty());
+        if (!lines.isEmpty()) {
+            lines.add(Component.empty());
+        }
         lines.add(ClickHints.left(factory(), ProfileMessages.Edit.PRANK_CHANGE));
         return builder.button(ButtonRole.NONE, menus.tooltip().icon(prank), Component.literal(prank.title()).withColor(prank.look().textColor().getValue()),
                 lines, click -> {
@@ -359,8 +376,9 @@ final class ProfileMenu extends UiMenu {
 
     /** The base as the block it is on, which a click copies, and its dimension; or that there is none. */
     private Component baseValue(ProfileDetails details) {
+        // The position keeps its click that copies it, and takes the gray of the other values
         return details.base().map(base -> factory().text(Message.plain(ProfileMessages.Menu.BASE_VALUE)
-                        .with("position", CoordinateView.position(base.x(), base.y(), base.z()))
+                        .with("position", CoordinateView.position(base.x(), base.y(), base.z()).copy().withColor(VALUE_COLOR))
                         .with("dimension", CoordinateView.dimension(base.dimension()))))
                 .orElseGet(this::none);
     }
@@ -390,26 +408,37 @@ final class ProfileMenu extends UiMenu {
         return TextWrap.lines(bio, width).stream().map(line -> (Component) Component.literal(line)).toList();
     }
 
+    /** The description for the screen: short lines, and no more than fit, since a description saved before the limit may be longer. */
+    private static List<Component> bioNote(String bio) {
+        List<Component> lines = bioLines(bio, COLUMN_BIO_LINE);
+        if (lines.size() <= NOTE_LINES) {
+            return lines;
+        }
+        List<Component> cut = new ArrayList<>(lines.subList(0, NOTE_LINES - 1));
+        cut.add(Component.literal(lines.get(NOTE_LINES - 1).getString() + "…"));
+        return cut;
+    }
+
     private UiElement.Button close(UiBuilder builder) {
         return builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE), List.of(),
                 click -> ui().close(click.player()));
     }
 
-    /** The dot that says whether the player is online, which the client companion keeps at the right end of the name's line. */
+    /** The dot that says whether the player is online, above their model. */
     private UiElement.Button status(UiBuilder builder, ProfileSubject subject) {
         return builder.button(ButtonRole.STATUS, ItemStack.EMPTY,
                 factory().text(subject.online() ? ProfileMessages.Menu.STATUS_ONLINE : ProfileMessages.Menu.STATUS_OFFLINE), List.of(),
                 subject.online() ? ONLINE_COLOR : OFFLINE_COLOR, click -> { });
     }
 
-    /** The last band: refresh and edit in the header for the viewer's own profile, and what saves the fields while editing. */
+    /** The last band: refresh and edit in the header for the viewer's own profile, and the one button that saves the fields while editing. */
     private UiElement controls(UiBuilder builder, ProfileSubject subject) {
         List<UiElement> controls = new ArrayList<>();
         if (editing) {
             controls.add(builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(ProfileMessages.Menu.VIEW), List.of(),
                     click -> showAs(click.player(), false)));
-            controls.add(builder.submitButton(factory().text(ProfileMessages.Edit.PRONOUNS_SAVE), pronounsInput));
-            controls.add(builder.submitButton(factory().text(ProfileMessages.Edit.BIO_SAVE), bioArea));
+            // One button saves the whole form: the client sends every field of the screen
+            controls.add(builder.submitButton(factory().text(ProfileMessages.Edit.SAVE), bioArea));
         } else if (isSelf()) {
             controls.add(builder.button(ButtonRole.REFRESH, new ItemStack(Items.CLOCK), factory().text(ProfileMessages.Menu.REFRESH),
                     List.of(factory().text(ProfileMessages.Menu.REFRESH_LORE)), click -> {

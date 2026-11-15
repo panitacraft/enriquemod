@@ -56,7 +56,9 @@ final class PranksMenu extends UiPagedMenu<EmblemView> {
     protected UiElement render(UiBuilder builder, EmblemView level) {
         boolean current = level.id().equals(edits.prankOf(viewer()));
         List<Component> lines = new ArrayList<>(tooltip.description(level));
-        lines.add(Component.empty());
+        if (!lines.isEmpty()) {
+            lines.add(Component.empty());
+        }
         lines.add(current ? factory().text(ProfileMessages.Edit.PRANK_CURRENT) : ClickHints.left(factory(), ProfileMessages.Edit.PRANK_CHOOSE));
         return builder.button(ButtonRole.NONE, tooltip.icon(level), tooltip.title(level), lines, current ? CURRENT_BADGE : "", click -> {
             if (click.isLeft()) {

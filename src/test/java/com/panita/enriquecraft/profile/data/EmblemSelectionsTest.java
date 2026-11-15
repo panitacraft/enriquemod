@@ -41,8 +41,7 @@ class EmblemSelectionsTest {
         EmblemSelections selections = EmblemSelections.EMPTY.withPrank(7, "enrique6_prank_2", NOW).with(7, List.of("a"));
 
         assertEquals(Optional.of(new EmblemSelections.Prank(7, "enrique6_prank_2", NOW)), selections.prankOf(7));
-        assertEquals(Optional.of(new EmblemSelections.Prank(7, "enrique6_prank_2", NOW)), selections.without(7).prankOf(7));
-        assertEquals(Optional.empty(), selections.without(7).of(7));
+        assertEquals(Optional.of(List.of("a")), selections.of(7));
     }
 
     @Test

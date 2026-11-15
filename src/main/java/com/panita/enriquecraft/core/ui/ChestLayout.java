@@ -148,6 +148,7 @@ final class ChestLayout {
             case UiElement.Page ignored -> null;
             case UiElement.Divider ignored -> null;
             case UiElement.Rule ignored -> null;
+            case UiElement.Note ignored -> null;
             case UiElement.PinPad ignored -> null;
             case UiElement.Detail detail -> detail(detail);
             case UiElement.Dropdown dropdown -> MenuItem.button(stack(dropdown), click -> choose(dropdown, click));

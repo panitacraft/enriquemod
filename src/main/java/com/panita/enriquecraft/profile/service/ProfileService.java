@@ -113,9 +113,11 @@ public final class ProfileService {
         accountOf(player).ifPresent(userId -> write.accept(read.get().with(userId, emblems)));
     }
 
-    /** Back to the default: the first emblems the player holds. The prank level is a choice of its own and is kept. */
-    public void resetChoice(ServerPlayer player) {
-        accountOf(player).ifPresent(userId -> write.accept(read.get().without(userId)));
+    /** How long the player must still wait to change their prank level; empty when they may change it now (the bypass is not considered). */
+    public Optional<Duration> prankWait(ServerPlayer player) {
+        return accountOf(player).flatMap(userId -> read.get().prankOf(userId))
+                .map(current -> Duration.between(clock.get(), current.changedAt().plusSeconds(prankCooldownSeconds.getAsInt())))
+                .filter(Duration::isPositive);
     }
 
     /**

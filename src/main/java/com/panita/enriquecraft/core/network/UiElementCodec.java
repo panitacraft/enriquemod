@@ -39,6 +39,7 @@ public final class UiElementCodec {
     private static final byte RULE = 13;
     private static final byte TEXT_AREA = 14;
     private static final byte TOGGLE = 15;
+    private static final byte NOTE = 16;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -155,6 +156,10 @@ public final class UiElementCodec {
             }
             case UiElement.Divider ignored -> buffer.writeByte(DIVIDER);
             case UiElement.Rule ignored -> buffer.writeByte(RULE);
+            case UiElement.Note note -> {
+                buffer.writeByte(NOTE);
+                TOOLTIP.encode(buffer, note.lines());
+            }
             case UiElement.Spacer ignored -> buffer.writeByte(SPACER);
         }
     }
@@ -201,6 +206,7 @@ public final class UiElementCodec {
             case PIN_PAD -> readPinPad(buffer);
             case DIVIDER -> new UiElement.Divider();
             case RULE -> new UiElement.Rule();
+            case NOTE -> new UiElement.Note(TOOLTIP.decode(buffer));
             case SPACER -> new UiElement.Spacer();
             default -> throw new DecoderException("Unknown screen element " + type);
         };

@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.client.ui;
 
-import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -18,7 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import com.panita.enriquecraft.core.ui.PlayerModels;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -55,7 +54,7 @@ final class UiLayouts {
     private final boolean compact;
     private final boolean flatScrolls;
     private final int maxWidth;
-    private final Map<Integer, Supplier<String>> inputs = new HashMap<>();
+    private final Map<Integer, Supplier<String>> inputs = new LinkedHashMap<>();
     private final List<AbstractWidget> inputOrder = new ArrayList<>();
     private AbstractWidget bodyInput;
     private boolean hasScroll;
@@ -154,13 +153,12 @@ final class UiLayouts {
         return widget.layout();
     }
 
-    /** What a footer button does when pressed: a form's confirm sends its field's value, any other button presses. */
+    /** What a footer button does when pressed: a form's confirm sends the value of every field of the form, any other button presses. */
     private UiButtonWidget.Press pressOf(UiElement.Button button) {
         if (button.submits() != UiElement.Button.NO_INPUT) {
             return (mouse, shift) -> {
-                Supplier<String> field = inputs.get(button.submits());
-                if (field != null) {
-                    actions.submit(button.submits(), field.get());
+                if (inputs.containsKey(button.submits())) {
+                    actions.submitAll(inputs.entrySet().stream().map(field -> Map.entry(field.getKey(), field.getValue().get())).toList());
                 }
             };
         }
@@ -209,37 +207,14 @@ final class UiLayouts {
         return row;
     }
 
-    /** A row that ends in a status dot keeps the dot at its right end, however wide the column that holds it is. */
-    private static boolean endsInStatus(UiElement.Row row) {
-        return row.children().size() > 1 && row.children().getLast() instanceof UiElement.Button button && button.role() == ButtonRole.STATUS;
-    }
-
-    private SpreadRow spread(UiElement.Row row) {
-        List<UiElement> rest = row.children().subList(0, row.children().size() - 1);
-        UiElement.Button status = (UiElement.Button) row.children().getLast();
-        LinearLayout left = row(rest, Place.ROW);
-        left.arrangeElements();
-        UiButtonWidget dot = UiButtonWidget.status(font, status);
-        SpreadRow frame = new SpreadRow(left.getWidth() + SPACING + dot.getWidth(), left.getHeight());
-        frame.addChild(left, settings -> settings.alignHorizontallyLeft().alignVerticallyMiddle());
-        frame.addChild(dot, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
-        return frame;
-    }
-
-    /** A frame the column stretches to its own width, which puts what is at its right end at the column's edge. */
-    private static final class SpreadRow extends FrameLayout {
-        SpreadRow(int width, int height) {
-            super(width, height);
-        }
-    }
-
     private LayoutElement build(UiElement element, Place place) {
         return switch (element) {
             case UiElement.Column column -> column(column.children(), column.align());
-            case UiElement.Row row -> endsInStatus(row) ? spread(row) : bodyRow(row.children());
+            case UiElement.Row row -> bodyRow(row.children());
             case UiElement.Grid grid -> grid(grid);
             case UiElement.Scroll scroll -> scroll(scroll);
             case UiElement.Label label -> text(label.text());
+            case UiElement.Note note -> new UiNoteWidget(font, note.lines());
             case UiElement.Page page -> text(Component.literal(page.page() + " / " + page.pages()));
             // In a row, a pressable detail is a card; elsewhere it is the full view of one thing.
             case UiElement.Detail detail -> place == Place.ROW && detail.iconId() != UiElement.Detail.NOT_PRESSABLE
@@ -374,14 +349,10 @@ final class UiLayouts {
     private LinearLayout column(List<UiElement> children, UiElement.Align align) {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
         List<UiDividerWidget> dividers = new ArrayList<>();
-        List<SpreadRow> spreads = new ArrayList<>();
         for (UiElement child : children) {
             LayoutElement built = build(child, Place.COLUMN);
             if (built instanceof UiDividerWidget divider) {
                 dividers.add(divider);
-            }
-            if (built instanceof SpreadRow spread) {
-                spreads.add(spread);
             }
             column.addChild(built, settings -> {
                 if (align == UiElement.Align.START) {
@@ -395,7 +366,6 @@ final class UiLayouts {
         column.arrangeElements();
         int width = column.getWidth();
         dividers.forEach(divider -> divider.setWidth(width));
-        spreads.forEach(spread -> spread.setMinWidth(width));
         column.arrangeElements();
         return column;
     }
