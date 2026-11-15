@@ -46,8 +46,8 @@ final class UiButtonWidget extends AbstractButton {
     private static final int CARD_MARGIN = 8;
     private static final int CARD_TITLE_GAP = 7;
 
-    static final int EMBLEM_SIZE = 56;
-    private static final int EMBLEM_ICON = 48;
+    static final int EMBLEM_SIZE = 40;
+    private static final int EMBLEM_ICON = 32;
     private static final int DOT_RADIUS = 5;
     private static final int BIG_PADDING = 8;
     private static final int ICON_SIZE = 16;

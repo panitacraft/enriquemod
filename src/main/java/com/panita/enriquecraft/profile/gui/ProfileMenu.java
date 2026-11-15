@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  * a refresh that finishes while the menu is open.
  * <p>
  * The client companion's screen has the player and their identity on top (name and nationality, rank, the three emblems they show,
- * and a dot that says whether they are online in the header), then two columns of facts, each as a label with its value under it:
+ * and a dot at the right end of the name's line that says whether they are online), then two columns of facts, each as a label with its value under it:
  * the personal ones on the left and the ones about the game on the right. The edit view is the same screen with the fields that can
  * change turned into controls: the emblems and the prank level open their lists, the pronouns and the description are fields.
  * Players without the companion see the facts as dialogs ({@link ProfileDialogs}); a chest is only the last resort.
@@ -47,8 +47,8 @@ import java.util.stream.Stream;
 final class ProfileMenu extends UiMenu {
 
     private static final int BIO_LINE = 56;
-    private static final int COLUMN_BIO_LINE = 30;
-    private static final int BIO_SCROLL = 70;
+    private static final int COLUMN_BIO_LINE = 26;
+    private static final int BIO_SCROLL = 56;
     private static final int AREA_WIDTH = 190;
     private static final int AREA_LINES = 5;
     private static final int ONLINE_COLOR = 0x3FCF6B;
@@ -155,6 +155,7 @@ final class ProfileMenu extends UiMenu {
         body.add(new UiElement.Divider());
         body.add(new UiElement.Row(List.of(
                 new UiElement.Column(personalColumn(builder, subject), UiElement.Align.START),
+                new UiElement.Divider(),
                 new UiElement.Column(gameColumn(builder, subject, emblems), UiElement.Align.START))));
         body.add(controls(builder, subject));
         return new UiElement.Column(body);
@@ -174,8 +175,10 @@ final class ProfileMenu extends UiMenu {
     private List<UiElement> identity(UiBuilder builder, ProfileSubject subject, PlayerEmblems emblems) {
         List<UiElement> lines = new ArrayList<>();
         List<UiElement> nameLine = new ArrayList<>();
-        nameLine.add(label(Component.literal(subject.name()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
+        // Wrapped, since a screen only keeps the color of a text's parts, not the color of the text itself
+        nameLine.add(label(Component.empty().append(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD))));
         emblems.nationality().ifPresent(nationality -> nameLine.add(label(menus.tooltip().picture(nationality))));
+        nameLine.add(status(builder, subject));
         lines.add(new UiElement.Row(nameLine));
         rank(subject).ifPresent(rank -> lines.add(label(rank)));
         List<EmblemView> shown = Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList();
@@ -216,7 +219,7 @@ final class ProfileMenu extends UiMenu {
     }
 
     private Component value(String text) {
-        return Component.literal(text).withStyle(ChatFormatting.WHITE);
+        return Component.literal(text);
     }
 
     private Component none() {
@@ -244,7 +247,8 @@ final class ProfileMenu extends UiMenu {
         lines.add(new UiElement.Spacer());
         lines.add(label(factory().text(ProfileMessages.Menu.FIELD_BIO)));
         if (editing) {
-            bioArea = builder.textArea(factory().text(ProfileMessages.Edit.BIO), subject.details().bio(), ProfileDetails.BIO_MAX, AREA_LINES, AREA_WIDTH,
+            bioArea = builder.textArea(factory().text(ProfileMessages.Edit.BIO), subject.details().bio(), Math.max(ProfileDetails.BIO_MAX, subject.details().bio().length()),
+                    AREA_LINES, AREA_WIDTH,
                     submit -> {
                         menus.edits().bio(submit.player(), submit.text());
                         refresh();
@@ -391,17 +395,16 @@ final class ProfileMenu extends UiMenu {
                 click -> ui().close(click.player()));
     }
 
-    /** The dot that says whether the player is online, which the client companion draws in the header. */
+    /** The dot that says whether the player is online, which the client companion keeps at the right end of the name's line. */
     private UiElement.Button status(UiBuilder builder, ProfileSubject subject) {
         return builder.button(ButtonRole.STATUS, ItemStack.EMPTY,
                 factory().text(subject.online() ? ProfileMessages.Menu.STATUS_ONLINE : ProfileMessages.Menu.STATUS_OFFLINE), List.of(),
                 subject.online() ? ONLINE_COLOR : OFFLINE_COLOR, click -> { });
     }
 
-    /** The last band: the status, refresh and edit in the header for the viewer's own profile, and what saves the fields while editing. */
+    /** The last band: refresh and edit in the header for the viewer's own profile, and what saves the fields while editing. */
     private UiElement controls(UiBuilder builder, ProfileSubject subject) {
         List<UiElement> controls = new ArrayList<>();
-        controls.add(status(builder, subject));
         if (editing) {
             controls.add(builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(ProfileMessages.Menu.VIEW), List.of(),
                     click -> showAs(click.player(), false)));

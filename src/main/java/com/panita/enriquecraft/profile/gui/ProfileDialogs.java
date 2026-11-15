@@ -136,7 +136,7 @@ final class ProfileDialogs {
                 .field(new DialogField.Choice(PRANK, factory.text(ProfileMessages.Edit.PRANK), levels, emblems.prank().id()))
                 .field(new DialogField.Toggle(LOCATOR, factory.text(ProfileMessages.Edit.LOCATOR), subject.details().shareLocation()))
                 .field(new DialogField.Text(PRONOUNS, factory.text(ProfileMessages.Edit.PRONOUNS), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX, 1))
-                .field(new DialogField.Text(BIO, factory.text(ProfileMessages.Edit.BIO), subject.details().bio(), ProfileDetails.BIO_MAX, BIO_LINES))
+                .field(new DialogField.Text(BIO, factory.text(ProfileMessages.Edit.BIO), subject.details().bio(), Math.max(ProfileDetails.BIO_MAX, subject.details().bio().length()), BIO_LINES))
                 .button(new DialogButton(MARK_BASE, factory.text(ProfileMessages.Edit.BASE_MARK), Optional.of(factory.text(ProfileMessages.Edit.BASE_MARK_LORE))))
                 .button(new DialogButton(CLEAR_BASE, factory.text(ProfileMessages.Edit.BASE_CLEAR)))
                 .button(new DialogButton(EMBLEMS, factory.text(ProfileMessages.Edit.EMBLEMS), Optional.of(factory.text(ProfileMessages.Edit.EMBLEMS_LORE))))

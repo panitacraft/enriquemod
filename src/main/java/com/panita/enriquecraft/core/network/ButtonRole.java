@@ -46,8 +46,9 @@ public enum ButtonRole {
     EDIT,
 
     /**
-     * A small colored dot that tells a state, such as whether a player is online; its tint is the color. The client companion
-     * draws it in the header next to close, and pressing it does nothing; its label and tooltip show when hovering it.
+     * A small colored dot that tells a state, such as whether a player is online; its tint is the color. Pressing it does
+     * nothing; its label and tooltip show when hovering it. As the last element of a row with others, the client companion keeps it at
+     * the right end of the column that holds the row.
      */
     STATUS,
 

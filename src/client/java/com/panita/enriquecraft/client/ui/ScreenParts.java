@@ -19,7 +19,7 @@ import java.util.List;
  * @param next     the button that shows the next page, or null when there is none
  * @param fields   the text fields and dropdowns of the controls
  * @param actions  the other buttons of the controls
- * @param headerActions the refresh, edit and status buttons of the controls, which the client draws as small icons next to close
+ * @param headerActions the refresh and edit buttons of the controls, which the client draws as small icons next to close
  */
 record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cancel, UiElement.Page page,
                    UiElement.Button previous, UiElement.Button next, List<UiElement> fields, List<UiElement> actions,
@@ -55,8 +55,8 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cance
                             cancel = button;
                             actions.add(button);
                         }
-                        case REFRESH, EDIT, STATUS -> headerActions.add(button);
-                        case NONE, CONFIRM, DANGER, SUCCESS, EMBLEM -> actions.add(button);
+                        case REFRESH, EDIT -> headerActions.add(button);
+                        case NONE, CONFIRM, DANGER, SUCCESS, EMBLEM, STATUS -> actions.add(button);
                     }
                 }
                 case UiElement.Page indicator -> page = indicator;

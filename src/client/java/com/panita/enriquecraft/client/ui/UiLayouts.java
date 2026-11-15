@@ -39,8 +39,8 @@ final class UiLayouts {
     private static final int MIN_SCROLL_HEIGHT = 30;
     private static final int COMPACT_ICON = 32;
     /** The box of the player's model, as tall as a player is in the inventory screen is. */
-    private static final int MODEL_WIDTH = 64;
-    private static final int MODEL_HEIGHT = 112;
+    private static final int MODEL_WIDTH = 48;
+    private static final int MODEL_HEIGHT = 84;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -171,9 +171,19 @@ final class UiLayouts {
         LinearLayout row = LinearLayout.horizontal().spacing(SPACING);
         boolean gap = false;
         boolean any = false;
+        List<UiVerticalRuleWidget> rules = new ArrayList<>();
         for (UiElement child : children) {
             if (child instanceof UiElement.Spacer) {
                 gap = true;
+                continue;
+            }
+            // A divider between the elements of a row is a vertical line as tall as the row
+            if (child instanceof UiElement.Divider) {
+                UiVerticalRuleWidget rule = new UiVerticalRuleWidget();
+                rules.add(rule);
+                row.addChild(rule, settings -> settings.paddingHorizontal(GAP / 2));
+                gap = false;
+                any = true;
                 continue;
             }
             if (gap && any) {
@@ -191,13 +201,42 @@ final class UiLayouts {
             gap = false;
             any = true;
         }
+        if (!rules.isEmpty()) {
+            row.arrangeElements();
+            rules.forEach(rule -> rule.setHeight(row.getHeight()));
+            row.arrangeElements();
+        }
         return row;
+    }
+
+    /** A row that ends in a status dot keeps the dot at its right end, however wide the column that holds it is. */
+    private static boolean endsInStatus(UiElement.Row row) {
+        return row.children().size() > 1 && row.children().getLast() instanceof UiElement.Button button && button.role() == ButtonRole.STATUS;
+    }
+
+    private SpreadRow spread(UiElement.Row row) {
+        List<UiElement> rest = row.children().subList(0, row.children().size() - 1);
+        UiElement.Button status = (UiElement.Button) row.children().getLast();
+        LinearLayout left = row(rest, Place.ROW);
+        left.arrangeElements();
+        UiButtonWidget dot = UiButtonWidget.status(font, status);
+        SpreadRow frame = new SpreadRow(left.getWidth() + SPACING + dot.getWidth(), left.getHeight());
+        frame.addChild(left, settings -> settings.alignHorizontallyLeft().alignVerticallyMiddle());
+        frame.addChild(dot, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
+        return frame;
+    }
+
+    /** A frame the column stretches to its own width, which puts what is at its right end at the column's edge. */
+    private static final class SpreadRow extends FrameLayout {
+        SpreadRow(int width, int height) {
+            super(width, height);
+        }
     }
 
     private LayoutElement build(UiElement element, Place place) {
         return switch (element) {
             case UiElement.Column column -> column(column.children(), column.align());
-            case UiElement.Row row -> bodyRow(row.children());
+            case UiElement.Row row -> endsInStatus(row) ? spread(row) : bodyRow(row.children());
             case UiElement.Grid grid -> grid(grid);
             case UiElement.Scroll scroll -> scroll(scroll);
             case UiElement.Label label -> text(label.text());
@@ -218,8 +257,11 @@ final class UiLayouts {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
                 case LARGE_GRID -> UiButtonWidget.tile(font, button, actions);
                 case FOOTER -> footerButton(button);
-                default -> button.role() == ButtonRole.EMBLEM ? UiButtonWidget.emblem(font, button, actions)
-                        : UiButtonWidget.action(font, button, actions);
+                default -> switch (button.role()) {
+                    case EMBLEM -> UiButtonWidget.emblem(font, button, actions);
+                    case STATUS -> UiButtonWidget.status(font, button);
+                    default -> UiButtonWidget.action(font, button, actions);
+                };
             };
             // Grid cells keep their size so the grid stays aligned; elsewhere a spacer is just a gap.
             case UiElement.Spacer ignored -> switch (place) {
@@ -332,10 +374,14 @@ final class UiLayouts {
     private LinearLayout column(List<UiElement> children, UiElement.Align align) {
         LinearLayout column = LinearLayout.vertical().spacing(SPACING);
         List<UiDividerWidget> dividers = new ArrayList<>();
+        List<SpreadRow> spreads = new ArrayList<>();
         for (UiElement child : children) {
             LayoutElement built = build(child, Place.COLUMN);
             if (built instanceof UiDividerWidget divider) {
                 dividers.add(divider);
+            }
+            if (built instanceof SpreadRow spread) {
+                spreads.add(spread);
             }
             column.addChild(built, settings -> {
                 if (align == UiElement.Align.START) {
@@ -349,6 +395,7 @@ final class UiLayouts {
         column.arrangeElements();
         int width = column.getWidth();
         dividers.forEach(divider -> divider.setWidth(width));
+        spreads.forEach(spread -> spread.setMinWidth(width));
         column.arrangeElements();
         return column;
     }
