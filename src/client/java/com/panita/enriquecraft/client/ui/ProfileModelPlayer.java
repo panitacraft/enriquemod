@@ -20,6 +20,8 @@ final class ProfileModelPlayer extends RemotePlayer {
 
     ProfileModelPlayer(ClientLevel level, ResolvableProfile profile) {
         super(level, profile.partialProfile());
+        // The renderer asks for an id, which an entity only gets when the world adds it; this one is never added
+        setId(-1);
         // A lookup gives the default skin until the real one is ready, and then the real one, so the model fills in by itself
         this.skin = Minecraft.getInstance().playerSkinRenderCache().createLookup(profile);
     }
