@@ -26,9 +26,10 @@ final class EmblemDetailMenu extends UiMenu {
         this.emblem = emblem;
     }
 
+    /** Only the words: the header already shows the emblem's picture next to the title. */
     @Override
     protected Component title() {
-        return tooltip.title(emblem);
+        return Component.literal(emblem.title()).withColor(emblem.look().textColor().getValue());
     }
 
     @Override

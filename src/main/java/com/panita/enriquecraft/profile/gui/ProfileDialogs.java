@@ -18,6 +18,7 @@ import com.panita.enriquecraft.profile.service.ProfileRefresher;
 import com.panita.enriquecraft.profile.service.ProfileSubject;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
@@ -79,18 +80,12 @@ final class ProfileDialogs {
         tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).toList());
         DialogSpec.Builder spec = DialogSpec.builder(menu.title());
         spec.body(Component.literal(subject.name()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
-        menu.factLines(subject).forEach(spec::body);
-        spec.body(Component.empty());
+        // A dialog spaces its paragraphs far apart, so related lines go together in one
+        spec.body(joined(menu.factLines(subject), "\n"));
         spec.body(factory.text(ProfileMessages.Menu.BIO_HEADER));
-        if (subject.details().bio().isEmpty()) {
-            spec.body(factory.text(ProfileMessages.Menu.NO_BIO));
-        } else {
-            ProfileMenu.bioLines(subject.details().bio()).forEach(spec::body);
-        }
-        spec.body(Component.empty());
+        spec.body(subject.details().bio().isEmpty() ? factory.text(ProfileMessages.Menu.NO_BIO) : joined(ProfileMenu.bioLines(subject.details().bio()), "\n"));
         spec.body(factory.text(ProfileMessages.Menu.EMBLEMS_HEADER));
-        spec.body(emblemLine(emblems.prank()));
-        emblems.selectable().forEach(emblem -> spec.body(emblemLine(emblem)));
+        spec.body(joined(Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).map(this::emblemLine).toList(), "\n"));
         if (menu.isSelf()) {
             spec.button(new DialogButton(EDIT, factory.text(ProfileMessages.Edit.DIALOG_EDIT)));
             spec.button(new DialogButton(REFRESH, factory.text(ProfileMessages.Edit.DIALOG_REFRESH)));
@@ -117,13 +112,16 @@ final class ProfileDialogs {
     private Component emblemLine(EmblemView emblem) {
         Component line = tooltip.title(emblem);
         List<Component> description = tooltip.description(emblem);
-        return description.isEmpty() ? line : Component.empty().append(line).append(Component.literal(" ")).append(joined(description));
+        return description.isEmpty() ? line : Component.empty().append(line).append(Component.literal(" ")).append(joined(description, " "));
     }
 
-    private static Component joined(List<Component> lines) {
-        Component all = Component.empty();
+    private static Component joined(List<Component> lines, String separator) {
+        MutableComponent all = Component.empty();
         for (int index = 0; index < lines.size(); index++) {
-            all = all.copy().append(index == 0 ? Component.empty() : Component.literal(" ")).append(lines.get(index));
+            if (index > 0) {
+                all.append(Component.literal(separator));
+            }
+            all.append(lines.get(index));
         }
         return all;
     }
@@ -133,9 +131,7 @@ final class ProfileDialogs {
         List<DialogField.Option> levels = edits.levels().stream()
                 .map(level -> new DialogField.Option(level.id(), Component.literal(level.title()))).toList();
         DialogSpec spec = DialogSpec.builder(menu.title())
-                .body(menu.baseLine(subject.details()))
-                .body(menu.birthdayLine(subject))
-                .body(factory.text(ProfileMessages.Edit.BIRTHDAY_NOTE))
+                .body(joined(List.of(menu.baseLine(subject.details()), menu.birthdayLine(subject), factory.text(ProfileMessages.Edit.BIRTHDAY_NOTE)), "\n"))
                 .field(new DialogField.Choice(PRANK, factory.text(ProfileMessages.Edit.PRANK), levels, emblems.prank().id()))
                 .field(new DialogField.Toggle(LOCATOR, factory.text(ProfileMessages.Edit.LOCATOR), subject.details().shareLocation()))
                 .field(new DialogField.Text(BIO, factory.text(ProfileMessages.Edit.BIO), subject.details().bio(), ProfileDetails.BIO_MAX, BIO_LINES))

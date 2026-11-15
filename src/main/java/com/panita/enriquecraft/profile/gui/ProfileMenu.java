@@ -88,6 +88,11 @@ final class ProfileMenu extends UiMenu {
         return target.orElseThrow();
     }
 
+    /** The title of a screen is only sent when it opens, so changing between viewing and editing opens the screen again. */
+    private void showAs(ServerPlayer player, boolean editing) {
+        new ProfileMenu(menus, target, editing).open(player);
+    }
+
     void openEmblems(ServerPlayer player) {
         menus.emblemsMenu(this).open(player);
     }
@@ -317,10 +322,8 @@ final class ProfileMenu extends UiMenu {
     private UiElement controls(UiBuilder builder, Optional<UiElement.TextArea> area) {
         List<UiElement> controls = new ArrayList<>();
         if (editing) {
-            controls.add(builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(ProfileMessages.Menu.VIEW), List.of(), click -> {
-                edit(false);
-                refresh();
-            }));
+            controls.add(builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(ProfileMessages.Menu.VIEW), List.of(),
+                    click -> showAs(click.player(), false)));
             controls.add(builder.submitButton(factory().text(ProfileMessages.Edit.BIO_SAVE), area.orElseThrow()));
             controls.add(builder.button(ButtonRole.NONE, new ItemStack(Items.NAME_TAG), factory().text(ProfileMessages.Edit.EMBLEMS),
                     List.of(factory().text(ProfileMessages.Edit.EMBLEMS_LORE)), click -> {
@@ -338,8 +341,7 @@ final class ProfileMenu extends UiMenu {
             controls.add(builder.button(ButtonRole.EDIT, new ItemStack(Items.WRITABLE_BOOK), factory().text(ProfileMessages.Menu.EDIT),
                     List.of(factory().text(ProfileMessages.Menu.EDIT_LORE)), click -> {
                         if (click.isLeft()) {
-                            edit(true);
-                            refresh();
+                            showAs(click.player(), true);
                         }
                     }));
         }
