@@ -11,10 +11,17 @@ public final class ProfilePermissions {
     /** A prank level change that ignores the wait between changes. */
     public static final String PRANK_BYPASS = Enriquecraft.MOD_ID + ".profile.prank.bypass";
 
+    /** The extra lines staff see in the profile of any player, such as the Panita account. */
+    public static final String STAFF_INFO = Enriquecraft.MOD_ID + ".profile.staff";
+
     private ProfilePermissions() {
     }
 
     public static boolean canBypassPrankCooldown(ServerPlayer player) {
         return Permissions.check(player, PRANK_BYPASS, PermissionLevel.ADMINS);
+    }
+
+    public static boolean canSeeStaffInfo(ServerPlayer player) {
+        return Permissions.check(player, STAFF_INFO, PermissionLevel.GAMEMASTERS);
     }
 }

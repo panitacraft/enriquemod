@@ -1,10 +1,9 @@
 package com.panita.enriquecraft.profile.gui;
 
 import com.panita.enriquecraft.core.message.Message;
-import com.panita.enriquecraft.profile.ProfilePermissions;
 import com.panita.enriquecraft.core.message.Messenger;
-import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.network.ButtonRole;
+import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ClickHints;
 import com.panita.enriquecraft.core.ui.ConfirmMenu;
 import com.panita.enriquecraft.core.ui.UiBuilder;
@@ -13,7 +12,6 @@ import com.panita.enriquecraft.core.ui.UiPagedMenu;
 import com.panita.enriquecraft.core.ui.UiService;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
-import com.panita.enriquecraft.profile.message.ProfileView;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 import com.panita.enriquecraft.profile.service.EmblemSelection;
 import com.panita.enriquecraft.profile.service.EmblemView;
@@ -26,33 +24,20 @@ import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
- * Where a player chooses what shows around their name. The prank levels come first, in the config's order: the one shown before the
- * name is marked, any other can be pressed to take its place once the wait between changes is over, and there is always one shown.
- * The first level is only where players start: once they have left it, it is listed but can no longer be pressed.
- * Every other emblem, the nationality and the staff emblem included, can be shown or put away with a click after the name, and the
- * shown ones are dragged into the order they want. What a player chooses is the mod's own, so it applies at once.
+ * Where a player chooses which of their emblems show after their name. The ones they show come first, in the order they chose, and
+ * can be dragged into another order; any other can be shown with a click, up to the most the config allows. What a player chooses is
+ * the mod's own, so it applies at once. The prank level is not here: it is changed in the profile's edit view.
  */
 final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
 
     /** What kind of place an emblem has on the screen. */
     enum Kind {
-        /** The prank level shown before the name. */
-        PRANK_SHOWN,
-        /** Another prank level, which the player can show before the name instead. */
-        PRANK_OTHER,
-        /** The starting prank level once the player has left it: it can no longer be chosen. */
-        PRANK_LOCKED,
         /** One the player chose to show after the name. */
         CHOSEN,
         /** One the player holds and does not show. */
-        OTHER;
-
-        boolean isPrank() {
-            return this == PRANK_SHOWN || this == PRANK_OTHER || this == PRANK_LOCKED;
-        }
+        OTHER
     }
 
     /** One emblem on the screen and what the player can do with it. */
@@ -65,17 +50,15 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
     private final EmblemTooltip tooltip;
     private final ProfileConfig config;
     private final Messenger messenger;
-    private final ProfileView view;
     private final OpenMenus openMenus;
 
     EmblemsMenu(UiService ui, ProfileService profiles, EmblemTooltip tooltip, ProfileConfig config, Messenger messenger,
-                ProfileView view, OpenMenus openMenus, UiMenu previous) {
+                OpenMenus openMenus, UiMenu previous) {
         super(ui, previous);
         this.profiles = profiles;
         this.tooltip = tooltip;
         this.config = config;
         this.messenger = messenger;
-        this.view = view;
         this.openMenus = openMenus;
     }
 
@@ -98,21 +81,12 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
     protected List<Slot> entries() {
         openMenus.seen(viewer().getUUID(), this);
         PlayerEmblems emblems = profiles.emblemsOf(viewer());
-        tooltip.announce(viewer(), Stream.concat(emblems.pranks().stream(), emblems.selectable().stream()).toList());
+        tooltip.announce(viewer(), emblems.selectable());
         List<Slot> slots = new ArrayList<>();
-        emblems.pranks().forEach(prank -> slots.add(new Slot(prank, prankKind(emblems, prank))));
         emblems.chosen().forEach(emblem -> slots.add(new Slot(emblem, Kind.CHOSEN)));
         emblems.selectable().stream().filter(emblem -> emblems.chosen().stream().noneMatch(chosen -> chosen.id().equals(emblem.id())))
                 .forEach(emblem -> slots.add(new Slot(emblem, Kind.OTHER)));
         return slots;
-    }
-
-    /** The levels are listed lowest first, and the first is where players start, which nobody can choose. */
-    private static Kind prankKind(PlayerEmblems emblems, EmblemView prank) {
-        if (prank.id().equals(emblems.prank().id())) {
-            return Kind.PRANK_SHOWN;
-        }
-        return prank.id().equals(emblems.pranks().getFirst().id()) ? Kind.PRANK_LOCKED : Kind.PRANK_OTHER;
     }
 
     @Override
@@ -120,32 +94,21 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
         EmblemView emblem = slot.emblem();
         List<Component> lines = new ArrayList<>(tooltip.description(emblem));
         lines.add(Component.empty());
-        switch (slot.kind()) {
-            case PRANK_SHOWN -> lines.add(factory().text(ProfileMessages.Emblems.PRANK_SHOWN));
-            case PRANK_LOCKED -> lines.add(factory().text(ProfileMessages.Emblems.PRANK_LOCKED));
-            case PRANK_OTHER -> {
-                lines.add(factory().text(ProfileMessages.Emblems.PRANK_OTHER));
-                lines.add(ClickHints.left(factory(), ProfileMessages.Emblems.PRANK_CHOOSE));
-            }
-            case CHOSEN -> {
-                lines.add(factory().text(ProfileMessages.Emblems.SHOWN));
-                lines.add(ClickHints.left(factory(), ProfileMessages.Emblems.HIDE));
-            }
-            case OTHER -> {
-                lines.add(factory().text(ProfileMessages.Emblems.HIDDEN));
-                lines.add(ClickHints.left(factory(), ProfileMessages.Emblems.SHOW));
-            }
+        if (slot.kind() == Kind.CHOSEN) {
+            lines.add(factory().text(ProfileMessages.Emblems.SHOWN));
+            lines.add(ClickHints.left(factory(), ProfileMessages.Emblems.HIDE));
+        } else {
+            lines.add(factory().text(ProfileMessages.Emblems.HIDDEN));
+            lines.add(ClickHints.left(factory(), ProfileMessages.Emblems.SHOW));
         }
-        String badge = slot.kind() == Kind.CHOSEN || slot.kind() == Kind.PRANK_SHOWN ? CHOSEN_BADGE : "";
+        String badge = slot.kind() == Kind.CHOSEN ? CHOSEN_BADGE : "";
         ItemStack tag = tooltip.icon(emblem);
         ItemStack icon = isLifted(slot) ? factory().item(tag).glint().build() : tag;
         return builder.button(ButtonRole.NONE, icon, tooltip.title(emblem), lines, badge, click -> {
-            if (!click.isLeft() || slot.kind() == Kind.PRANK_SHOWN || slot.kind() == Kind.PRANK_LOCKED) {
+            if (!click.isLeft()) {
                 return;
             }
-            if (slot.kind().isPrank()) {
-                choosePrank(click.player(), emblem);
-            } else if (arranging()) {
+            if (arranging()) {
                 arrange(slot);
             } else {
                 toggle(click.player(), slot);
@@ -165,8 +128,7 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
             return;
         }
         ServerPlayer player = viewer();
-        List<String> ids = chosenIds(player);
-        profiles.choose(player, EmblemSelection.move(ids, dragged.emblem().id(), onto.emblem().id()));
+        profiles.choose(player, EmblemSelection.move(chosenIds(player), dragged.emblem().id(), onto.emblem().id()));
     }
 
     @Override
@@ -188,14 +150,6 @@ final class EmblemsMenu extends UiPagedMenu<EmblemsMenu.Slot> {
         }
         profiles.choose(player, toggled.emblems());
         refresh();
-    }
-
-    private void choosePrank(ServerPlayer player, EmblemView level) {
-        ProfileService.PrankChange change = profiles.choosePrank(player, level.id(), ProfilePermissions.canBypassPrankCooldown(player));
-        view.prankResult(player, level.title(), change);
-        if (change.status() == ProfileService.PrankChange.Status.CHANGED) {
-            refresh();
-        }
     }
 
     private List<String> chosenIds(ServerPlayer player) {

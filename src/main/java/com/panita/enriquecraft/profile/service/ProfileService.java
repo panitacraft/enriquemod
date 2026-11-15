@@ -67,6 +67,11 @@ public final class ProfileService {
         return cache.get(player);
     }
 
+    /** What the API last said of the player with this Minecraft name, who may not be online; empty when they are not on the list. */
+    public Optional<ModProfile> profileOf(String name) {
+        return linked.byName(name).flatMap(account -> cache.byAccount(account.userId()));
+    }
+
     /**
      * The emblems of the player as this server shows them. The prank level does not need the API, only the Panita account the player
      * is listed under; the emblems after the name need what the API said of them.

@@ -1,8 +1,10 @@
 package com.panita.enriquecraft.profile.gui;
 
+import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
+import com.panita.enriquecraft.core.message.TextWrap;
 import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import com.panita.enriquecraft.core.ui.ChestStyle;
@@ -11,19 +13,17 @@ import com.panita.enriquecraft.core.ui.PlayerHeads;
 import com.panita.enriquecraft.core.ui.PlayerModels;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
-import com.panita.enriquecraft.core.ui.UiService;
-import com.panita.enriquecraft.profile.client.ModProfile;
-import com.panita.enriquecraft.profile.message.EmblemTooltip;
+import com.panita.enriquecraft.profile.ProfilePermissions;
+import com.panita.enriquecraft.profile.data.ProfileDetails;
+import com.panita.enriquecraft.profile.message.BirthdayView;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
-import com.panita.enriquecraft.profile.message.ProfileView;
 import com.panita.enriquecraft.profile.service.EmblemView;
 import com.panita.enriquecraft.profile.service.PlayerEmblems;
-import com.panita.enriquecraft.profile.service.ProfileRefresher;
-import com.panita.enriquecraft.profile.service.ProfileService;
+import com.panita.enriquecraft.profile.service.ProfileSubject;
+import com.panita.enriquecraft.staff.message.CoordinateView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.stats.Stats;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -31,43 +31,77 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * A player's own profile: who they are on this server and on Panitacraft, and the emblems that show next to their name. From it they
- * can read their emblems again from Panitacraft and go to the screen where they choose them. The data is read again on every redraw,
- * so it follows a refresh that finishes while the menu is open.
+ * A player's profile: who they are on this server and on Panitacraft, what they wrote about themselves, and every emblem they hold.
+ * It is the profile of the viewer, who can edit it, or of any other player, who can only be looked at. The data is read again on every
+ * redraw, so it follows a refresh that finishes while the menu is open.
  * <p>
- * The client companion's screen has the player and their facts on top, then the prank level and below it the emblems the player can
- * choose, each as a small square with its image. A chest keeps to a row of cards, since it has no room for more.
+ * The client companion's screen has two columns on top (the player and the facts about them), the bio below and the emblems as large
+ * tiles; pressing one shows it in full. The edit view puts the settings in the right column and the bio in a field. Players without the
+ * companion see the same things as dialogs ({@link ProfileDialogs}); a chest is only the last resort, for players who may not use one.
  */
 final class ProfileMenu extends UiMenu {
 
-    private static final int ROW_WIDTH = 9;
     private static final int GRID_COLUMNS = 6;
+    private static final int BIO_LINE = 56;
+    private static final int BIO_SCROLL = 70;
+    private static final int AREA_WIDTH = 300;
+    private static final int AREA_LINES = 5;
 
     private final ProfileMenus menus;
-    private final ProfileService profiles;
-    private final ProfileView view;
-    private final EmblemTooltip tooltip;
-    private final ProfileRefresher refresher;
-    private final OpenMenus openMenus;
+    private final Optional<String> target;
+    private boolean editing;
 
-    ProfileMenu(UiService ui, ProfileMenus menus, ProfileService profiles, ProfileView view, EmblemTooltip tooltip,
-                ProfileRefresher refresher, OpenMenus openMenus) {
-        super(ui, null);
+    /**
+     * @param target  the name of the player to look at, or empty for the viewer's own profile
+     * @param editing whether the viewer's own profile is shown for editing; ignored for another player's
+     */
+    ProfileMenu(ProfileMenus menus, Optional<String> target, boolean editing) {
+        super(menus.ui(), null);
         this.menus = menus;
-        this.profiles = profiles;
-        this.view = view;
-        this.tooltip = tooltip;
-        this.refresher = refresher;
-        this.openMenus = openMenus;
+        this.target = target;
+        this.editing = editing && target.isEmpty();
+    }
+
+    boolean editing() {
+        return editing;
+    }
+
+    void edit(boolean editing) {
+        this.editing = editing && isSelf();
+    }
+
+    boolean isSelf() {
+        return target.isEmpty();
+    }
+
+    /** The player the profile is of; empty when nobody on the server has the name that was asked for. */
+    Optional<ProfileSubject> subject() {
+        ServerPlayer viewer = viewer();
+        return isSelf() ? Optional.of(menus.subjects().of(viewer)) : menus.subjects().named(viewer.level().getServer(), target.get());
+    }
+
+    /** The name that was asked for, for a profile of another player. */
+    String targetName() {
+        return target.orElseThrow();
+    }
+
+    void openEmblems(ServerPlayer player) {
+        menus.emblemsMenu(this).open(player);
     }
 
     @Override
     protected Component title() {
-        return factory().text(ProfileMessages.Menu.TITLE);
+        if (editing) {
+            return factory().text(ProfileMessages.Menu.TITLE_EDIT);
+        }
+        if (isSelf()) {
+            return factory().text(ProfileMessages.Menu.TITLE);
+        }
+        String name = subject().map(ProfileSubject::name).orElse(target.get());
+        return factory().text(Message.plain(ProfileMessages.Menu.TITLE_OTHER).with("name", name));
     }
 
     @Override
@@ -81,118 +115,235 @@ final class ProfileMenu extends UiMenu {
     }
 
     @Override
-    protected void onClose() {
-        openMenus.closed(viewer().getUUID(), this);
+    protected boolean openFallback(ServerPlayer player) {
+        return menus.dialogs().show(player, this);
     }
 
-    /** The client companion: the player and their facts side by side, then the emblems as squares. */
+    @Override
+    protected void onClose() {
+        menus.openMenus().closed(viewer().getUUID(), this);
+    }
+
     @Override
     protected UiElement describe(UiBuilder builder) {
-        ServerPlayer player = viewer();
-        UUID id = player.getUUID();
-        openMenus.seen(id, this);
-        PlayerEmblems emblems = profiles.emblemsOf(player);
-        tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).toList());
-
-        UiElement.Detail model = new UiElement.Detail(PlayerModels.ofViewer(PlayerHeads.item(player.getGameProfile())), Component.empty(), List.of());
-        List<UiElement> lines = new ArrayList<>();
-        lines.add(new UiElement.Label(Component.literal(player.getGameProfile().name()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
-        factLines(player, profiles.profileOf(id)).forEach(line -> lines.add(new UiElement.Label(line)));
-        // A column beside the model would start at the top; inside a row of its own it sits in the middle of the model's height
-        UiElement facts = new UiElement.Row(List.of(new UiElement.Column(lines, UiElement.Align.START)));
-        UiElement identity = new UiElement.Row(List.of(model, facts));
+        ServerPlayer viewer = viewer();
+        menus.openMenus().seen(viewer.getUUID(), this);
+        Optional<ProfileSubject> found = subject();
+        if (found.isEmpty()) {
+            return new UiElement.Column(List.of(new UiElement.Label(factory().text(Message.plain(ProfileMessages.Menu.NOT_FOUND).with("name", target.get()))),
+                    new UiElement.Row(List.of(close(builder)))));
+        }
+        ProfileSubject subject = found.get();
+        PlayerEmblems emblems = subject.emblems();
+        menus.tooltip().announce(viewer, Stream.concat(Stream.of(emblems.prank()), emblems.selectable().stream()).toList());
 
         List<UiElement> body = new ArrayList<>();
-        body.add(identity);
+        body.add(new UiElement.Row(List.of(portrait(subject), new UiElement.Row(List.of(
+                new UiElement.Column(editing ? editColumn(builder, subject) : viewColumn(subject), UiElement.Align.START))))));
         body.add(new UiElement.Divider());
-        body.add(new UiElement.Label(factory().text(ProfileMessages.Menu.EMBLEMS_HEADER)));
-        body.add(new UiElement.Grid(1, 1, List.of(square(builder, emblems.prank(), ""))));
-        body.add(new UiElement.Rule());
-        List<EmblemView> chosen = emblems.chosen();
-        List<UiElement> squares = emblems.selectable().stream()
-                .map(emblem -> square(builder, emblem, chosen.stream().anyMatch(shown -> shown.id().equals(emblem.id())) ? "✔" : ""))
-                .toList();
-        if (squares.isEmpty()) {
-            body.add(new UiElement.Label(factory().text(ProfileMessages.Menu.NO_EMBLEMS)));
+        if (editing) {
+            body.add(label(factory().text(ProfileMessages.Menu.BIO_HEADER)));
+            UiElement.TextArea area = builder.textArea(factory().text(ProfileMessages.Edit.BIO), subject.details().bio(), ProfileDetails.BIO_MAX,
+                    AREA_LINES, AREA_WIDTH, submit -> {
+                        menus.edits().bio(submit.player(), submit.text());
+                        refresh();
+                    });
+            body.add(area);
+            body.add(controls(builder, Optional.of(area)));
         } else {
-            body.add(new UiElement.Grid(Math.min(GRID_COLUMNS, squares.size()), (squares.size() + GRID_COLUMNS - 1) / GRID_COLUMNS, squares));
+            body.addAll(bioSection(subject.details()));
+            body.add(new UiElement.Divider());
+            body.addAll(emblemSection(builder, emblems));
+            body.add(controls(builder, Optional.empty()));
         }
-        body.add(controls(builder));
         return new UiElement.Column(body);
     }
 
-    /** A chest: the player, the emblems that show next to their name as cards, and the controls. */
-    @Override
-    protected UiElement describeChest(UiBuilder builder) {
-        ServerPlayer player = viewer();
-        openMenus.seen(player.getUUID(), this);
-        PlayerEmblems emblems = profiles.emblemsOf(player);
-        tooltip.announce(player, Stream.concat(Stream.of(emblems.prank()), emblems.chosen().stream()).toList());
-        UiElement.Detail detail = new UiElement.Detail(PlayerHeads.item(player.getGameProfile()),
-                Component.literal(player.getGameProfile().name()), factLines(player, profiles.profileOf(player.getUUID())));
-        return new UiElement.Column(List.of(detail, cards(builder, emblems), controls(builder)));
+    /** The viewer sees themselves as the model of their own player; anyone else is shown by their head, with the skin the server knows. */
+    private UiElement portrait(ProfileSubject subject) {
+        ItemStack head = subject.skin().map(PlayerHeads::item).orElseGet(() -> PlayerHeads.item(subject.id()));
+        return new UiElement.Detail(isSelf() ? PlayerModels.ofViewer(head) : head, Component.empty(), List.of());
     }
 
-    private UiElement controls(UiBuilder builder) {
-        UiElement none = new UiElement.Spacer();
-        UiElement openEmblems = builder.button(ButtonRole.NONE, new ItemStack(Items.NAME_TAG), factory().text(ProfileMessages.Menu.EMBLEMS),
-                List.of(factory().text(ProfileMessages.Menu.EMBLEMS_LORE), Component.empty(),
-                        ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN)), click -> {
-                    if (click.isLeft()) {
-                        menus.emblemsMenu(this).open(click.player());
-                    }
-                });
-        UiElement refresh = builder.button(ButtonRole.NONE, new ItemStack(Items.CLOCK), factory().text(ProfileMessages.Menu.REFRESH),
-                List.of(factory().text(ProfileMessages.Menu.REFRESH_LORE)), click -> {
-                    if (click.isLeft()) {
-                        refresher.refreshSelf(click.player()).thenAccept(result -> view.selfRefresh(click.player(), result));
-                    }
-                });
-        UiElement close = builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE), List.of(),
-                click -> ui().close(click.player()));
-        return new UiElement.Row(List.of(none, none, openEmblems, none, close, none, refresh, none, none));
+    private static UiElement.Label label(Component text) {
+        return new UiElement.Label(text);
     }
 
-    /** One emblem as a square with its image; pressing it opens the screen where the emblems are chosen. */
-    private UiElement square(UiBuilder builder, EmblemView emblem, String badge) {
-        List<Component> lines = new ArrayList<>(tooltip.description(emblem));
+    private static UiElement.Label name(ProfileSubject subject) {
+        return label(Component.literal(subject.name()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD));
+    }
+
+    /** The facts about the player, one line each, which both the screen and the dialog show. */
+    List<Component> factLines(ProfileSubject subject) {
+        List<Component> lines = new ArrayList<>();
+        subject.profile().ifPresentOrElse(
+                profile -> {
+                    lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DISCORD).with("discord", profile.discordName())));
+                    profile.birthday().ifPresent(birthday -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_BIRTHDAY)
+                            .with("date", factory().text(BirthdayView.date(birthday))))));
+                },
+                () -> lines.add(factory().text(ProfileMessages.Menu.NO_DATA)));
+        subject.playSeconds().ifPresent(seconds -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_PLAY_TIME)
+                .with("time", Durations.format(Duration.ofSeconds(seconds))))));
+        lines.add(baseLine(subject.details()));
+        if (isSelf()) {
+            lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_LOCATOR).with("state", factory().text(subject.details().shareLocation()
+                    ? ProfileMessages.Menu.LOCATOR_SHARED : ProfileMessages.Menu.LOCATOR_HIDDEN))));
+        }
+        if (ProfilePermissions.canSeeStaffInfo(viewer())) {
+            subject.profile().ifPresent(profile -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_ACCOUNT)
+                    .with("id", profile.userId())
+                    .with("mode", factory().text(subject.mode() == AuthMode.PREMIUM ? ProfileMessages.Menu.MODE_PREMIUM : ProfileMessages.Menu.MODE_PIN)))));
+        }
+        return lines;
+    }
+
+    /** The base as the block it is on, which a click copies, and its dimension. */
+    Component baseLine(ProfileDetails details) {
+        return details.base().map(base -> factory().text(Message.plain(ProfileMessages.Menu.LINE_BASE)
+                        .with("position", CoordinateView.position(base.x(), base.y(), base.z()))
+                        .with("dimension", CoordinateView.dimension(base.dimension()))))
+                .orElseGet(() -> factory().text(ProfileMessages.Menu.LINE_NO_BASE));
+    }
+
+    private List<UiElement> viewColumn(ProfileSubject subject) {
+        List<UiElement> lines = new ArrayList<>();
+        lines.add(name(subject));
+        factLines(subject).forEach(line -> lines.add(label(line)));
+        return lines;
+    }
+
+    /** The settings, in the right column where the facts are: the prank level, the base, the birthday and the locator bar. */
+    private List<UiElement> editColumn(UiBuilder builder, ProfileSubject subject) {
+        List<EmblemView> levels = menus.edits().levels();
+        int selected = 0;
+        for (int index = 0; index < levels.size(); index++) {
+            if (levels.get(index).id().equals(subject.emblems().prank().id())) {
+                selected = index;
+            }
+        }
+        List<Component> options = levels.stream().map(level -> (Component) Component.literal(level.title())).toList();
+        List<UiElement> lines = new ArrayList<>();
+        lines.add(name(subject));
+        lines.add(builder.dropdown(factory().text(ProfileMessages.Edit.PRANK), options, selected, select -> {
+            menus.edits().prank(select.player(), levels.get(select.option()).id());
+            refresh();
+        }));
+        lines.add(label(baseLine(subject.details())));
+        lines.add(new UiElement.Row(List.of(
+                builder.button(ButtonRole.NONE, new ItemStack(Items.COMPASS), factory().text(ProfileMessages.Edit.BASE_MARK),
+                        List.of(factory().text(ProfileMessages.Edit.BASE_MARK_LORE)), click -> {
+                            if (click.isLeft()) {
+                                menus.edits().markBase(click.player());
+                                refresh();
+                            }
+                        }),
+                builder.button(ButtonRole.NONE, new ItemStack(Items.BARRIER), factory().text(ProfileMessages.Edit.BASE_CLEAR), List.of(), click -> {
+                    if (click.isLeft()) {
+                        menus.edits().clearBase(click.player());
+                        refresh();
+                    }
+                }))));
+        lines.add(label(birthdayLine(subject)));
+        lines.add(label(factory().text(ProfileMessages.Edit.BIRTHDAY_NOTE)));
+        lines.add(builder.toggle(factory().text(ProfileMessages.Edit.LOCATOR), subject.details().shareLocation(), toggle -> {
+            menus.edits().locator(toggle.player(), toggle.checked());
+            refresh();
+        }));
+        return lines;
+    }
+
+    /** The birthday, or that there is none, which the edit view shows although it can only be changed on the website. */
+    Component birthdayLine(ProfileSubject subject) {
+        Component date = subject.profile().flatMap(profile -> profile.birthday())
+                .map(birthday -> factory().text(BirthdayView.date(birthday)))
+                .orElseGet(() -> factory().text(ProfileMessages.Edit.BIRTHDAY_NONE));
+        return factory().text(Message.plain(ProfileMessages.Menu.LINE_BIRTHDAY).with("date", date));
+    }
+
+    /** The bio on short lines in a scroll area, so a long one never makes the screen taller than the window. */
+    private List<UiElement> bioSection(ProfileDetails details) {
+        List<UiElement> section = new ArrayList<>();
+        section.add(label(factory().text(ProfileMessages.Menu.BIO_HEADER)));
+        if (details.bio().isEmpty()) {
+            section.add(label(factory().text(ProfileMessages.Menu.NO_BIO)));
+        } else {
+            List<UiElement> lines = bioLines(details.bio()).stream().map(line -> (UiElement) label(line)).toList();
+            section.add(new UiElement.Scroll(new UiElement.Column(lines, UiElement.Align.START), BIO_SCROLL));
+        }
+        return section;
+    }
+
+    /** The bio broken into lines short enough to read, which neither the screen nor a dialog does by itself. */
+    static List<Component> bioLines(String bio) {
+        return TextWrap.lines(bio, BIO_LINE).stream().map(line -> (Component) Component.literal(line)).toList();
+    }
+
+    /** The prank level on its own, then every emblem the player holds, as large tiles; the ones shown in chat are marked. */
+    private List<UiElement> emblemSection(UiBuilder builder, PlayerEmblems emblems) {
+        List<UiElement> section = new ArrayList<>();
+        section.add(label(factory().text(ProfileMessages.Menu.EMBLEMS_HEADER)));
+        section.add(new UiElement.Grid(1, 1, List.of(tile(builder, emblems.prank(), ""))).withLargeTiles());
+        section.add(new UiElement.Rule());
+        List<UiElement> tiles = emblems.selectable().stream()
+                .map(emblem -> tile(builder, emblem, emblems.chosen().stream().anyMatch(shown -> shown.id().equals(emblem.id())) ? "✔" : ""))
+                .toList();
+        if (tiles.isEmpty()) {
+            section.add(label(factory().text(ProfileMessages.Menu.NO_EMBLEMS)));
+        } else {
+            section.add(new UiElement.Grid(Math.min(GRID_COLUMNS, tiles.size()), (tiles.size() + GRID_COLUMNS - 1) / GRID_COLUMNS, tiles).withLargeTiles());
+        }
+        return section;
+    }
+
+    /** One emblem as a large tile with its image; pressing it shows the emblem in full. */
+    private UiElement tile(UiBuilder builder, EmblemView emblem, String badge) {
+        List<Component> lines = new ArrayList<>(menus.tooltip().description(emblem));
         lines.add(Component.empty());
-        lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN));
-        return builder.button(ButtonRole.NONE, tooltip.icon(emblem), tooltip.title(emblem), lines, badge, click -> {
+        lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEM_DETAIL));
+        return builder.button(ButtonRole.NONE, menus.tooltip().icon(emblem), menus.tooltip().title(emblem), lines, badge, click -> {
             if (click.isLeft()) {
-                menus.emblemsMenu(this).open(click.player());
+                menus.emblemDetail(this, emblem).open(click.player());
             }
         });
     }
 
-    /** The emblems that show next to the player's name, as cards of a chest; the row keeps its place when there are none. */
-    private UiElement cards(UiBuilder builder, PlayerEmblems emblems) {
-        List<EmblemView> shown = Stream.concat(Stream.of(emblems.prank()), emblems.chosen().stream()).limit(ROW_WIDTH).toList();
-        List<UiElement> cards = new ArrayList<>();
-        for (EmblemView emblem : shown) {
-            List<Component> lines = new ArrayList<>(tooltip.description(emblem));
-            lines.add(Component.empty());
-            lines.add(ClickHints.left(factory(), ProfileMessages.Menu.EMBLEMS_OPEN));
-            cards.add(builder.detail(tooltip.icon(emblem), tooltip.title(emblem), List.of(), lines, click -> {
-                if (click.isLeft()) {
-                    menus.emblemsMenu(this).open(click.player());
-                }
+    private UiElement.Button close(UiBuilder builder) {
+        return builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE), List.of(),
+                click -> ui().close(click.player()));
+    }
+
+    /** The last band: refresh and edit in the header for the viewer's own profile, and what saves the bio while editing it. */
+    private UiElement controls(UiBuilder builder, Optional<UiElement.TextArea> area) {
+        List<UiElement> controls = new ArrayList<>();
+        if (editing) {
+            controls.add(builder.button(ButtonRole.BACK, new ItemStack(Items.OAK_DOOR), factory().text(ProfileMessages.Menu.VIEW), List.of(), click -> {
+                edit(false);
+                refresh();
             }));
+            controls.add(builder.submitButton(factory().text(ProfileMessages.Edit.BIO_SAVE), area.orElseThrow()));
+            controls.add(builder.button(ButtonRole.NONE, new ItemStack(Items.NAME_TAG), factory().text(ProfileMessages.Edit.EMBLEMS),
+                    List.of(factory().text(ProfileMessages.Edit.EMBLEMS_LORE)), click -> {
+                        if (click.isLeft()) {
+                            openEmblems(click.player());
+                        }
+                    }));
+        } else if (isSelf()) {
+            controls.add(builder.button(ButtonRole.REFRESH, new ItemStack(Items.CLOCK), factory().text(ProfileMessages.Menu.REFRESH),
+                    List.of(factory().text(ProfileMessages.Menu.REFRESH_LORE)), click -> {
+                        if (click.isLeft()) {
+                            menus.refresher().refreshSelf(click.player()).thenAccept(result -> menus.view().selfRefresh(click.player(), result));
+                        }
+                    }));
+            controls.add(builder.button(ButtonRole.EDIT, new ItemStack(Items.WRITABLE_BOOK), factory().text(ProfileMessages.Menu.EDIT),
+                    List.of(factory().text(ProfileMessages.Menu.EDIT_LORE)), click -> {
+                        if (click.isLeft()) {
+                            edit(true);
+                            refresh();
+                        }
+                    }));
         }
-        return new UiElement.Row(cards);
-    }
-
-    /** The facts about the player, one line each; the Discord name is grayed out. */
-    private List<Component> factLines(ServerPlayer player, Optional<ModProfile> profile) {
-        List<Component> lines = new ArrayList<>();
-        profile.ifPresentOrElse(known -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DISCORD).with("discord", known.discordName()))),
-                () -> lines.add(factory().text(ProfileMessages.Menu.NO_DATA)));
-        lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_PLAY_TIME).with("time", playTime(player))));
-        return lines;
-    }
-
-    private static String playTime(ServerPlayer player) {
-        long seconds = Math.max(0, player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME))) / 20L;
-        return Durations.format(Duration.ofSeconds(seconds));
+        controls.add(close(builder));
+        return new UiElement.Row(controls);
     }
 }
