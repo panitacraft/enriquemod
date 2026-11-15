@@ -16,7 +16,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class HeadTooltipTest {
 
@@ -39,24 +38,24 @@ class HeadTooltipTest {
 
     @Test
     void aPremiumAccountSaysSo() {
-        assertEquals("Cuenta premium", hover(tooltip.styleOf("Alex", Optional.of(AuthMode.PREMIUM))));
+        assertEquals("Cuenta premium\nClic para ver el perfil", hover(tooltip.styleOf("Alex", Optional.of(AuthMode.PREMIUM))));
     }
 
     @Test
     void anAccountThatIsNotPremiumSaysThatToo() {
-        assertEquals("Cuenta no premium", hover(tooltip.styleOf("Alex", Optional.of(AuthMode.CRACKED))));
+        assertEquals("Cuenta no premium\nClic para ver el perfil", hover(tooltip.styleOf("Alex", Optional.of(AuthMode.CRACKED))));
     }
 
     @Test
-    void anAccountOfUnknownKindSaysNothingOfIt() {
-        assertNull(tooltip.styleOf("Alex", Optional.empty()).getHoverEvent());
+    void anAccountOfUnknownKindSaysNothingOfItButStillOffersTheProfile() {
+        assertEquals("Clic para ver el perfil", hover(tooltip.styleOf("Alex", Optional.empty())));
     }
 
     @Test
-    void theHeadCanBeClickedToWriteAMessageButNeverRunsAnything() {
-        ClickEvent.SuggestCommand click = assertInstanceOf(ClickEvent.SuggestCommand.class,
+    void theHeadOpensTheProfileOfThePlayerAndRunsNothingElse() {
+        ClickEvent.RunCommand click = assertInstanceOf(ClickEvent.RunCommand.class,
                 tooltip.styleOf("Alex", Optional.of(AuthMode.PREMIUM)).getClickEvent());
 
-        assertEquals("/msg Alex ", click.command());
+        assertEquals("/profile Alex", click.command());
     }
 }

@@ -48,6 +48,7 @@ public final class ProfileMessages {
         public static final String EDIT = "<yellow>Editar perfil";
         public static final String EDIT_LORE = "<gray>Cambia tu bio, tu base y lo que se muestra de ti.";
         public static final String VIEW = "<yellow>Volver al perfil";
+        public static final String NOT_ALLOWED = "<red>No tienes permiso para ver perfiles.";
 
         private Menu() {
         }

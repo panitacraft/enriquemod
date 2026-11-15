@@ -88,6 +88,10 @@ public final class ProfileView {
                         .withStyle(style -> style.withClickEvent(new ClickEvent.SuggestCommand("/prank set " + level.id())).withHoverEvent(hover))));
     }
 
+    public void notAllowed(ServerPlayer player) {
+        messenger.send(player, Message.error(ProfileMessages.Menu.NOT_ALLOWED).prefixed());
+    }
+
     /** What saving a detail of the profile came to: the given message when it was saved, the reason when it was not. */
     public void saved(ServerPlayer player, ProfileDetailsService.Outcome outcome, Message success) {
         messenger.send(player, switch (outcome) {
