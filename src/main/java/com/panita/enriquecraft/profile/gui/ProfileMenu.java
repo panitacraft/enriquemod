@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.profile.gui;
 
-import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
@@ -188,20 +187,12 @@ final class ProfileMenu extends UiMenu {
         List<Component> lines = new ArrayList<>();
         profile.ifPresentOrElse(known -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DISCORD).with("discord", known.discordName()))),
                 () -> lines.add(factory().text(ProfileMessages.Menu.NO_DATA)));
-        boolean premium = AuthMode.of(player.getUUID(), player.getGameProfile().name()) == AuthMode.PREMIUM;
-        lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_STATUS)
-                .with("status", premium ? ProfileMessages.Menu.PREMIUM : ProfileMessages.Menu.NO_PREMIUM)));
         lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_PLAY_TIME).with("time", playTime(player))));
-        lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DEATHS).with("count", deaths(player))));
         return lines;
     }
 
     private static String playTime(ServerPlayer player) {
         long seconds = Math.max(0, player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME))) / 20L;
         return Durations.format(Duration.ofSeconds(seconds));
-    }
-
-    private static int deaths(ServerPlayer player) {
-        return Math.max(0, player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS)));
     }
 }

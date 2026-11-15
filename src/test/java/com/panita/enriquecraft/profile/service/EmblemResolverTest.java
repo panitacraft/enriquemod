@@ -101,20 +101,21 @@ class EmblemResolverTest {
     }
 
     @Test
-    void theStaffEmblemAndTheNationalityAreChosenLikeAnyOther() {
+    void theStaffEmblemIsChosenLikeAnyOther() {
         PlayerEmblems emblems = resolve(profile(
-                emblem("nationality_co", EmblemCategory.SYSTEM, 1),
-                emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 2),
-                emblem("hero", EmblemCategory.EMBLEM, 3),
-                emblem("extra", EmblemCategory.EMBLEM, 4)), Optional.empty());
+                emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 1),
+                emblem("hero", EmblemCategory.EMBLEM, 2),
+                emblem("extra", EmblemCategory.EMBLEM, 3),
+                emblem("more", EmblemCategory.EMBLEM, 4)), Optional.empty());
 
-        assertEquals(List.of("nationality_co", "enriquecraft6_staff", "hero", "extra"), ids(emblems.selectable()));
-        assertEquals(List.of("nationality_co", "enriquecraft6_staff", "hero"), ids(emblems.chosen()));
+        assertEquals(List.of("enriquecraft6_staff", "hero", "extra", "more"), ids(emblems.selectable()));
+        assertEquals(List.of("enriquecraft6_staff", "hero", "extra"), ids(emblems.chosen()));
     }
 
     @Test
-    void aSystemEmblemTheServerDoesNotAcceptNeverShows() {
+    void aSystemEmblemNeverShows() {
         PlayerEmblems emblems = resolve(profile(
+                emblem("nationality_co", EmblemCategory.SYSTEM, 1),
                 emblem("veterano", EmblemCategory.SYSTEM, 1),
                 emblem("master_of_lens", EmblemCategory.SYSTEM, 2)), Optional.empty());
 
@@ -182,7 +183,6 @@ class EmblemResolverTest {
     @Test
     void anEmblemLooksAsItsOwnEntryOrElseAsItsCategory() {
         assertEquals(new EmblemLook("★", "#ff5555"), resolver.lookOf(emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 1)));
-        assertEquals(new EmblemLook("●", "gold"), resolver.lookOf(emblem("nationality_co", EmblemCategory.SYSTEM, 1)));
         assertEquals(new EmblemLook("○", "gray"), resolver.lookOf(emblem("hero", EmblemCategory.EMBLEM, 1)));
         assertEquals(new EmblemLook("○", "gray"), resolver.lookOf(emblem("rey", EmblemCategory.TITLE, 1)));
     }

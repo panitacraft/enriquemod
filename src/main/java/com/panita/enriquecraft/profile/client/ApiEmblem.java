@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * An emblem as the Panita API describes it.
  *
- * @param id          the id the administrator chose, such as {@code staff} or {@code nationality_co}
+ * @param id          the id the administrator chose, such as {@code staff}
  * @param name        its title
  * @param description what it is for, if the API has one
  * @param iconUrl     the address of its image, if it has one (a title has none)

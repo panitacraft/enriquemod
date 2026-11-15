@@ -20,8 +20,9 @@ import java.util.Set;
  * them can be chosen and how many fit are this server's rules, in the config.
  * <p>
  * Every player shows one prank level before their name. The levels are the server's own, from the config, and the player may pick
- * any of them; the first is where they start. Everything the API says they hold, the nationality and the staff emblem included, is
+ * any of them; the first is where they start. Every global or local emblem the API says they hold, the staff emblem included, is
  * theirs to choose to show after the name, except the emblems the API has for the prank levels, which would show the same thing twice.
+ * The system emblems of the API (veteran, awards) are never shown by this server.
  */
 public final class EmblemResolver {
 
@@ -84,11 +85,7 @@ public final class EmblemResolver {
      *               shows the first one
      */
     public PlayerEmblems resolve(ModProfile profile, Optional<List<String>> chosen, Optional<String> prank) {
-        List<String> prefixes = ProfileConfig.idsOf(config.systemPrefixes.get());
-        List<ApiEmblem> selectable = profile.emblems().stream()
-                .filter(emblem -> (isPlain(emblem) && !isPrank(emblem.id()))
-                        || (emblem.category() == EmblemCategory.SYSTEM && prefixes.stream().anyMatch(emblem.id()::startsWith)))
-                .toList();
+        List<ApiEmblem> selectable = profile.emblems().stream().filter(emblem -> isPlain(emblem) && !isPrank(emblem.id())).toList();
         return assemble(selectable, chosen, prank);
     }
 
