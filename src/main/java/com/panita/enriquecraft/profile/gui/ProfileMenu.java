@@ -23,6 +23,7 @@ import com.panita.enriquecraft.profile.service.ProfileSubject;
 import com.panita.enriquecraft.staff.message.CoordinateView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -102,8 +103,8 @@ final class ProfileMenu extends UiMenu {
 
     /** Opens the list of emblems for the first place that is empty, or the first place when all are filled. */
     void openEmblems(ServerPlayer player) {
-        int shown = menus.subjects().of(player).emblems().chosen().size();
-        openEmblems(player, shown < menus.slots() ? shown : 0);
+        int firstEmpty = menus.subjects().of(player).emblems().placedIds().indexOf("");
+        openEmblems(player, Math.max(0, firstEmpty));
     }
 
     private void openEmblems(ServerPlayer player, int slot) {
@@ -153,14 +154,15 @@ final class ProfileMenu extends UiMenu {
         }
         ProfileSubject subject = found.get();
         PlayerEmblems emblems = subject.emblems();
-        menus.tooltip().announce(viewer, Stream.of(Stream.of(emblems.prank()), emblems.nationality().stream(), emblems.chosen().stream(),
-                emblems.empty().stream()).flatMap(all -> all).toList());
+        menus.tooltip().announce(viewer, Stream.of(Stream.of(emblems.prank()), emblems.nationality().stream(), emblems.slots().stream())
+                .flatMap(all -> all).toList());
 
         List<UiElement> body = new ArrayList<>();
         body.add(new UiElement.Row(List.of(
-                new UiElement.Column(List.of(status(builder, subject), portrait(subject)), UiElement.Align.START),
+                // Each column is alone in a row of its own, which a row centers vertically; the columns of a row start at the top
+                new UiElement.Row(List.of(new UiElement.Column(List.of(status(builder, subject), portrait(subject))))),
                 new UiElement.Spacer(),
-                new UiElement.Column(identity(builder, subject, emblems), UiElement.Align.START))));
+                new UiElement.Row(List.of(new UiElement.Column(identity(builder, subject, emblems), UiElement.Align.START))))));
         body.add(new UiElement.Divider());
         body.add(new UiElement.Row(List.of(
                 new UiElement.Column(personalColumn(builder, subject), UiElement.Align.START),
@@ -184,15 +186,20 @@ final class ProfileMenu extends UiMenu {
     /** The rank, the name and the nationality on one line, and the emblems the player shows under it. */
     private List<UiElement> identity(UiBuilder builder, ProfileSubject subject, PlayerEmblems emblems) {
         List<UiElement> lines = new ArrayList<>();
-        List<UiElement> nameLine = new ArrayList<>();
-        rank(subject).ifPresent(rank -> nameLine.add(label(rank)));
-        nameLine.add(label(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE)));
-        emblems.nationality().ifPresent(nationality -> nameLine.add(label(menus.tooltip().picture(nationality))));
-        lines.add(new UiElement.Row(nameLine));
-        List<EmblemView> shown = Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList();
+        // One line of text, so the space the rank brings is the only one between it and the name
+        MutableComponent nameLine = Component.empty();
+        rank(subject).ifPresent(nameLine::append);
+        nameLine.append(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE));
+        emblems.nationality().ifPresent(nationality -> nameLine.append(Component.literal(" ")).append(menus.tooltip().picture(nationality)));
+        lines.add(label(nameLine));
+        if (editing) {
+            lines.add(new UiElement.Row(List.of(label(white(ProfileMessages.Menu.FIELD_PRONOUNS)), pronounsInput(builder, subject))));
+        } else if (!subject.details().pronouns().isEmpty()) {
+            lines.add(label(Component.empty().append(white(ProfileMessages.Menu.FIELD_PRONOUNS)).append(Component.literal(" " + subject.details().pronouns()))));
+        }
         List<UiElement> tiles = new ArrayList<>();
-        for (int place = 0; place < shown.size(); place++) {
-            tiles.add(emblemTile(builder, shown.get(place), Math.min(place, emblems.chosen().size())));
+        for (int place = 0; place < emblems.slots().size(); place++) {
+            tiles.add(emblemTile(builder, emblems.slots().get(place), place));
         }
         lines.add(new UiElement.Row(tiles));
         return lines;
@@ -229,7 +236,19 @@ final class ProfileMenu extends UiMenu {
 
     /** A field as a label with its value under it. */
     private List<UiElement> field(String name, Component value) {
-        return List.of(label(factory().text(name)), label(value));
+        return List.of(label(white(name)), label(value));
+    }
+
+    /** A title in the same white as the name, whatever color the administrator's text for it has. */
+    private Component white(String name) {
+        return Component.literal(factory().text(name).getString()).withStyle(ChatFormatting.WHITE);
+    }
+
+    private UiElement.TextInput pronounsInput(UiBuilder builder, ProfileSubject subject) {
+        return builder.input(factory().text(ProfileMessages.Edit.PRONOUNS_HINT), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX, submit -> {
+            menus.edits().pronouns(submit.player(), submit.text());
+            refresh();
+        });
     }
 
     private Component value(String text) {
@@ -243,29 +262,17 @@ final class ProfileMenu extends UiMenu {
     /** What the player says about themselves: pronouns, birthday and description. */
     private List<UiElement> personalColumn(UiBuilder builder, ProfileSubject subject) {
         List<UiElement> lines = new ArrayList<>();
-        if (editing) {
-            lines.add(label(factory().text(ProfileMessages.Menu.FIELD_PRONOUNS)));
-            UiElement.TextInput pronounsInput = builder.input(factory().text(ProfileMessages.Edit.PRONOUNS_HINT), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX,
-                    submit -> {
-                        menus.edits().pronouns(submit.player(), submit.text());
-                        refresh();
-                    });
-            lines.add(pronounsInput);
-        } else {
-            String pronouns = subject.details().pronouns();
-            lines.addAll(field(ProfileMessages.Menu.FIELD_PRONOUNS, pronouns.isEmpty() ? none() : value(pronouns)));
-        }
-        lines.add(new UiElement.Spacer());
         lines.addAll(field(ProfileMessages.Menu.FIELD_BIRTHDAY, subject.profile().flatMap(profile -> profile.birthday())
                 .map(birthday -> factory().text(BirthdayView.date(birthday))).orElseGet(this::none)));
         lines.add(new UiElement.Spacer());
-        lines.add(label(factory().text(ProfileMessages.Menu.FIELD_BIO)));
+        lines.add(label(white(ProfileMessages.Menu.FIELD_BIO)));
         if (editing) {
             bioArea = builder.textArea(factory().text(ProfileMessages.Edit.BIO), subject.details().bio(), Math.max(ProfileDetails.BIO_MAX, subject.details().bio().length()),
                     AREA_LINES, AREA_WIDTH,
                     submit -> {
+                        // The form's last field: saving is done, so the profile is shown again
                         menus.edits().bio(submit.player(), submit.text());
-                        refresh();
+                        showAs(submit.player(), false);
                     });
             lines.add(bioArea);
         } else if (subject.details().bio().isEmpty()) {
@@ -284,13 +291,13 @@ final class ProfileMenu extends UiMenu {
         lines.add(new UiElement.Spacer());
         lines.addAll(field(ProfileMessages.Menu.FIELD_DEATHS, subject.deaths().stream().mapToObj(deaths -> value(String.valueOf(deaths))).findFirst().orElseGet(this::none)));
         lines.add(new UiElement.Spacer());
-        lines.add(label(factory().text(ProfileMessages.Menu.FIELD_BASE)));
+        lines.add(label(white(ProfileMessages.Menu.FIELD_BASE)));
         lines.add(label(baseValue(subject.details())));
         if (editing) {
             lines.add(baseControls(builder));
         }
         lines.add(new UiElement.Spacer());
-        lines.add(label(factory().text(ProfileMessages.Menu.FIELD_PRANK)));
+        lines.add(label(white(ProfileMessages.Menu.FIELD_PRANK)));
         Optional<Duration> wait = editing ? menus.edits().prankWait(viewer()) : Optional.empty();
         lines.add(editing && wait.isEmpty() ? prankButton(builder, emblems.prank()) : label(menus.tooltip().title(emblems.prank())));
         wait.ifPresent(remaining -> lines.add(label(factory().text(Message.plain(ProfileMessages.Edit.PRANK_WAIT).with("time", Durations.format(remaining))))));

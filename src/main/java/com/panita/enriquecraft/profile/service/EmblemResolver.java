@@ -9,7 +9,6 @@ import com.panita.enriquecraft.profile.data.PrankLevel;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +27,7 @@ import java.util.Set;
 public final class EmblemResolver {
 
     /** The id of the stand-in for a place after the name the player has not filled; an entry of {@code profile.looks} may restyle it. */
-    static final String EMPTY_ID = "no_emblem";
+    public static final String EMPTY_ID = "no_emblem";
 
     private static final EmblemLook FALLBACK_LOOK = new EmblemLook("○", "gray");
     private static final EmblemLook EMPTY_LOOK = new EmblemLook("○", "dark_gray");
@@ -97,9 +96,10 @@ public final class EmblemResolver {
         Optional<EmblemView> nationality = held.map(this::view);
         List<EmblemView> levels = levels();
         EmblemView shown = prank.flatMap(id -> levels.stream().filter(level -> level.id().equals(id)).findFirst()).orElse(levels.getFirst());
-        List<EmblemView> shownEmblems = chosenFrom(selectable, chosen).stream().map(this::view).toList();
-        List<EmblemView> empty = Collections.nCopies(Math.max(0, config.loreMax.get() - shownEmblems.size()), emptySlot());
-        return new PlayerEmblems(nationality, shown, levels, shownEmblems, empty, selectable.stream().map(this::view).toList());
+        List<Optional<ApiEmblem>> placed = placedFrom(selectable, chosen);
+        List<EmblemView> slots = placed.stream().map(emblem -> emblem.map(this::view).orElseGet(this::emptySlot)).toList();
+        List<EmblemView> shownEmblems = placed.stream().flatMap(Optional::stream).map(this::view).toList();
+        return new PlayerEmblems(nationality, shown, levels, shownEmblems, slots, selectable.stream().map(this::view).toList());
     }
 
     private static boolean isPlain(ApiEmblem emblem) {
@@ -113,17 +113,25 @@ public final class EmblemResolver {
                 Optional.of(config.emptyEmblemImage.get()).filter(url -> !url.isEmpty()), EmblemCategory.LOCAL_EMBLEM, look);
     }
 
-    private List<ApiEmblem> chosenFrom(List<ApiEmblem> selectable, Optional<List<String>> chosen) {
+    /**
+     * What is in each place after the name. A player who never chose has their first emblems; one who did has exactly what they put in
+     * each place, an empty string or an emblem they no longer hold leaving the place empty.
+     */
+    private List<Optional<ApiEmblem>> placedFrom(List<ApiEmblem> selectable, Optional<List<String>> chosen) {
         int max = config.loreMax.get();
-        if (chosen.isEmpty()) {
-            return selectable.stream().limit(max).toList();
+        List<Optional<ApiEmblem>> placed = new ArrayList<>();
+        Set<String> used = new LinkedHashSet<>();
+        for (int place = 0; place < max; place++) {
+            Optional<ApiEmblem> emblem;
+            if (chosen.isEmpty()) {
+                emblem = place < selectable.size() ? Optional.of(selectable.get(place)) : Optional.empty();
+            } else {
+                String id = place < chosen.get().size() ? chosen.get().get(place) : "";
+                emblem = selectable.stream().filter(held -> held.id().equals(id) && !used.contains(id)).findFirst();
+                emblem.ifPresent(held -> used.add(held.id()));
+            }
+            placed.add(emblem);
         }
-        // What the player no longer holds, or what is no longer selectable, simply drops out of their choice
-        Set<String> ids = new LinkedHashSet<>(chosen.get());
-        List<ApiEmblem> result = new ArrayList<>();
-        for (String id : ids) {
-            selectable.stream().filter(emblem -> emblem.id().equals(id)).findFirst().ifPresent(result::add);
-        }
-        return result.stream().limit(max).toList();
+        return placed;
     }
 }

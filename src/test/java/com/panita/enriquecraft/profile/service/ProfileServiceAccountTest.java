@@ -62,7 +62,7 @@ class ProfileServiceAccountTest {
 
         assertEquals("enrique6_prank_2", emblems.prank().id());
         assertEquals(List.of("c", "a"), ids(emblems.chosen()));
-        assertEquals(1, emblems.empty().size());
+        assertEquals(List.of("c", "a", "no_emblem"), ids(emblems.slots()));
     }
 
     @Test
@@ -73,7 +73,7 @@ class ProfileServiceAccountTest {
 
         assertEquals("enrique6_prank_1", emblems.prank().id());
         assertEquals(List.of(), emblems.chosen());
-        assertEquals(3, emblems.empty().size());
+        assertEquals(3, emblems.slots().size());
     }
 
     @Test
@@ -82,7 +82,7 @@ class ProfileServiceAccountTest {
 
         assertEquals("enrique6_prank_0", emblems.prank().id());
         assertEquals(List.of(), emblems.chosen());
-        assertEquals(3, emblems.empty().size());
+        assertEquals(3, emblems.slots().size());
     }
 
     @Test

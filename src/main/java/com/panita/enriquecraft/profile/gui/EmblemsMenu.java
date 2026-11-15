@@ -73,7 +73,7 @@ final class EmblemsMenu extends UiPagedMenu<EmblemView> {
 
     @Override
     protected UiElement render(UiBuilder builder, EmblemView emblem) {
-        int at = chosenIds().indexOf(emblem.id());
+        int at = placed().indexOf(emblem.id());
         boolean here = at >= 0 && at == slot;
         boolean elsewhere = at >= 0 && !here;
         List<Component> lines = new ArrayList<>(tooltip.description(emblem));
@@ -92,13 +92,13 @@ final class EmblemsMenu extends UiPagedMenu<EmblemView> {
         String badge = here ? HERE_BADGE : elsewhere ? ELSEWHERE_BADGE : "";
         return builder.button(ButtonRole.NONE, tooltip.icon(emblem), tooltip.title(emblem), lines, badge, click -> {
             if (click.isLeft()) {
-                profiles.choose(click.player(), EmblemSelection.place(chosenIds(), slot, emblem.id(), config.loreMax.get()));
+                profiles.choose(click.player(), EmblemSelection.place(placed(), slot, emblem.id(), config.loreMax.get()));
                 previous().open(click.player());
             }
         });
     }
 
-    private List<String> chosenIds() {
-        return profiles.emblemsOf(viewer()).chosen().stream().map(EmblemView::id).toList();
+    private List<String> placed() {
+        return profiles.emblemsOf(viewer()).placedIds();
     }
 }

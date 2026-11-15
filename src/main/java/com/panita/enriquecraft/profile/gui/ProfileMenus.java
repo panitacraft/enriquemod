@@ -94,11 +94,6 @@ public final class ProfileMenus {
         return new EmblemDetailMenu(ui, tooltip, profileMenu, emblem);
     }
 
-    /** How many emblems a player shows after their name. */
-    int slots() {
-        return config.loreMax.get();
-    }
-
     UiService ui() {
         return ui;
     }

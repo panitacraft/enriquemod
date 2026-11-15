@@ -14,8 +14,8 @@ class EmblemSelectionTest {
     }
 
     @Test
-    void choosingTheEmblemOfThePlaceGivesItUp() {
-        assertEquals(List.of("a", "c"), EmblemSelection.place(List.of("a", "b", "c"), 1, "b", 3));
+    void choosingTheEmblemOfThePlaceEmptiesIt() {
+        assertEquals(List.of("a", "", "c"), EmblemSelection.place(List.of("a", "b", "c"), 1, "b", 3));
     }
 
     @Test
@@ -24,17 +24,19 @@ class EmblemSelectionTest {
     }
 
     @Test
-    void anEmptyPlaceTakesANewEmblemAtTheEnd() {
-        assertEquals(List.of("a", "x"), EmblemSelection.place(List.of("a"), 2, "x", 3));
+    void anEmblemCanStandAloneInTheLastPlace() {
+        assertEquals(List.of("", "", "x"), EmblemSelection.place(List.of("", "", ""), 2, "x", 3));
+        assertEquals(List.of("", "", "x"), EmblemSelection.place(List.of(), 2, "x", 3));
     }
 
     @Test
-    void anEmptyPlaceMovesAnEmblemShownElsewhereToTheEnd() {
-        assertEquals(List.of("b", "a"), EmblemSelection.place(List.of("a", "b"), 2, "a", 3));
+    void movingAnEmblemToAnEmptyPlaceLeavesItsOldPlaceEmpty() {
+        assertEquals(List.of("", "", "a"), EmblemSelection.place(List.of("a"), 2, "a", 3));
     }
 
     @Test
-    void aFullListIsNotGrownByAnEmptyPlace() {
-        assertEquals(List.of("a", "b"), EmblemSelection.place(List.of("a", "b"), 2, "x", 2));
+    void theEmptyPlacesAtTheEndAreNotKept() {
+        assertEquals(List.of(), EmblemSelection.place(List.of("a"), 0, "a", 3));
+        assertEquals(List.of("a"), EmblemSelection.place(List.of("a", "b"), 1, "b", 3));
     }
 }

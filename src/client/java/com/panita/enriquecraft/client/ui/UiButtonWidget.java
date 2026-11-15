@@ -48,7 +48,8 @@ final class UiButtonWidget extends AbstractButton {
 
     static final int EMBLEM_SIZE = 40;
     private static final int EMBLEM_ICON = 32;
-    private static final int DOT_RADIUS = 5;
+    private static final int DOT_RADIUS = 3;
+    private static final int DOT_SIZE = 10;
     private static final int BIG_PADDING = 8;
     private static final int ICON_SIZE = 16;
     private static final int PADDING = 5;
@@ -132,7 +133,7 @@ final class UiButtonWidget extends AbstractButton {
 
     /** A filled dot in the button's tint that only tells a state; pressing it does nothing. */
     static UiButtonWidget status(Font font, UiElement.Button button) {
-        UiButtonWidget widget = new UiButtonWidget(font, Look.STATUS, UiTheme.Tone.of(button.tint()), GLYPH_SIZE, GLYPH_SIZE,
+        UiButtonWidget widget = new UiButtonWidget(font, Look.STATUS, UiTheme.Tone.of(button.tint()), DOT_SIZE, DOT_SIZE,
                 button.label(), ItemStack.EMPTY, null, "", false, (mouse, shift) -> { });
         widget.describe(button, true);
         return widget;

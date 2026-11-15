@@ -86,7 +86,7 @@ class EmblemResolverTest {
         assertEquals("enrique6_prank_1", emblems.prank().id());
         assertEquals(List.of(), emblems.chosen());
         assertEquals(List.of(), emblems.selectable());
-        assertEquals(3, emblems.empty().size());
+        assertEquals(List.of("no_emblem", "no_emblem", "no_emblem"), ids(emblems.slots()));
     }
 
     @Test
@@ -130,11 +130,21 @@ class EmblemResolverTest {
         PlayerEmblems full = resolve(profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.EMBLEM, 2),
                 emblem("c", EmblemCategory.EMBLEM, 3)), Optional.empty());
 
-        assertEquals(List.of("no_emblem", "no_emblem"), ids(one.empty()));
+        assertEquals(List.of("a", "no_emblem", "no_emblem"), ids(one.slots()));
         assertEquals(Optional.of("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=3"),
-                one.empty().getFirst().iconUrl());
-        assertEquals(new EmblemLook("○", "dark_gray"), one.empty().getFirst().look());
-        assertTrue(full.empty().isEmpty());
+                one.slots().get(1).iconUrl());
+        assertEquals(new EmblemLook("○", "dark_gray"), one.slots().get(1).look());
+        assertEquals(List.of("a", "b", "c"), ids(full.slots()));
+    }
+
+    @Test
+    void anyPlaceCanBeLeftEmptyWhileAnotherIsFilled() {
+        PlayerEmblems emblems = resolve(profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.EMBLEM, 2)),
+                Optional.of(List.of("", "", "b")));
+
+        assertEquals(List.of("no_emblem", "no_emblem", "b"), ids(emblems.slots()));
+        assertEquals(List.of("b"), ids(emblems.chosen()));
+        assertEquals(List.of("", "", "b"), emblems.placedIds());
     }
 
     @Test

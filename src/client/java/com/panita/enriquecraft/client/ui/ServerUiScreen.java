@@ -24,6 +24,8 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import com.panita.enriquecraft.client.art.InlineArtTextures;
+
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +105,7 @@ final class ServerUiScreen extends Screen implements UiActions {
     private static final int SUBMIT_GAP_TICKS = 3;
     private final java.util.ArrayDeque<Map.Entry<Integer, String>> queuedSubmits = new java.util.ArrayDeque<>();
     private int submitDelay;
+    private int artGeneration = InlineArtTextures.generation();
     // A draggable button pressed and not yet released: it is a click unless the mouse moves far enough.
     private @Nullable UiButtonWidget dragCandidate;
     private double dragStartX;
@@ -161,6 +164,7 @@ final class ServerUiScreen extends Screen implements UiActions {
 
     @Override
     protected void init() {
+        artGeneration = InlineArtTextures.generation();
         parts = ScreenParts.split(root);
         UiLayouts layouts = layout(0, false, 0);
         // A panel taller than the window gives the difference back through its scroll areas; when that is not
@@ -333,6 +337,10 @@ final class ServerUiScreen extends Screen implements UiActions {
     @Override
     public void tick() {
         super.tick();
+        // A line of text that holds a picture was measured before the picture came; lay the screen out again with its real width
+        if (artGeneration != InlineArtTextures.generation()) {
+            rebuildWidgets();
+        }
         if (!queuedSubmits.isEmpty() && --submitDelay <= 0) {
             Map.Entry<Integer, String> next = queuedSubmits.poll();
             submit(next.getKey(), next.getValue());
