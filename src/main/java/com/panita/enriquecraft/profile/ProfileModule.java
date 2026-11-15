@@ -21,6 +21,7 @@ import com.panita.enriquecraft.profile.message.ProfileView;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
 import com.panita.enriquecraft.profile.service.EmblemPlaceholders;
 import com.panita.enriquecraft.profile.service.EmblemResolver;
+import com.panita.enriquecraft.profile.service.LocatorBarService;
 import com.panita.enriquecraft.profile.service.ProfileCache;
 import com.panita.enriquecraft.profile.service.ProfileDetailsService;
 import com.panita.enriquecraft.profile.service.ProfileLoader;
@@ -74,6 +75,7 @@ public final class ProfileModule implements EnriquecraftModule {
         services.register(EmblemResolver.class, resolver);
         services.register(ProfileService.class, profiles);
         services.register(ProfileDetailsService.class, detailsService);
+        services.register(LocatorBarService.class, new LocatorBarService(player -> detailsService.detailsOf(player).shareLocation()));
         services.register(RefreshCooldown.class, cooldown);
         ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown, config.cacheSeconds::get,
                 services.get(LinkConfig.class).autoFetch::get);
