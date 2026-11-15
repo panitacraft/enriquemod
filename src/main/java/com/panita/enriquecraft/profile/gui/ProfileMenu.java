@@ -194,6 +194,9 @@ final class ProfileMenu extends UiMenu {
         lines.add(label(nameLine));
         if (editing) {
             lines.add(new UiElement.Row(List.of(label(white(ProfileMessages.Menu.FIELD_PRONOUNS)), pronounsInput(builder, subject))));
+        } else if (!subject.details().pronouns().isEmpty()) {
+            // Only the value: the field's name is for the form
+            lines.add(label(Component.literal(subject.details().pronouns())));
         }
         List<UiElement> tiles = new ArrayList<>();
         for (int place = 0; place < emblems.slots().size(); place++) {
