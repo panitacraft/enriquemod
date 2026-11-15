@@ -30,7 +30,7 @@ class EmblemResolverTest {
     }
 
     private static ModProfile profile(ApiEmblem... emblems) {
-        return new ModProfile(7, Optional.of("Alex"), "alex", List.of(emblems));
+        return new ModProfile(7, Optional.of("Alex"), "alex", Optional.empty(), List.of(emblems));
     }
 
     private static List<String> ids(List<EmblemView> views) {

@@ -63,10 +63,20 @@ public final class HttpEmblemApi implements EmblemApi {
                 emblems.add(emblem.get());
             }
             return new Result.Found(new ModProfile(data.get("user_id").getAsInt(), text(data, "ign"),
-                    data.get("discord_name").getAsString(), emblems));
+                    data.get("discord_name").getAsString(), birthday(data), emblems));
         } catch (RuntimeException e) {
             return new Result.Failed("the profile is not in the expected format");
         }
+    }
+
+    /** Absent or null is no birthday, so an API that does not send it yet still works; a value that is not a month and a day fails. */
+    private static Optional<Birthday> birthday(JsonObject data) {
+        JsonElement element = data.get("birthday");
+        if (element == null || element.isJsonNull()) {
+            return Optional.empty();
+        }
+        JsonObject day = element.getAsJsonObject();
+        return Optional.of(new Birthday(day.get("month").getAsInt(), day.get("day").getAsInt()));
     }
 
     private static Optional<ApiEmblem> emblem(JsonObject item) {

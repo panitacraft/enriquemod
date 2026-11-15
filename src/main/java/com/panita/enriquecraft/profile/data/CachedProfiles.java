@@ -5,6 +5,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.panita.enriquecraft.core.framework.data.TimeCodecs;
 import com.panita.enriquecraft.profile.client.ApiEmblem;
+import com.panita.enriquecraft.profile.client.Birthday;
 import com.panita.enriquecraft.profile.client.EmblemCategory;
 import com.panita.enriquecraft.profile.client.ModProfile;
 import net.minecraft.core.UUIDUtil;
@@ -44,10 +45,16 @@ public record CachedProfiles(Map<UUID, Entry> entries) {
             Codec.STRING.optionalFieldOf("editionId").forGetter(ApiEmblem::editionId)
     ).apply(instance, ApiEmblem::new));
 
+    private static final Codec<Birthday> BIRTHDAY = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.INT.fieldOf("month").forGetter(Birthday::month),
+            Codec.INT.fieldOf("day").forGetter(Birthday::day)
+    ).apply(instance, Birthday::new));
+
     private static final Codec<ModProfile> PROFILE = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("userId").forGetter(ModProfile::userId),
             Codec.STRING.optionalFieldOf("ign").forGetter(ModProfile::ign),
             Codec.STRING.fieldOf("discordName").forGetter(ModProfile::discordName),
+            BIRTHDAY.optionalFieldOf("birthday").forGetter(ModProfile::birthday),
             EMBLEM.listOf().fieldOf("emblems").forGetter(ModProfile::emblems)
     ).apply(instance, ModProfile::new));
 

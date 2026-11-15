@@ -80,6 +80,26 @@ class HttpEmblemApiTest {
     }
 
     @Test
+    void readsTheMonthAndDayOfTheBirthdayAndToleratesItsAbsence() {
+        EmblemApi.Result.Found without = assertInstanceOf(EmblemApi.Result.Found.class, ask());
+        body = PROFILE.replace("\"avatar_url\": null,", "\"avatar_url\": null, \"birthday\": {\"month\": 8, \"day\": 18},");
+        EmblemApi.Result.Found with = assertInstanceOf(EmblemApi.Result.Found.class, ask());
+        body = PROFILE.replace("\"avatar_url\": null,", "\"avatar_url\": null, \"birthday\": null,");
+        EmblemApi.Result.Found none = assertInstanceOf(EmblemApi.Result.Found.class, ask());
+
+        assertEquals(Optional.empty(), without.profile().birthday());
+        assertEquals(Optional.of(new Birthday(8, 18)), with.profile().birthday());
+        assertEquals(Optional.empty(), none.profile().birthday());
+    }
+
+    @Test
+    void aBirthdayThatIsNotADayOfTheYearFailsAsAWhole() {
+        body = PROFILE.replace("\"avatar_url\": null,", "\"avatar_url\": null, \"birthday\": {\"month\": 13, \"day\": 1},");
+
+        assertInstanceOf(EmblemApi.Result.Failed.class, ask());
+    }
+
+    @Test
     void asksForTheEditionOfTheServerWithTheKey() {
         ask();
 

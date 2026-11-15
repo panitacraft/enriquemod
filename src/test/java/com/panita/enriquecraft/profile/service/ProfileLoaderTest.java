@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProfileLoaderTest {
 
-    private static final ModProfile PROFILE = new ModProfile(7, Optional.of("Alex"), "alex", List.of());
+    private static final ModProfile PROFILE = new ModProfile(7, Optional.of("Alex"), "alex", Optional.empty(), List.of());
     private static final ProfileLoader.Freshness FORCE = new ProfileLoader.Freshness.Force();
     private static final ProfileLoader.Freshness TEN_MINUTES = new ProfileLoader.Freshness.AllowCached(Duration.ofMinutes(10));
 

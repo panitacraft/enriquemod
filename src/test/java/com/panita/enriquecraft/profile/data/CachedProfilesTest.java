@@ -3,6 +3,7 @@ package com.panita.enriquecraft.profile.data;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import com.panita.enriquecraft.profile.client.ApiEmblem;
+import com.panita.enriquecraft.profile.client.Birthday;
 import com.panita.enriquecraft.profile.client.EmblemCategory;
 import com.panita.enriquecraft.profile.client.ModProfile;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ class CachedProfilesTest {
                 EmblemCategory.LOCAL_EMBLEM, 3, Optional.of("enriquecraft6"));
         ApiEmblem title = new ApiEmblem("title", "Title", Optional.empty(), Optional.empty(), EmblemCategory.TITLE, 9, Optional.empty());
         CachedProfiles cached = new CachedProfiles(Map.of(
-                UUID.randomUUID(), new CachedProfiles.Entry(Optional.of(new ModProfile(7, Optional.of("Alex"), "alex", List.of(staff, title))),
+                UUID.randomUUID(), new CachedProfiles.Entry(Optional.of(new ModProfile(7, Optional.of("Alex"), "alex", Optional.empty(), List.of(staff, title))),
                         Instant.parse("2026-11-09T12:00:00Z")),
                 UUID.randomUUID(), new CachedProfiles.Entry(Optional.empty(), Instant.parse("2026-11-09T13:00:00Z"))));
 
@@ -34,9 +35,32 @@ class CachedProfilesTest {
     }
 
     @Test
+    void aFileWrittenBeforeBirthdaysExistedStillLoads() {
+        ModProfile profile = new ModProfile(7, Optional.of("Alex"), "alex", Optional.of(new Birthday(8, 18)), List.of());
+        JsonElement written = CachedProfiles.CODEC.encodeStart(JsonOps.INSTANCE, new CachedProfiles(Map.of(UUID.randomUUID(),
+                new CachedProfiles.Entry(Optional.of(profile), Instant.EPOCH)))).getOrThrow();
+        String old = written.toString().replace(",\"birthday\":{\"month\":8,\"day\":18}", "");
+
+        CachedProfiles read = CachedProfiles.CODEC.parse(JsonOps.INSTANCE, com.google.gson.JsonParser.parseString(old)).getOrThrow();
+
+        assertEquals(Optional.empty(), read.entries().values().iterator().next().profile().orElseThrow().birthday());
+        assertTrue(!old.contains("birthday"));
+    }
+
+    @Test
+    void aBirthdayIsReadBackExactly() {
+        ModProfile profile = new ModProfile(7, Optional.empty(), "alex", Optional.of(new Birthday(2, 29)), List.of());
+        CachedProfiles cached = new CachedProfiles(Map.of(UUID.randomUUID(), new CachedProfiles.Entry(Optional.of(profile), Instant.EPOCH)));
+
+        JsonElement written = CachedProfiles.CODEC.encodeStart(JsonOps.INSTANCE, cached).getOrThrow();
+
+        assertEquals(cached, CachedProfiles.CODEC.parse(JsonOps.INSTANCE, written).getOrThrow());
+    }
+
+    @Test
     void anUnknownEmblemCategoryIsRefused() {
         JsonElement written = CachedProfiles.CODEC.encodeStart(JsonOps.INSTANCE, new CachedProfiles(Map.of(UUID.randomUUID(),
-                new CachedProfiles.Entry(Optional.of(new ModProfile(1, Optional.empty(), "a", List.of(
+                new CachedProfiles.Entry(Optional.of(new ModProfile(1, Optional.empty(), "a", Optional.empty(), List.of(
                         new ApiEmblem("x", "X", Optional.empty(), Optional.empty(), EmblemCategory.EMBLEM, 0, Optional.empty())))),
                         Instant.EPOCH)))).getOrThrow();
         String broken = written.toString().replace("\"emblem\"", "\"nonsense\"");
