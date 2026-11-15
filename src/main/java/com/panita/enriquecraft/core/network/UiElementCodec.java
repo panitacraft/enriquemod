@@ -37,6 +37,8 @@ public final class UiElementCodec {
     private static final byte DIVIDER = 11;
     private static final byte PIN_PAD = 12;
     private static final byte RULE = 13;
+    private static final byte TEXT_AREA = 14;
+    private static final byte TOGGLE = 15;
 
     private static final StreamCodec<RegistryFriendlyByteBuf, List<Component>> TOOLTIP =
             ComponentSerialization.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_TOOLTIP_LINES));
@@ -74,6 +76,7 @@ public final class UiElementCodec {
                 buffer.writeByte(GRID);
                 buffer.writeVarInt(grid.columns());
                 buffer.writeVarInt(grid.rows());
+                buffer.writeBoolean(grid.large());
                 writeChildren(buffer, grid.children(), depth);
             }
             case UiElement.Label label -> {
@@ -95,6 +98,21 @@ public final class UiElementCodec {
             case UiElement.TextInput input -> {
                 buffer.writeByte(TEXT_INPUT);
                 writeTextInput(buffer, input);
+            }
+            case UiElement.TextArea area -> {
+                buffer.writeByte(TEXT_AREA);
+                buffer.writeVarInt(area.id());
+                ComponentSerialization.STREAM_CODEC.encode(buffer, area.hint());
+                buffer.writeUtf(area.value(), UiElement.TextArea.MAX_LENGTH);
+                buffer.writeVarInt(area.maxLength());
+                buffer.writeVarInt(area.lines());
+                buffer.writeVarInt(area.width());
+            }
+            case UiElement.Toggle toggle -> {
+                buffer.writeByte(TOGGLE);
+                buffer.writeVarInt(toggle.id());
+                ComponentSerialization.STREAM_CODEC.encode(buffer, toggle.label());
+                buffer.writeBoolean(toggle.checked());
             }
             case UiElement.Page page -> {
                 buffer.writeByte(PAGE);
@@ -163,9 +181,10 @@ public final class UiElementCodec {
             case GRID -> {
                 int columns = buffer.readVarInt();
                 int rows = buffer.readVarInt();
+                boolean large = buffer.readBoolean();
                 List<UiElement> children = readChildren(buffer, depth);
                 try {
-                    yield new UiElement.Grid(columns, rows, children);
+                    yield new UiElement.Grid(columns, rows, children, large);
                 } catch (IllegalArgumentException e) {
                     throw new DecoderException(e.getMessage());
                 }
@@ -173,6 +192,8 @@ public final class UiElementCodec {
             case LABEL -> new UiElement.Label(ComponentSerialization.STREAM_CODEC.decode(buffer));
             case BUTTON -> readButton(buffer);
             case TEXT_INPUT -> readTextInput(buffer);
+            case TEXT_AREA -> readTextArea(buffer);
+            case TOGGLE -> readToggle(buffer);
             case PAGE -> readPage(buffer);
             case DETAIL -> readDetail(buffer);
             case SCROLL -> readScroll(buffer, depth);
@@ -239,6 +260,26 @@ public final class UiElementCodec {
         } catch (IllegalArgumentException e) {
             throw new DecoderException(e.getMessage());
         }
+    }
+
+    private static UiElement readTextArea(RegistryFriendlyByteBuf buffer) {
+        int id = buffer.readVarInt();
+        Component hint = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        String value = buffer.readUtf(UiElement.TextArea.MAX_LENGTH);
+        int maxLength = buffer.readVarInt();
+        int lines = buffer.readVarInt();
+        int width = buffer.readVarInt();
+        try {
+            return new UiElement.TextArea(id, hint, value, maxLength, lines, width);
+        } catch (IllegalArgumentException e) {
+            throw new DecoderException(e.getMessage());
+        }
+    }
+
+    private static UiElement readToggle(RegistryFriendlyByteBuf buffer) {
+        int id = buffer.readVarInt();
+        Component label = ComponentSerialization.STREAM_CODEC.decode(buffer);
+        return new UiElement.Toggle(id, label, buffer.readBoolean());
     }
 
     private static UiElement readPage(RegistryFriendlyByteBuf buffer) {

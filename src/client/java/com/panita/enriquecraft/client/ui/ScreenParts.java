@@ -19,14 +19,16 @@ import java.util.List;
  * @param next     the button that shows the next page, or null when there is none
  * @param fields   the text fields and dropdowns of the controls
  * @param actions  the other buttons of the controls
+ * @param headerActions the refresh and edit buttons of the controls, which the client draws as small icons next to close
  */
 record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cancel, UiElement.Page page,
-                   UiElement.Button previous, UiElement.Button next, List<UiElement> fields, List<UiElement> actions) {
+                   UiElement.Button previous, UiElement.Button next, List<UiElement> fields, List<UiElement> actions,
+                   List<UiElement.Button> headerActions) {
 
     static ScreenParts split(UiElement root) {
         if (!(root instanceof UiElement.Column column) || column.children().size() < 2
                 || !(column.children().getLast() instanceof UiElement.Row controls)) {
-            return new ScreenParts(root, null, null, null, null, null, List.of(), List.of());
+            return new ScreenParts(root, null, null, null, null, null, List.of(), List.of(), List.of());
         }
 
         List<UiElement> bands = column.children().subList(0, column.children().size() - 1);
@@ -39,6 +41,7 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cance
         UiElement.Button next = null;
         List<UiElement> fields = new ArrayList<>();
         List<UiElement> actions = new ArrayList<>();
+        List<UiElement.Button> headerActions = new ArrayList<>();
         for (UiElement element : controls.children()) {
             switch (element) {
                 case UiElement.Button button -> {
@@ -52,6 +55,7 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cance
                             cancel = button;
                             actions.add(button);
                         }
+                        case REFRESH, EDIT -> headerActions.add(button);
                         case NONE, CONFIRM, DANGER, SUCCESS -> actions.add(button);
                     }
                 }
@@ -62,6 +66,6 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cance
                 default -> actions.add(element);
             }
         }
-        return new ScreenParts(body, back, cancel, page, previous, next, fields, actions);
+        return new ScreenParts(body, back, cancel, page, previous, next, fields, actions, headerActions);
     }
 }

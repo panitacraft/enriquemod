@@ -182,7 +182,7 @@ public final class UiSessions {
         if (input == null) {
             return ActionResult.UNKNOWN_ELEMENT;
         }
-        if (submit.text().length() > input.maxLength() || submit.text().chars().anyMatch(Character::isISOControl)) {
+        if (!input.accepts(submit.text())) {
             LOGGER.warn("{} sent a value the field does not accept", playerId);
             return ActionResult.INVALID;
         }

@@ -35,6 +35,8 @@ import java.util.List;
 final class UiButtonWidget extends AbstractButton {
 
     static final int CELL_SIZE = 22;
+    static final int TILE_SIZE = 32;
+    private static final int TILE_ICON = 24;
     static final int TOOL_SIZE = 26;
     static final int ACTION_HEIGHT = 20;
     static final int GLYPH_SIZE = 18;
@@ -74,6 +76,7 @@ final class UiButtonWidget extends AbstractButton {
     private final Press press;
     private List<Component> tooltipLines = List.of();
     private int bigIcon = BIG_ICON;
+    private int cellIcon = ICON_SIZE;
     private int slideX;
     private int slideY;
     private long slideStartedAt = Long.MIN_VALUE / 2;
@@ -95,11 +98,21 @@ final class UiButtonWidget extends AbstractButton {
 
     /** A button that is only its item, with everything else in the tooltip. */
     static UiButtonWidget cell(Font font, UiElement.Button button, UiActions actions) {
-        UiButtonWidget widget = new UiButtonWidget(font, Look.CELL, UiTheme.Tone.ACTION, CELL_SIZE, CELL_SIZE,
+        return cell(font, button, actions, CELL_SIZE, ICON_SIZE);
+    }
+
+    /** A cell of a large grid: a bigger tile with its item drawn big, like the emblems on the website. */
+    static UiButtonWidget tile(Font font, UiElement.Button button, UiActions actions) {
+        return cell(font, button, actions, TILE_SIZE, TILE_ICON);
+    }
+
+    private static UiButtonWidget cell(Font font, UiElement.Button button, UiActions actions, int size, int iconSize) {
+        UiButtonWidget widget = new UiButtonWidget(font, Look.CELL, UiTheme.Tone.ACTION, size, size,
                 shownLabel(button), button.icon(), null, button.badge(), false,
                 (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.elementId = button.id();
         widget.draggable = button.draggable();
+        widget.cellIcon = iconSize;
         widget.describe(button, true);
         return widget;
     }
@@ -278,10 +291,19 @@ final class UiButtonWidget extends AbstractButton {
         switch (look) {
             case CELL -> {
                 surface(graphics, hovered);
-                int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
-                int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
-                ArtItems.draw(graphics, icon, iconX, iconY);
-                graphics.itemDecorations(font, icon, iconX, iconY);
+                if (cellIcon == ICON_SIZE) {
+                    int iconX = getX() + (getWidth() - ICON_SIZE) / 2;
+                    int iconY = getY() + (getHeight() - ICON_SIZE) / 2;
+                    ArtItems.draw(graphics, icon, iconX, iconY);
+                    graphics.itemDecorations(font, icon, iconX, iconY);
+                } else {
+                    // A large tile draws its item stretched, the way the cards and the big icons do.
+                    graphics.pose().pushMatrix();
+                    graphics.pose().translate(getX() + (getWidth() - cellIcon) / 2.0F, getY() + (getHeight() - cellIcon) / 2.0F);
+                    graphics.pose().scale(cellIcon / (float) ICON_SIZE, cellIcon / (float) ICON_SIZE);
+                    ArtItems.draw(graphics, icon, 0, 0);
+                    graphics.pose().popMatrix();
+                }
                 drawBadge(graphics, getX() + getWidth() - 1, getY() + getHeight() - 1);
             }
             case TOOL -> {

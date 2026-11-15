@@ -43,14 +43,27 @@ public sealed interface UiElement {
     /**
      * A grid of {@code columns} by {@code rows} cells, filled left to right and top to bottom. It may
      * hold fewer children than cells; the rest stay empty.
+     *
+     * @param large whether the client companion draws the cells as large tiles with their item drawn big, as the
+     *              emblems of a profile are; a chest ignores the flag, and a grid is not large unless made so
      */
-    record Grid(int columns, int rows, List<UiElement> children) implements UiElement {
+    record Grid(int columns, int rows, List<UiElement> children, boolean large) implements UiElement {
         public Grid {
             if (columns < 1 || rows < 1 || children.size() > columns * rows) {
                 throw new IllegalArgumentException(
                         children.size() + " children do not fit a grid of " + columns + " by " + rows);
             }
             children = List.copyOf(children);
+        }
+
+        /** A grid of ordinary cells. */
+        public Grid(int columns, int rows, List<UiElement> children) {
+            this(columns, rows, children, false);
+        }
+
+        /** The same grid, drawn as large tiles by the client companion. */
+        public Grid withLargeTiles() {
+            return new Grid(columns, rows, children, true);
         }
     }
 
@@ -166,6 +179,42 @@ public sealed interface UiElement {
                 throw new IllegalArgumentException("A field of up to " + maxLength + " characters cannot hold \"" + value + "\"");
             }
         }
+    }
+
+    /**
+     * A field the player types several lines into; newlines are kept. Like a {@link TextInput}, the value reaches the
+     * server when the player confirms it, and a chest asks for it in chat, where it is a single line.
+     *
+     * @param id        identifies the field within one description; unique, assigned by the server
+     * @param value     what the field holds when it appears
+     * @param maxLength the most characters the field holds, newlines included
+     * @param lines     how many lines tall the client companion draws the field before it scrolls
+     * @param width     how wide the client companion draws the field, in GUI pixels; narrower windows shrink it
+     */
+    record TextArea(int id, Component hint, String value, int maxLength, int lines, int width) implements UiElement {
+        public static final int MAX_LENGTH = 1024;
+        public static final int MAX_LINES = 16;
+        public static final int MIN_WIDTH = 60;
+        public static final int MAX_WIDTH = 400;
+
+        public TextArea {
+            if (maxLength < 1 || maxLength > MAX_LENGTH || value.length() > maxLength) {
+                throw new IllegalArgumentException("An area of up to " + maxLength + " characters cannot hold " + value.length());
+            }
+            if (lines < 1 || lines > MAX_LINES || width < MIN_WIDTH || width > MAX_WIDTH) {
+                throw new IllegalArgumentException("An area of " + lines + " lines and " + width + " pixels is not allowed");
+            }
+        }
+    }
+
+    /**
+     * A box the player checks or unchecks, with a label beside it. Pressing it tells the server the state it now has;
+     * the server then sends the screen again. A chest shows an item that flips on a left click.
+     *
+     * @param id      identifies the toggle within one description; unique, assigned by the server
+     * @param checked whether the box is checked now
+     */
+    record Toggle(int id, Component label, boolean checked) implements UiElement {
     }
 
     /**

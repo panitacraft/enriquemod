@@ -4,6 +4,7 @@ import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.FrameLayout;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Turns a screen description into vanilla layouts and widgets. The client sizes everything with its
@@ -42,7 +44,7 @@ final class UiLayouts {
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
-        COLUMN, ROW, GRID, FOOTER
+        COLUMN, ROW, GRID, LARGE_GRID, FOOTER
     }
 
     private final Font font;
@@ -53,9 +55,9 @@ final class UiLayouts {
     private final boolean compact;
     private final boolean flatScrolls;
     private final int maxWidth;
-    private final Map<Integer, UiInputWidget> inputs = new HashMap<>();
-    private final List<UiInputWidget> inputOrder = new ArrayList<>();
-    private UiInputWidget bodyInput;
+    private final Map<Integer, Supplier<String>> inputs = new HashMap<>();
+    private final List<AbstractWidget> inputOrder = new ArrayList<>();
+    private AbstractWidget bodyInput;
     private boolean hasScroll;
 
     /**
@@ -91,7 +93,7 @@ final class UiLayouts {
     }
 
     /** The first text field in the body, which the screen focuses so the player can start typing; null if none. */
-    UiInputWidget bodyInput() {
+    AbstractWidget bodyInput() {
         return bodyInput;
     }
 
@@ -139,18 +141,26 @@ final class UiLayouts {
     /** A text field, remembered by id so a confirm button can send what it holds. */
     private UiInputWidget input(UiElement.TextInput input) {
         UiInputWidget widget = new UiInputWidget(font, input, actions);
-        inputs.put(input.id(), widget);
+        inputs.put(input.id(), widget::getValue);
         inputOrder.add(widget);
         return widget;
+    }
+
+    /** A multi-line field, remembered by id like a one-line one. */
+    private LayoutElement textArea(UiElement.TextArea area) {
+        UiTextAreaWidget widget = new UiTextAreaWidget(font, area, maxWidth);
+        inputs.put(area.id(), widget::getValue);
+        inputOrder.add(widget.field());
+        return widget.layout();
     }
 
     /** What a footer button does when pressed: a form's confirm sends its field's value, any other button presses. */
     private UiButtonWidget.Press pressOf(UiElement.Button button) {
         if (button.submits() != UiElement.Button.NO_INPUT) {
             return (mouse, shift) -> {
-                UiInputWidget field = inputs.get(button.submits());
+                Supplier<String> field = inputs.get(button.submits());
                 if (field != null) {
-                    actions.submit(button.submits(), field.getValue());
+                    actions.submit(button.submits(), field.get());
                 }
             };
         }
@@ -198,17 +208,24 @@ final class UiLayouts {
                             (mouse, shift) -> actions.press(detail.iconId(), mouse, shift))
                     : detail(detail);
             case UiElement.TextInput input -> input(input);
+            case UiElement.TextArea area -> textArea(area);
+            case UiElement.Toggle toggle -> new UiToggleWidget(font, toggle, actions);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Divider ignored -> new UiDividerWidget();
             case UiElement.Rule ignored -> new UiRuleWidget();
             case UiElement.PinPad pad -> new UiPinPadWidget(font, pad, actions, compact);
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
+                case LARGE_GRID -> UiButtonWidget.tile(font, button, actions);
                 case FOOTER -> footerButton(button);
                 default -> UiButtonWidget.action(font, button, actions);
             };
             // Grid cells keep their size so the grid stays aligned; elsewhere a spacer is just a gap.
-            case UiElement.Spacer ignored -> place == Place.GRID ? new UiCellWidget() : SpacerElement.height(SPACING);
+            case UiElement.Spacer ignored -> switch (place) {
+                case GRID -> new UiCellWidget(UiButtonWidget.CELL_SIZE);
+                case LARGE_GRID -> new UiCellWidget(UiButtonWidget.TILE_SIZE);
+                default -> SpacerElement.height(SPACING);
+            };
         };
     }
 
@@ -349,7 +366,7 @@ final class UiLayouts {
                 overlay = label;
                 child = new UiElement.Spacer();
             }
-            layout.addChild(build(child, Place.GRID), index / grid.columns(), index % grid.columns());
+            layout.addChild(build(child, grid.large() ? Place.LARGE_GRID : Place.GRID), index / grid.columns(), index % grid.columns());
         }
         if (overlay == null) {
             return layout;
