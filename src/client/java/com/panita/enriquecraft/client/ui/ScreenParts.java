@@ -56,7 +56,7 @@ record ScreenParts(UiElement body, UiElement.Button back, UiElement.Button cance
                             actions.add(button);
                         }
                         case REFRESH, EDIT -> headerActions.add(button);
-                        case NONE, CONFIRM, DANGER, SUCCESS, EMBLEM, STATUS -> actions.add(button);
+                        case NONE, CONFIRM, DANGER, SUCCESS, EMBLEM -> actions.add(button);
                     }
                 }
                 case UiElement.Page indicator -> page = indicator;

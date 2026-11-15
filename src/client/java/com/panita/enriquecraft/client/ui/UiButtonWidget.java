@@ -48,8 +48,6 @@ final class UiButtonWidget extends AbstractButton {
 
     static final int EMBLEM_SIZE = 40;
     private static final int EMBLEM_ICON = 32;
-    private static final int DOT_RADIUS = 3;
-    private static final int DOT_SIZE = 10;
     private static final int BIG_PADDING = 8;
     private static final int ICON_SIZE = 16;
     private static final int PADDING = 5;
@@ -61,7 +59,7 @@ final class UiButtonWidget extends AbstractButton {
     private static final int LABEL_COLOR = 0xFFFFFFFF;
 
     private enum Look {
-        CELL, TOOL, CARD, LABELED, ACTION, GLYPH, BIG, EMBLEM, STATUS
+        CELL, TOOL, CARD, LABELED, ACTION, GLYPH, BIG, EMBLEM
     }
 
     /** What happens when the button is pressed. */
@@ -127,14 +125,6 @@ final class UiButtonWidget extends AbstractButton {
                 shownLabel(button), button.icon(), null, button.badge(), false,
                 (mouse, shift) -> actions.press(button.id(), mouse, shift));
         widget.bigIcon = EMBLEM_ICON;
-        widget.describe(button, true);
-        return widget;
-    }
-
-    /** A filled dot in the button's tint that only tells a state; pressing it does nothing. */
-    static UiButtonWidget status(Font font, UiElement.Button button) {
-        UiButtonWidget widget = new UiButtonWidget(font, Look.STATUS, UiTheme.Tone.of(button.tint()), DOT_SIZE, DOT_SIZE,
-                button.label(), ItemStack.EMPTY, null, "", false, (mouse, shift) -> { });
         widget.describe(button, true);
         return widget;
     }
@@ -385,16 +375,6 @@ final class UiButtonWidget extends AbstractButton {
                 graphics.pose().scale(bigIcon / (float) ICON_SIZE, bigIcon / (float) ICON_SIZE);
                 ArtItems.draw(graphics, icon, 0, 0);
                 graphics.pose().popMatrix();
-            }
-            case STATUS -> {
-                int centerX = getX() + getWidth() / 2;
-                int centerY = getY() + getHeight() / 2;
-                int color = tone.border();
-                // A disc drawn row by row, since a rectangle is all the screen can fill
-                for (int dy = -DOT_RADIUS; dy <= DOT_RADIUS; dy++) {
-                    int half = (int) Math.round(Math.sqrt(DOT_RADIUS * DOT_RADIUS + 0.5 - dy * dy));
-                    graphics.fill(centerX - half, centerY + dy, centerX + half + 1, centerY + dy + 1, color);
-                }
             }
             case BIG -> {
                 surface(graphics, hovered);

@@ -38,8 +38,8 @@ final class UiLayouts {
     private static final int MIN_SCROLL_HEIGHT = 30;
     private static final int COMPACT_ICON = 32;
     /** The box of the player's model, as tall as a player is in the inventory screen is. */
-    private static final int MODEL_WIDTH = 40;
-    private static final int MODEL_HEIGHT = 62;
+    private static final int MODEL_WIDTH = 44;
+    private static final int MODEL_HEIGHT = 72;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
@@ -234,7 +234,6 @@ final class UiLayouts {
                 case FOOTER -> footerButton(button);
                 default -> switch (button.role()) {
                     case EMBLEM -> UiButtonWidget.emblem(font, button, actions);
-                    case STATUS -> UiButtonWidget.status(font, button);
                     default -> UiButtonWidget.action(font, button, actions);
                 };
             };

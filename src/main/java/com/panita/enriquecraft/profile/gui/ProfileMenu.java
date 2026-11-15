@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  * a refresh that finishes while the menu is open.
  * <p>
  * The client companion's screen has the player and their identity on top (name and nationality, rank, the three emblems they show,
- * and a dot above the model that says whether they are online), then two columns of facts, each as a label with its value under it:
+ * and the model), then two columns of facts, each as a label with its value under it:
  * the personal ones on the left and the ones about the game on the right. The edit view is the same screen with the fields that can
  * change turned into controls: the emblems and the prank level open their lists, the pronouns and the description are fields.
  * Players without the companion see the facts as dialogs ({@link ProfileDialogs}); a chest is only the last resort.
@@ -53,8 +53,6 @@ final class ProfileMenu extends UiMenu {
     private static final int AREA_WIDTH = 190;
     private static final int AREA_LINES = 5;
     private static final int VALUE_COLOR = 0x8E8E8E;
-    private static final int ONLINE_COLOR = 0x3FCF6B;
-    private static final int OFFLINE_COLOR = 0x7A7A7A;
 
     private final ProfileMenus menus;
     private final Optional<String> target;
@@ -158,9 +156,11 @@ final class ProfileMenu extends UiMenu {
                 .flatMap(all -> all).toList());
 
         List<UiElement> body = new ArrayList<>();
+        // A little room above, so a picture taller than a line is not cut by the top of a screen that scrolls
+        body.add(new UiElement.Spacer());
         body.add(new UiElement.Row(List.of(
                 // Each column is alone in a row of its own, which a row centers vertically; the columns of a row start at the top
-                new UiElement.Row(List.of(new UiElement.Column(List.of(status(builder, subject), portrait(subject))))),
+                new UiElement.Row(List.of(portrait(subject))),
                 new UiElement.Spacer(),
                 new UiElement.Row(List.of(new UiElement.Column(identity(builder, subject, emblems), UiElement.Align.START))))));
         body.add(new UiElement.Divider());
@@ -194,8 +194,6 @@ final class ProfileMenu extends UiMenu {
         lines.add(label(nameLine));
         if (editing) {
             lines.add(new UiElement.Row(List.of(label(white(ProfileMessages.Menu.FIELD_PRONOUNS)), pronounsInput(builder, subject))));
-        } else if (!subject.details().pronouns().isEmpty()) {
-            lines.add(label(Component.empty().append(white(ProfileMessages.Menu.FIELD_PRONOUNS)).append(Component.literal(" " + subject.details().pronouns()))));
         }
         List<UiElement> tiles = new ArrayList<>();
         for (int place = 0; place < emblems.slots().size(); place++) {
@@ -245,10 +243,9 @@ final class ProfileMenu extends UiMenu {
     }
 
     private UiElement.TextInput pronounsInput(UiBuilder builder, ProfileSubject subject) {
-        return builder.input(factory().text(ProfileMessages.Edit.PRONOUNS_HINT), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX, submit -> {
-            menus.edits().pronouns(submit.player(), submit.text());
-            refresh();
-        });
+        // No redraw: the form's other field is confirmed right after, and a redraw would change the ids it is sent to
+        return builder.input(factory().text(ProfileMessages.Edit.PRONOUNS_HINT), subject.details().pronouns(), ProfileDetails.PRONOUNS_MAX,
+                submit -> menus.edits().pronouns(submit.player(), submit.text()));
     }
 
     private Component value(String text) {
@@ -429,13 +426,6 @@ final class ProfileMenu extends UiMenu {
     private UiElement.Button close(UiBuilder builder) {
         return builder.button(ButtonRole.CLOSE, new ItemStack(Items.BARRIER), factory().text(Messages.Gui.CLOSE), List.of(),
                 click -> ui().close(click.player()));
-    }
-
-    /** The dot that says whether the player is online, above their model. */
-    private UiElement.Button status(UiBuilder builder, ProfileSubject subject) {
-        return builder.button(ButtonRole.STATUS, ItemStack.EMPTY,
-                factory().text(subject.online() ? ProfileMessages.Menu.STATUS_ONLINE : ProfileMessages.Menu.STATUS_OFFLINE), List.of(),
-                subject.online() ? ONLINE_COLOR : OFFLINE_COLOR, click -> { });
     }
 
     /** The last band: refresh and edit in the header for the viewer's own profile, and the one button that saves the fields while editing. */

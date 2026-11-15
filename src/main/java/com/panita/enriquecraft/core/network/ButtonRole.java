@@ -45,13 +45,6 @@ public enum ButtonRole {
     /** Starts editing what the screen shows; the client companion draws a small icon button in the header, next to close. */
     EDIT,
 
-    /**
-     * A small colored dot that tells a state, such as whether a player is online; its tint is the color. Pressing it does
-     * nothing; its label and tooltip show when hovering it. As the last element of a row with others, the client companion keeps it at
-     * the right end of the column that holds the row.
-     */
-    STATUS,
-
     /** One emblem or similar picture drawn large with no surface behind it; the surface only shows when hovered. */
     EMBLEM
 }

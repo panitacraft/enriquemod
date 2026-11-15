@@ -39,8 +39,6 @@ public final class ProfileMessages {
         public static final String FIELD_BASE = "<white>Ubicación de la base:";
         public static final String FIELD_PRANK = "<white>Nivel de Pranks:";
         public static final String BASE_VALUE = "<gray>{position} <gray>({dimension})";
-        public static final String STATUS_ONLINE = "<green>En línea";
-        public static final String STATUS_OFFLINE = "<gray>Desconectado";
         public static final String LINE_BASE = "<gray>Base: <white>{position} <gray>({dimension})";
         public static final String LINE_NO_BASE = "<gray>Base: <dark_gray>sin marcar";
         public static final String LINE_LOCATOR = "<gray>Barra de localización: {state}";

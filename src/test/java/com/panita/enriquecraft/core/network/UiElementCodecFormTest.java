@@ -25,8 +25,8 @@ final class UiElementCodecFormTest {
     }
 
     @Test
-    void theProtocolVersionIsFifteen() {
-        assertEquals(15, NetworkProtocol.VERSION);
+    void theProtocolVersionIsSixteen() {
+        assertEquals(16, NetworkProtocol.VERSION);
     }
 
     @Test
@@ -98,9 +98,8 @@ final class UiElementCodecFormTest {
         assertEquals(8, ButtonRole.SUCCESS.ordinal());
         assertEquals(9, ButtonRole.REFRESH.ordinal());
         assertEquals(10, ButtonRole.EDIT.ordinal());
-        assertEquals(11, ButtonRole.STATUS.ordinal());
-        assertEquals(12, ButtonRole.EMBLEM.ordinal());
-        for (ButtonRole role : List.of(ButtonRole.REFRESH, ButtonRole.EDIT, ButtonRole.STATUS, ButtonRole.EMBLEM)) {
+        assertEquals(11, ButtonRole.EMBLEM.ordinal());
+        for (ButtonRole role : List.of(ButtonRole.REFRESH, ButtonRole.EDIT, ButtonRole.EMBLEM)) {
             UiElement button = new UiElement.Button(1, role, ItemStack.EMPTY, Component.literal("x"), List.of());
 
             assertEquals(role, assertInstanceOf(UiElement.Button.class, roundTrip(button)).role());
