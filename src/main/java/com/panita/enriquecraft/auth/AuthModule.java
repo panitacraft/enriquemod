@@ -18,6 +18,7 @@ import com.panita.enriquecraft.auth.service.PinHasher;
 import com.panita.enriquecraft.auth.service.PlayerDataMigration;
 import com.panita.enriquecraft.auth.service.PremiumLookup;
 import com.panita.enriquecraft.auth.service.WhitelistAdmin;
+import com.panita.enriquecraft.core.dialog.DialogService;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -79,6 +80,8 @@ public final class AuthModule implements EnriquecraftModule {
         services.register(WhitelistAdmin.class, whitelistAdmin);
         services.register(PlayerDataMigration.class, migration);
         services.register(AdminView.class, new AdminView(services.get(Messenger.class)));
+        // A player on the PIN screen has no use for a dialog and may not answer one.
+        services.get(DialogService.class).refuseWhen(held::isHeld);
         AuthHooks.install(gate, refusals, held, whitelist);
     }
 }

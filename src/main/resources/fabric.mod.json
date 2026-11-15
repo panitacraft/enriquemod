@@ -18,6 +18,7 @@
     ]
   },
   "mixins": [
+    "enriquecraft.core.mixins.json",
     "enriquecraft.auth.mixins.json",
     "enriquecraft.chat.mixins.json",
     "enriquecraft.discord.mixins.json",
