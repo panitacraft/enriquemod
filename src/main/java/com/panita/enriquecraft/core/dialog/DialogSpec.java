@@ -8,19 +8,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import net.minecraft.world.item.ItemStack;
+
 /**
  * The description of a dialog: a title, some lines of text, inputs and buttons. It says nothing about how the
  * game draws it; {@link DialogFactory} turns it into a game dialog, and {@link DialogPayloadReader} uses it to
  * decide what a reply may contain.
  *
  * @param cancel the button that Escape presses, shown under the others; empty when Escape just closes the dialog
+ * @param width  how wide the text, the inputs and the buttons are drawn, in pixels; buttons in columns share it
  */
-public record DialogSpec(Component title, List<Component> body, List<DialogField> fields, List<DialogButton> buttons,
-                         Optional<DialogButton> cancel, int columns, boolean closeableWithEscape) {
+public record DialogSpec(Component title, List<DialogBlock> body, List<DialogField> fields, List<DialogButton> buttons,
+                         Optional<DialogButton> cancel, int columns, int width, boolean closeableWithEscape) {
 
     private static final int MAX_FIELDS = 16;
     private static final int MAX_BUTTONS = 16;
     private static final int MAX_COLUMNS = 4;
+    /** The width the game gives a dialog that does not ask for another. */
+    public static final int DEFAULT_WIDTH = 200;
+    private static final int MIN_WIDTH = 150;
+    private static final int MAX_WIDTH = 400;
 
     public DialogSpec {
         body = List.copyOf(body);
@@ -34,6 +41,9 @@ public record DialogSpec(Component title, List<Component> body, List<DialogField
         }
         if (columns < 1 || columns > MAX_COLUMNS) {
             throw new IllegalArgumentException("columns must be between 1 and " + MAX_COLUMNS);
+        }
+        if (width < MIN_WIDTH || width > MAX_WIDTH) {
+            throw new IllegalArgumentException("width must be between " + MIN_WIDTH + " and " + MAX_WIDTH);
         }
         Set<String> names = new HashSet<>();
         for (DialogField field : fields) {
@@ -67,19 +77,32 @@ public record DialogSpec(Component title, List<Component> body, List<DialogField
     public static final class Builder {
 
         private final Component title;
-        private final List<Component> body = new ArrayList<>();
+        private final List<DialogBlock> body = new ArrayList<>();
         private final List<DialogField> fields = new ArrayList<>();
         private final List<DialogButton> buttons = new ArrayList<>();
         private Optional<DialogButton> cancel = Optional.empty();
         private int columns = 2;
+        private int width = DEFAULT_WIDTH;
         private boolean closeableWithEscape = true;
 
         private Builder(Component title) {
             this.title = title;
         }
 
-        public Builder body(Component line) {
-            body.add(line);
+        public Builder body(Component text) {
+            body.add(new DialogBlock.Message(text));
+            return this;
+        }
+
+        /** An item drawn large with text beside it, in the body. */
+        public Builder item(ItemStack icon, Component text, int size) {
+            body.add(new DialogBlock.Item(icon, text, size));
+            return this;
+        }
+
+        /** How wide the dialog's content is (200 by default). */
+        public Builder width(int width) {
+            this.width = width;
             return this;
         }
 
@@ -112,7 +135,7 @@ public record DialogSpec(Component title, List<Component> body, List<DialogField
         }
 
         public DialogSpec build() {
-            return new DialogSpec(title, body, fields, buttons, cancel, columns, closeableWithEscape);
+            return new DialogSpec(title, body, fields, buttons, cancel, columns, width, closeableWithEscape);
         }
     }
 }

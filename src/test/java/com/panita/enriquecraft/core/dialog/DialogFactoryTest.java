@@ -134,6 +134,41 @@ class DialogFactoryTest {
                 List.of(new DialogField.Option("a", label)), "b"));
     }
 
+    @Test
+    void anItemBlockIsDrawnAtItsSizeWithItsTextBesideIt() {
+        DialogSpec spec = DialogSpec.builder(Component.literal("Profile")).width(260)
+                .item(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PLAYER_HEAD), Component.literal("Ana"), 48)
+                .button(new DialogButton("close", Component.literal("Close"))).build();
+
+        MultiActionDialog dialog = assertInstanceOf(MultiActionDialog.class, DialogFactory.build(spec, "t"));
+
+        net.minecraft.server.dialog.body.ItemBody body = assertInstanceOf(net.minecraft.server.dialog.body.ItemBody.class, dialog.common().body().getFirst());
+        assertEquals(48, body.width());
+        assertEquals(48, body.height());
+        assertFalse(body.showTooltip());
+        // The text beside the item takes what the item leaves
+        assertEquals(260 - 48 - 4, body.description().orElseThrow().width());
+        assertTrue(Dialog.DIRECT_CODEC.encodeStart(MinecraftTestSupport.ops(), dialog).result().isPresent());
+    }
+
+    @Test
+    void theButtonsOfARowShareTheWidthOfTheDialogAndTheCancelButtonTakesAllOfIt() {
+        DialogSpec spec = DialogSpec.builder(Component.literal("Menu")).width(260).columns(2)
+                .button(new DialogButton("a", Component.literal("A"))).button(new DialogButton("b", Component.literal("B")))
+                .cancel(new DialogButton("cancel", Component.literal("Back"))).build();
+
+        MultiActionDialog dialog = assertInstanceOf(MultiActionDialog.class, DialogFactory.build(spec, "t"));
+
+        assertEquals(128, dialog.actions().getFirst().button().width());
+        assertEquals(260, dialog.exitAction().orElseThrow().button().width());
+    }
+
+    @Test
+    void aDialogWiderOrNarrowerThanTheGameAllowsIsRefused() {
+        assertThrows(IllegalArgumentException.class, () -> DialogSpec.builder(Component.literal("x")).width(100)
+                .button(new DialogButton("a", Component.literal("A"))).build());
+    }
+
     private static String keyOf(ActionButton button) {
         return clickOf(button).getStringOr("button", "");
     }
