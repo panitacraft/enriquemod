@@ -50,7 +50,7 @@ public final class ProfileMenus {
         this.openMenus = openMenus;
         this.subjects = subjects;
         this.edits = new ProfileEdits(profiles, details, locatorBar, view);
-        this.dialogs = new ProfileDialogs(dialogService, tooltip, edits, details, refresher, view, ui.factory());
+        this.dialogs = new ProfileDialogs(dialogService, tooltip, edits, details, refresher, profiles, config, view, ui.factory());
     }
 
     /**

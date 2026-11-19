@@ -47,7 +47,6 @@ import java.util.stream.Stream;
  */
 final class ProfileMenu extends UiMenu {
 
-    private static final int BIO_LINE = 56;
     private static final int COLUMN_BIO_LINE = 36;
     private static final int NOTE_LINES = 9;
     private static final int AREA_WIDTH = 190;
@@ -97,12 +96,6 @@ final class ProfileMenu extends UiMenu {
     /** The title of a screen is only sent when it opens, so changing between viewing and editing opens the screen again. */
     private void showAs(ServerPlayer player, boolean editing) {
         new ProfileMenu(menus, target, editing).open(player);
-    }
-
-    /** Opens the list of emblems for the first place that is empty, or the first place when all are filled. */
-    void openEmblems(ServerPlayer player) {
-        int firstEmpty = menus.subjects().of(player).emblems().placedIds().indexOf("");
-        openEmblems(player, Math.max(0, firstEmpty));
     }
 
     private void openEmblems(ServerPlayer player, int slot) {
@@ -174,8 +167,13 @@ final class ProfileMenu extends UiMenu {
 
     /** The viewer sees themselves as the model of their own player; anyone else is shown by their head, with the skin the server knows. */
     private UiElement portrait(ProfileSubject subject) {
-        ItemStack head = subject.skin().map(PlayerHeads::item).orElseGet(() -> PlayerHeads.item(subject.id()));
+        ItemStack head = head(subject);
         return new UiElement.Detail(isSelf() ? PlayerModels.ofViewer(head) : PlayerModels.ofPlayer(head), Component.empty(), List.of());
+    }
+
+    /** The head of the player with the skin the server knows, or by their id when it knows none, which the client looks up. */
+    static ItemStack head(ProfileSubject subject) {
+        return subject.skin().map(PlayerHeads::item).orElseGet(() -> PlayerHeads.item(subject.id()));
     }
 
     /** Wrapped, since a screen only keeps the colors of the parts of a text, and draws the text itself in its own gray. */
@@ -207,7 +205,7 @@ final class ProfileMenu extends UiMenu {
     }
 
     /** The rank the player shows in chat, which needs the player to be online: their ranks live in LuckPerms, which only knows who is here. */
-    private Optional<Component> rank(ProfileSubject subject) {
+    Optional<Component> rank(ProfileSubject subject) {
         ServerPlayer player = viewer().level().getServer().getPlayerList().getPlayer(subject.id());
         if (player == null || !subject.online()) {
             return Optional.empty();
@@ -255,7 +253,7 @@ final class ProfileMenu extends UiMenu {
         return Component.literal(text);
     }
 
-    private Component none() {
+    Component none() {
         return factory().text(ProfileMessages.Menu.FIELD_NONE);
     }
 
@@ -352,63 +350,13 @@ final class ProfileMenu extends UiMenu {
                 });
     }
 
-    /** The facts about the player, one line each, which the dialogs show. */
-    List<Component> factLines(ProfileSubject subject) {
-        List<Component> lines = new ArrayList<>();
-        subject.profile().ifPresentOrElse(
-                profile -> {
-                    lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DISCORD).with("discord", profile.discordName())));
-                    profile.birthday().ifPresent(birthday -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_BIRTHDAY)
-                            .with("date", factory().text(BirthdayView.date(birthday))))));
-                },
-                () -> lines.add(factory().text(ProfileMessages.Menu.NO_DATA)));
-        if (!subject.details().pronouns().isEmpty()) {
-            lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_PRONOUNS).with("pronouns", subject.details().pronouns())));
-        }
-        subject.playSeconds().ifPresent(seconds -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_PLAY_TIME)
-                .with("time", Durations.format(Duration.ofSeconds(seconds))))));
-        subject.deaths().ifPresent(deaths -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_DEATHS).with("deaths", String.valueOf(deaths)))));
-        lines.add(baseLine(subject.details()));
-        if (isSelf()) {
-            lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_LOCATOR).with("state", factory().text(subject.details().shareLocation()
-                    ? ProfileMessages.Menu.LOCATOR_SHARED : ProfileMessages.Menu.LOCATOR_HIDDEN))));
-        }
-        if (ProfilePermissions.canSeeStaffInfo(viewer())) {
-            subject.profile().ifPresent(profile -> lines.add(factory().text(Message.plain(ProfileMessages.Menu.LINE_ACCOUNT)
-                    .with("id", profile.userId())
-                    .with("mode", factory().text(subject.mode() == AuthMode.PREMIUM ? ProfileMessages.Menu.MODE_PREMIUM : ProfileMessages.Menu.MODE_PIN)))));
-        }
-        return lines;
-    }
-
     /** The base as the block it is on, which a click copies, and its dimension; or that there is none. */
-    private Component baseValue(ProfileDetails details) {
+    Component baseValue(ProfileDetails details) {
         // The position keeps its click that copies it, and takes the gray of the other values
         return details.base().map(base -> factory().text(Message.plain(ProfileMessages.Menu.BASE_VALUE)
                         .with("position", CoordinateView.position(base.x(), base.y(), base.z()).copy().withColor(VALUE_COLOR))
                         .with("dimension", CoordinateView.dimension(base.dimension()))))
                 .orElseGet(this::none);
-    }
-
-    /** The base as a line, for the dialogs. */
-    Component baseLine(ProfileDetails details) {
-        return details.base().map(base -> factory().text(Message.plain(ProfileMessages.Menu.LINE_BASE)
-                        .with("position", CoordinateView.position(base.x(), base.y(), base.z()))
-                        .with("dimension", CoordinateView.dimension(base.dimension()))))
-                .orElseGet(() -> factory().text(ProfileMessages.Menu.LINE_NO_BASE));
-    }
-
-    /** The birthday, or that there is none, which the edit dialog shows although it can only be changed on the website. */
-    Component birthdayLine(ProfileSubject subject) {
-        Component date = subject.profile().flatMap(profile -> profile.birthday())
-                .map(birthday -> factory().text(BirthdayView.date(birthday)))
-                .orElseGet(() -> factory().text(ProfileMessages.Edit.BIRTHDAY_NONE));
-        return factory().text(Message.plain(ProfileMessages.Menu.LINE_BIRTHDAY).with("date", date));
-    }
-
-    /** The bio broken into lines short enough to read, which neither the screen nor a dialog does by itself. */
-    static List<Component> bioLines(String bio) {
-        return bioLines(bio, BIO_LINE);
     }
 
     private static List<Component> bioLines(String bio, int width) {

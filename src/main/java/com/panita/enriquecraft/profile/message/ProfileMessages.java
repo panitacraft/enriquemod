@@ -25,11 +25,6 @@ public final class ProfileMessages {
         public static final String TITLE = "Tu perfil";
         public static final String TITLE_OTHER = "Perfil de {name}";
         public static final String TITLE_EDIT = "Editando tu perfil";
-        public static final String LINE_DISCORD = "<gray>Discord: <white>{discord}";
-        public static final String LINE_PLAY_TIME = "<gray>Tiempo de juego: <white>{time}";
-        public static final String LINE_BIRTHDAY = "<gray>Cumpleaños: <white>{date}";
-        public static final String LINE_PRONOUNS = "<gray>Pronombres: <white>{pronouns}";
-        public static final String LINE_DEATHS = "<gray>Muertes: <white>{deaths}";
         public static final String FIELD_NONE = "<dark_gray>Sin definir";
         public static final String FIELD_PRONOUNS = "<white>Pronombres:";
         public static final String FIELD_BIRTHDAY = "<white>Cumpleaños:";
@@ -39,18 +34,9 @@ public final class ProfileMessages {
         public static final String FIELD_BASE = "<white>Ubicación de la base:";
         public static final String FIELD_PRANK = "<white>Nivel de Pranks:";
         public static final String BASE_VALUE = "<gray>{position} <gray>({dimension})";
-        public static final String LINE_BASE = "<gray>Base: <white>{position} <gray>({dimension})";
-        public static final String LINE_NO_BASE = "<gray>Base: <dark_gray>sin marcar";
-        public static final String LINE_LOCATOR = "<gray>Barra de localización: {state}";
-        public static final String LOCATOR_SHARED = "<green>visible";
-        public static final String LOCATOR_HIDDEN = "<red>oculto";
         public static final String LINE_ACCOUNT = "<gray>Cuenta Panita: <white>{id} <gray>({mode})";
         public static final String MODE_PREMIUM = "premium";
         public static final String MODE_PIN = "con PIN";
-        public static final String BIO_HEADER = "<light_purple>Descripción";
-        public static final String NO_BIO = "<gray>Sin descripción";
-        public static final String EMBLEMS_HEADER = "<light_purple>Emblemas";
-        public static final String NO_DATA = "<gray>Esta cuenta no está vinculada a Panitacraft, o no se pudieron leer sus datos.";
         public static final String NOT_FOUND = "No hay ningún jugador llamado <white>{name}</white> en este servidor.";
         public static final String EMBLEM_DETAIL = "ver el emblema";
         public static final String REFRESH = "<aqua>Actualizar";
@@ -65,19 +51,13 @@ public final class ProfileMessages {
     }
 
     public static final class Edit {
-        public static final String PRANK = "Nivel de Pranks";
-        public static final String BASE = "Base";
         public static final String BASE_MARK = "<green>Marcar ubicación";
         public static final String BASE_MARK_LORE = "<gray>Guarda el bloque donde estás y su dimensión.";
         public static final String BASE_CLEAR = "<red>Quitar ubicación";
-        public static final String BIRTHDAY_NOTE = "<gray>Tu cumpleaños se cambia en la web de Panitacraft.";
-        public static final String BIRTHDAY_NONE = "sin definir";
         public static final String LOCATOR = "Compartir mi ubicación";
-        public static final String LOCATOR_LORE = "<gray>Si lo apagas, los demás no te ven en su barra de localización.";
         public static final String BIO = "Descripción";
         public static final String SAVE = "Guardar cambios";
         public static final String PRANK_WAIT = "<dark_gray>Podrás cambiarlo en {time}";
-        public static final String PRONOUNS = "Pronombres";
         public static final String PRONOUNS_HINT = "Pronombres";
         public static final String PRONOUNS_SAVED = "Pronombres guardados.";
         public static final String PRONOUNS_TOO_LONG = "Tus pronombres tienen más de <white>{max}</white> caracteres. Acórtalos e inténtalo de nuevo.";
@@ -87,8 +67,6 @@ public final class ProfileMessages {
         public static final String PRANK_CHOOSE = "elegir este nivel";
         public static final String PRANK_CURRENT = "<green>Es tu nivel actual.";
         public static final String PRANKS_TITLE = "Tu nivel de Pranks";
-        public static final String EMBLEMS = "<yellow>Elegir emblemas";
-        public static final String EMBLEMS_LORE = "<gray>Elige cuáles se ven junto a tu nombre y en qué orden.";
         public static final String BASE_SAVED = "Base guardada en <white>{position}</white>.";
         public static final String BASE_CLEARED = "Base eliminada.";
         public static final String BIO_SAVED = "Descripción guardada.";
@@ -97,14 +75,39 @@ public final class ProfileMessages {
         public static final String LOCATOR_OFF = "Ahora los demás no te ven en su barra de localización.";
         public static final String NOT_LINKED = "Tu cuenta no está vinculada a Panitacraft, así que no se pueden guardar estos datos.";
         public static final String DIALOG_DONE = "Listo";
-        public static final String DIALOG_CANCEL = "Cancelar";
         public static final String DIALOG_CLOSE = "Cerrar";
         public static final String DIALOG_EDIT = "Editar perfil";
         public static final String DIALOG_REFRESH = "Actualizar";
-        public static final String DIALOG_EMBLEMS = "Emblemas";
 
         private Edit() {
         }
+    }
+
+    /** The texts of the dialogs players without the client companion see. */
+    public static final class Dialogs {
+        public static final String HEADING_ABOUT = "<gold><bold>Sobre mí";
+        public static final String HEADING_GAME = "<gold><bold>En el juego";
+        public static final String HUB_HINT = "<gray>Elige qué quieres cambiar. Pasa el cursor por un botón para ver lo que tiene ahora.";
+        public static final String HUB_TEXTS = "Pronombres y descripción";
+        public static final String HUB_BASE = "Ubicación";
+        public static final String HUB_EMBLEMS = "Emblemas";
+        public static final String HUB_PRANK = "Nivel de Pranks";
+        public static final String LOCATOR_SHARED = "<green>Te ven en la barra de localización";
+        public static final String LOCATOR_HIDDEN = "<red>No te ven en la barra de localización";
+        public static final String TEXTS_NOTE = "<gray>Lo que escribas lo verá cualquiera que abra tu perfil.";
+        public static final String TEXTS_PRONOUNS = "Pronombres (hasta {max} caracteres)";
+        public static final String TEXTS_BIO = "Descripción (hasta {max} caracteres)";
+        public static final String BASE_NOTE = "<gray>Marca el bloque donde estás como tu base. Dejar de compartir tu ubicación solo te oculta de la barra de localización: tu base se sigue viendo en tu perfil.";
+        public static final String PRANK_CURRENT = "Tu nivel actual: {level}";
+        public static final String PRANK_PICK = "<gray>Elige tu nuevo nivel.";
+        public static final String EMBLEMS_INTRO = "<gray>Elige el lugar que quieres cambiar.";
+        public static final String SLOT = "Lugar {n}: {emblem}";
+        public static final String SLOT_HINT = "<gray>Haz clic para cambiar este lugar.";
+        public static final String PICK_TITLE = "Emblema del lugar {n}";
+        public static final String PICK_INTRO = "<gray>Elige el emblema para el lugar {n}. Si ya está en otro lugar, los dos lugares se intercambian; si es el de este lugar, lo quitas.";
+        public static final String EMBLEMS_NONE = "<gray>Aún no tienes emblemas de esta edición.";
+        public static final String SAVE = "Guardar";
+        public static final String BACK = "Volver";
     }
 
     /** The day and month of a birthday, one template for each month, with the day as {day}. */
