@@ -197,8 +197,9 @@ final class ProfileDialogs {
                         saved.pronouns(), ProfileDetails.PRONOUNS_MAX, 0))
                 .field(new DialogField.Text(BIO, factory.text(Message.plain(ProfileMessages.Dialogs.TEXTS_BIO).with("max", ProfileDetails.BIO_MAX)),
                         saved.bio(), Math.max(ProfileDetails.BIO_MAX, saved.bio().length()), BIO_LINES))
-                .button(new DialogButton(SAVE, factory.text(ProfileMessages.Dialogs.SAVE)))
-                .cancel(new DialogButton(BACK, factory.text(ProfileMessages.Dialogs.BACK)))
+                // Pinned to the bottom, clear of the character count the game draws under a long field; Escape presses the second
+                .pinned(new DialogButton(SAVE, factory.text(ProfileMessages.Dialogs.SAVE)),
+                        new DialogButton(BACK, factory.text(ProfileMessages.Dialogs.BACK)))
                 .build();
         return dialogs.show(player, spec, (viewer, button, values) -> {
             if (SAVE.equals(button)) {
