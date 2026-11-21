@@ -20,7 +20,9 @@ import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.chat.service.ClientNames;
 import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
+import com.panita.enriquecraft.chat.service.NameChanges;
 import com.panita.enriquecraft.chat.service.NicknameService;
+import com.panita.enriquecraft.chat.service.TabNames;
 import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.ReplyTracker;
@@ -102,6 +104,8 @@ public final class ChatModule implements EnriquecraftModule {
         SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
-        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config));
+        TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
+        services.register(TabNames.class, tabNames);
+        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config), tabNames);
     }
 }
