@@ -52,7 +52,6 @@ final class ProfileDialogs {
 
     private static final String CLOSE = "close";
     private static final String EDIT = "edit";
-    private static final String REFRESH = "refresh";
     private static final String DONE = "done";
     private static final String BACK = "back";
     private static final String SAVE = "save";
@@ -73,22 +72,18 @@ final class ProfileDialogs {
     private final EmblemTooltip tooltip;
     private final ProfileEdits edits;
     private final ProfileDetailsService details;
-    private final ProfileRefresher refresher;
     private final ProfileService profiles;
     private final ProfileConfig config;
-    private final ProfileView view;
     private final MenuFactory factory;
 
-    ProfileDialogs(DialogService dialogs, EmblemTooltip tooltip, ProfileEdits edits, ProfileDetailsService details, ProfileRefresher refresher,
-                   ProfileService profiles, ProfileConfig config, ProfileView view, MenuFactory factory) {
+    ProfileDialogs(DialogService dialogs, EmblemTooltip tooltip, ProfileEdits edits, ProfileDetailsService details,
+                   ProfileService profiles, ProfileConfig config, MenuFactory factory) {
         this.dialogs = dialogs;
         this.tooltip = tooltip;
         this.edits = edits;
         this.details = details;
-        this.refresher = refresher;
         this.profiles = profiles;
         this.config = config;
-        this.view = view;
         this.factory = factory;
     }
 
@@ -177,7 +172,6 @@ final class ProfileDialogs {
         spec.button(new DialogButton(HUB_EMBLEMS, factory.text(ProfileMessages.Dialogs.HUB_EMBLEMS), Optional.of(join(emblems.slots().stream()
                 .map(tooltip::title).toList()))));
         spec.button(new DialogButton(HUB_PRANK, factory.text(ProfileMessages.Dialogs.HUB_PRANK), Optional.of(tooltip.title(emblems.prank()))));
-        spec.button(new DialogButton(REFRESH, factory.text(ProfileMessages.Edit.DIALOG_REFRESH)));
         spec.cancel(new DialogButton(DONE, factory.text(ProfileMessages.Edit.DIALOG_DONE)));
         return dialogs.show(player, spec.build(), (viewer, button, values) -> {
             switch (button) {
@@ -185,10 +179,6 @@ final class ProfileDialogs {
                 case HUB_BASE -> base(viewer, menu);
                 case HUB_EMBLEMS -> emblems(viewer, menu);
                 case HUB_PRANK -> prank(viewer, menu);
-                case REFRESH -> refresher.refreshSelf(viewer).thenAccept(result -> viewer.level().getServer().execute(() -> {
-                    view.selfRefresh(viewer, result);
-                    show(viewer, menu);
-                }));
                 default -> {
                     menu.edit(false);
                     show(viewer, menu);

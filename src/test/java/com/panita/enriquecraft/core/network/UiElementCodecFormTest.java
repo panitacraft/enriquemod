@@ -25,8 +25,8 @@ final class UiElementCodecFormTest {
     }
 
     @Test
-    void theProtocolVersionIsSixteen() {
-        assertEquals(16, NetworkProtocol.VERSION);
+    void theProtocolVersionIsSeventeen() {
+        assertEquals(17, NetworkProtocol.VERSION);
     }
 
     @Test
@@ -96,10 +96,9 @@ final class UiElementCodecFormTest {
     void theNewRolesComeAfterEveryOldOneAndSurviveARoundTrip() {
         // Roles travel by position, so the old values must keep theirs.
         assertEquals(8, ButtonRole.SUCCESS.ordinal());
-        assertEquals(9, ButtonRole.REFRESH.ordinal());
-        assertEquals(10, ButtonRole.EDIT.ordinal());
-        assertEquals(11, ButtonRole.EMBLEM.ordinal());
-        for (ButtonRole role : List.of(ButtonRole.REFRESH, ButtonRole.EDIT, ButtonRole.EMBLEM)) {
+        assertEquals(9, ButtonRole.EDIT.ordinal());
+        assertEquals(10, ButtonRole.EMBLEM.ordinal());
+        for (ButtonRole role : List.of(ButtonRole.EDIT, ButtonRole.EMBLEM)) {
             UiElement button = new UiElement.Button(1, role, ItemStack.EMPTY, Component.literal("x"), List.of());
 
             assertEquals(role, assertInstanceOf(UiElement.Button.class, roundTrip(button)).role());

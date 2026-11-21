@@ -39,8 +39,6 @@ public final class ProfileMessages {
         public static final String MODE_PIN = "con PIN";
         public static final String NOT_FOUND = "No hay ningún jugador llamado <white>{name}</white> en este servidor.";
         public static final String EMBLEM_DETAIL = "ver el emblema";
-        public static final String REFRESH = "<aqua>Actualizar";
-        public static final String REFRESH_LORE = "<gray>Vuelve a leer los datos desde Panitacraft.";
         public static final String EDIT = "<yellow>Editar perfil";
         public static final String EDIT_LORE = "<gray>Cambia tu descripción, tus pronombres, tu base y lo que se muestra de ti.";
         public static final String VIEW = "<yellow>Volver al perfil";
@@ -77,7 +75,6 @@ public final class ProfileMessages {
         public static final String DIALOG_DONE = "Listo";
         public static final String DIALOG_CLOSE = "Cerrar";
         public static final String DIALOG_EDIT = "Editar perfil";
-        public static final String DIALOG_REFRESH = "Actualizar";
 
         private Edit() {
         }

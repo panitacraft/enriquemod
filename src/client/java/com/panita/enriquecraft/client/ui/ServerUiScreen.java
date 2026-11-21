@@ -233,10 +233,10 @@ final class ServerUiScreen extends Screen implements UiActions {
         // A screen that asks for a PIN cannot be dismissed: there is nothing to go back to.
         UiButtonWidget close = locked() ? null
                 : UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
-        // Refresh and edit are small icons beside close, in the order the server gave them.
+        // Edit is a small icon beside close.
         LinearLayout headerEnd = LinearLayout.horizontal().spacing(4);
         for (UiElement.Button action : parts.headerActions()) {
-            headerEnd.addChild(UiButtonWidget.glyph(font, action.role() == ButtonRole.REFRESH ? "⟳" : "✎", action.label(), false, true,
+            headerEnd.addChild(UiButtonWidget.glyph(font, "✎", action.label(), false, true,
                     (mouse, shift) -> press(action.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
         }
         if (close != null) {

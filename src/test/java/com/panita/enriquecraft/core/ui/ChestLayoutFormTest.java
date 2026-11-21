@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ChestLayoutFormTest {
 
-    /** A row of a text area, a toggle, a refresh button and an edit button, then a large grid of one button. */
+    /** A row of a text area, a toggle and an edit button, then a large grid of one button. */
     private static final class FormMenu extends UiMenu {
         private final List<String> areaValues = new ArrayList<>();
         private final List<Boolean> toggled = new ArrayList<>();
@@ -48,8 +48,6 @@ class ChestLayoutFormTest {
 
         @Override
         protected UiElement describe(UiBuilder builder) {
-            UiElement.Button refresh = builder.button(ButtonRole.REFRESH, new ItemStack(Items.CLOCK), Component.literal("Actualizar"),
-                    List.of(), click -> pressed.add("refresh"));
             UiElement.Button edit = builder.button(ButtonRole.EDIT, new ItemStack(Items.WRITABLE_BOOK), Component.literal("Editar"),
                     List.of(), click -> pressed.add("edit"));
             UiElement.Button tile = builder.button(new ItemStack(Items.DIAMOND), Component.literal("Emblema"), List.of(),
@@ -58,7 +56,7 @@ class ChestLayoutFormTest {
                     new UiElement.Row(List.of(
                             builder.textArea(Component.literal("Biografía"), "uno\ndos", 100, 4, 200, submit -> areaValues.add(submit.text())),
                             builder.toggle(Component.literal("Mostrar"), checked, toggle -> toggled.add(toggle.checked())),
-                            refresh, edit)),
+                            edit)),
                     new UiElement.Grid(1, 1, List.of(tile)).withLargeTiles()));
         }
     }
@@ -159,16 +157,14 @@ class ChestLayoutFormTest {
     }
 
     @Test
-    void theHeaderRolesAreOrdinaryButtonsInAChest() {
+    void theHeaderRoleIsAnOrdinaryButtonInAChest() {
         FormMenu menu = new FormMenu(ui, false);
         ChestLayout.Plan plan = plan(menu, new RecordingPrompter());
 
-        assertEquals(Items.CLOCK, plan.items().get(2).stack().getItem());
-        assertEquals(Items.WRITABLE_BOOK, plan.items().get(3).stack().getItem());
+        assertEquals(Items.WRITABLE_BOOK, plan.items().get(2).stack().getItem());
         click(plan.items().get(2), 2, 0);
-        click(plan.items().get(3), 3, 0);
 
-        assertEquals(List.of("refresh", "edit"), menu.pressed);
+        assertEquals(List.of("edit"), menu.pressed);
     }
 
     @Test

@@ -39,9 +39,6 @@ public enum ButtonRole {
     /** An action that gives something back or completes something; green in the client companion. */
     SUCCESS,
 
-    /** Reloads what the screen shows; the client companion draws a small icon button in the header, next to close. */
-    REFRESH,
-
     /** Starts editing what the screen shows; the client companion draws a small icon button in the header, next to close. */
     EDIT,
 

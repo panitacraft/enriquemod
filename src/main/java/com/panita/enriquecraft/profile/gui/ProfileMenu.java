@@ -392,12 +392,6 @@ final class ProfileMenu extends UiMenu {
             // One button saves the whole form: the client sends every field of the screen
             controls.add(builder.submitButton(factory().text(ProfileMessages.Edit.SAVE), bioArea));
         } else if (isSelf()) {
-            controls.add(builder.button(ButtonRole.REFRESH, new ItemStack(Items.CLOCK), factory().text(ProfileMessages.Menu.REFRESH),
-                    List.of(factory().text(ProfileMessages.Menu.REFRESH_LORE)), click -> {
-                        if (click.isLeft()) {
-                            menus.refresher().refreshSelf(click.player()).thenAccept(result -> menus.view().selfRefresh(click.player(), result));
-                        }
-                    }));
             controls.add(builder.button(ButtonRole.EDIT, new ItemStack(Items.WRITABLE_BOOK), factory().text(ProfileMessages.Menu.EDIT),
                     List.of(factory().text(ProfileMessages.Menu.EDIT_LORE)), click -> {
                         if (click.isLeft()) {
