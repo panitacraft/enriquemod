@@ -104,7 +104,7 @@ final class ProfileDialogs {
         DialogSpec.Builder spec = DialogSpec.builder(menu.title()).width(WIDTH).columns(2);
         spec.body(identity(menu, subject));
         List<Component> about = new ArrayList<>(List.of(factory.text(ProfileMessages.Dialogs.HEADING_ABOUT),
-                line(ProfileMessages.Menu.FIELD_BIRTHDAY, subject.profile().flatMap(profile -> profile.birthday())
+                block(ProfileMessages.Menu.FIELD_BIRTHDAY, subject.profile().flatMap(profile -> profile.birthday())
                         .map(birthday -> factory.text(BirthdayView.date(birthday))).orElseGet(menu::none))));
         if (!subject.details().bio().isEmpty()) {
             // A description has several lines, so it starts under its title
@@ -137,21 +137,21 @@ final class ProfileDialogs {
         });
     }
 
-    /** Who the player is: their head, rank, name and nationality, pronouns, the emblems they show and their prank level. */
+    /** Who the player is: their head, rank, name and the emblems they show, then their pronouns and their prank level. */
     private Component identity(ProfileMenu menu, ProfileSubject subject) {
         PlayerEmblems emblems = subject.emblems();
         MutableComponent name = Component.empty().append(PlayerHeads.glyph(subject.id(), subject.skin())).append(Component.literal(" "));
         menu.rank(subject).ifPresent(name::append);
         name.append(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
+        // The emblems the player shows go right of the name, as they do in chat
+        for (EmblemView emblem : emblems.slots()) {
+            name.append(Component.literal(" ")).append(tooltip.glyph(emblem));
+        }
         MutableComponent text = Component.empty().append(name);
         if (!subject.details().pronouns().isEmpty()) {
             text.append(Component.literal("\n" + subject.details().pronouns()).withStyle(ChatFormatting.GRAY));
         }
-        MutableComponent shown = Component.empty();
-        for (EmblemView emblem : emblems.slots()) {
-            shown.append(tooltip.glyph(emblem)).append(Component.literal(" "));
-        }
-        return text.append(Component.literal("\n")).append(shown).append(Component.literal("\n")).append(tooltip.title(emblems.prank()));
+        return text.append(Component.literal("\n")).append(tooltip.title(emblems.prank()));
     }
 
     // ---- editing: the list of what can change
