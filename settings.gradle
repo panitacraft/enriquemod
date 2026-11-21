@@ -10,5 +10,5 @@ pluginManagement {
 
 rootProject.name = 'enriquecraft'
 
-// common: the protocol and the helpers both sides share. server: the mod for hosting. client: the optional companion.
-include 'common', 'server', 'client'
+// lib: the protocol and the helpers both sides share. server: the mod for hosting. client: the optional companion.
+include 'lib', 'server', 'client'

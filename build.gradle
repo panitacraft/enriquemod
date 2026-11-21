@@ -2,7 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 }
 
-// Three jars: `common` (the shared protocol) is bundled inside both `server` (the mod for hosting, installed on the
+// Three jars: `lib` (the shared protocol) is bundled inside both `server` (the mod for hosting, installed on the
 // server only) and `client` (the optional companion, installed on the player's client only).
 subprojects {
     apply plugin: 'net.fabricmc.fabric-loom'
@@ -63,5 +63,16 @@ subprojects {
         from(rootProject.file("LICENSE.txt")) {
             rename { "${it}_${rootProject.archives_base_name}" }
         }
+    }
+}
+
+// Puts the two jars to install side by side in ./dist after every build.
+['server', 'client'].each { name ->
+    project(":${name}") {
+        def copyToDist = tasks.register('copyToDist', Copy) {
+            from tasks.named('jar')
+            into rootProject.layout.projectDirectory.dir('dist')
+        }
+        tasks.named('build') { finalizedBy copyToDist }
     }
 }

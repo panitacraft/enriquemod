@@ -14,7 +14,7 @@ loom {
 }
 
 dependencies {
-    include(implementation(project(":common")))
+    include(implementation(project(":lib")))
 
     // Bundled inside the mod jar so servers do not need to install them separately.
     include(implementation("eu.pb4:placeholder-api:${rootProject.placeholder_api_version}"))

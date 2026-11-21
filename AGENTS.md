@@ -26,19 +26,19 @@ The server mod is installed on the server and is the only required part. Players
 - The server never trusts data received from a client. Validate everything.
 - Do not add anything a vanilla client would reject on join: custom blocks, items, entities, block entities, or custom registry entries. Use vanilla content only, unless the owner approves otherwise.
 - Do not require a resource pack or any client-side asset for the vanilla experience.
-- Code in `server` and `common` must never reference client classes (`net.minecraft.client.*`, Fabric API client modules). Client classes do not exist on a dedicated server and crash it.
+- Code in `server` and `lib` must never reference client classes (`net.minecraft.client.*`, Fabric API client modules). Client classes do not exist on a dedicated server and crash it.
 
 ### Client companion rules
 - Client-only code lives in the `client` project and only adds enhancements. It never changes server rules or gameplay.
 - Every client-enhanced feature must have a defined vanilla fallback, implemented on the server, and both must be delivered together.
 - The server sends custom payloads only to players whose client has announced support for that channel (`ServerPlayNetworking.canSend` or the configuration-phase equivalent). Never send custom payloads to a client that has not announced support.
-- Payload types, codecs, and the protocol version are shared in the `common` project (`network` packages), and `NetworkProtocol.registerPayloads()` registers them; the server mod and the client companion each call it once at startup. Client and server exchange the protocol version on join. On a mismatch, the server treats that player as vanilla.
+- Payload types, codecs, and the protocol version are shared in the `lib` project (`network` packages), and `NetworkProtocol.registerPayloads()` registers them; the server mod and the client companion each call it once at startup. Client and server exchange the protocol version on join. On a mismatch, the server treats that player as vanilla.
 - Client mixins are declared in the client mixin config and target client classes only.
 - Whether a player's client offers an enhancement is answered by one service, `ClientCapabilities.supports(player, ClientFeature)`. Features call it and fall back to vanilla on false; they never inspect protocol versions or channels themselves. A new enhancement adds one `ClientFeature` value, and the client adds it to its announced set only once it implements it.
 - The client sends `HelloC2S` on join, only after checking `ClientPlayNetworking.canSend`, because sending a payload the server did not register throws. What it announces is untrusted: the server accepts it only for the exact protocol version and only for features it knows.
 
 ### Environment
-- The mod ships as three jars from one repository. `server` (mod id `enriquecraft`, `"environment": "server"`) is what a host installs. `client` (mod id `enriquecraft-client`, `"environment": "client"`, the `client` entrypoint) is the optional companion a player installs. `common` (mod id `enriquecraft-common`, `"environment": "*"`) holds only the protocol and helpers both sides share, and is bundled inside the other two jars (jar-in-jar), never installed alone. The server jar does not run in a singleplayer world; test it with `./gradlew :server:runServer` and the client with `./gradlew :client:runClient`. A class goes into `common` only when the client really needs it; everything else stays in `server`.
+- The mod ships as three jars from one repository. `server` (mod id `enriquecraft`, `"environment": "server"`) is what a host installs. `client` (mod id `enriquecraft-client`, `"environment": "client"`, the `client` entrypoint) is the optional companion a player installs. `lib` (mod id `enriquecraft-lib`, `"environment": "*"`) holds only the protocol and helpers both sides share, and is bundled inside the other two jars (jar-in-jar), never installed alone. The server jar does not run in a singleplayer world; test it with `./gradlew :server:runServer` and the client with `./gradlew :client:runClient`. A class goes into `lib` only when the client really needs it; everything else stays in `server`.
 - Client-only text and key names live in `client/src/main/resources/assets/enriquecraft/lang/en_us.json`, written in Spanish like all player-visible text. The client's keys (the staff menu on U and the profile menu on P, rebindable in the controls) only run a server command, so the server keeps deciding who may do what; they do nothing on a server without the mod.
 
 ## 3. Language and Communication
@@ -224,8 +224,8 @@ Every module follows the same layout:
 The client companion lives in the `client` project, in the package `com.panita.enriquecraft.client`, with its own entrypoint (`EnriquecraftClient`), payload handlers, rendering, HUD, screens (`client.ui` shows the screens the server describes), and client mixins (`client.mixin`). It only adds enhancements.
 
 Rules:
-- The build has three Gradle projects. `server/src/main` holds the server mod and `server/src/test` its tests. `client/src/main` holds the client companion and its resources. `common/src/main` holds the shared protocol and helpers (payloads and their codecs, `ClientFeature`, `UiElement`, `ArtLinks`, the image decoding and fetching helpers), keeping the package names they had, so a class moves between projects without changing its imports.
-- `common` depends on neither `server` nor `client`; both depend on `common`, and `server` and `client` never depend on each other. The scanner never scans client packages.
+- The build has three Gradle projects. `server/src/main` holds the server mod and `server/src/test` its tests. `client/src/main` holds the client companion and its resources. `lib/src/main` holds the shared protocol and helpers (payloads and their codecs, `ClientFeature`, `UiElement`, `ArtLinks`, the image decoding and fetching helpers), keeping the package names they had, so a class moves between projects without changing its imports.
+- `lib` depends on neither `server` nor `client`; both depend on `lib`, and `server` and `client` never depend on each other. The scanner never scans client packages.
 - The entrypoint only registers modules. Commands and listeners are never registered by hand.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
 - The client mixin config is `enriquecraft.client.mixins.json` (in `client/src/main/resources`, declared in the `fabric.mod.json` of the client jar); a client enhancement that needs a mixin adds it there, in `client.mixin`, kept thin and delegating to `client.chat` and the like.

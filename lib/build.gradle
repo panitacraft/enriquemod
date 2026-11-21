@@ -1,7 +1,7 @@
 // Protocol and helpers shared by the server mod and the client companion. Never installed alone: both jars bundle it.
 loom {
     mods {
-        "enriquecraft-common" {
+        "enriquecraft-lib" {
             sourceSet sourceSets.main
         }
     }

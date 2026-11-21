@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "enriquecraft-common",
+  "id": "enriquecraft-lib",
   "version": "${version}",
-  "name": "Enriquecraft Common",
+  "name": "Enriquecraft Lib",
   "description": "Protocol shared by the Enriquecraft server mod and its client companion",
   "authors": [],
   "contact": {},
