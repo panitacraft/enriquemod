@@ -12,4 +12,7 @@ public interface FrameSink {
 
     /** Whether the bot bridges this chat channel, as far as the server knows. */
     boolean bridges(String channel);
+
+    /** Whether the bot said, in its welcome, that it offers an optional feature such as {@code afk}. */
+    boolean offers(String feature);
 }

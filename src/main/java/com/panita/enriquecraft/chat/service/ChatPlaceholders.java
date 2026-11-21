@@ -5,6 +5,7 @@ import com.panita.enriquecraft.chat.channel.ChannelSelection;
 import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.message.RankTooltip;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.message.TabText;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.api.ServerPlaceholderContext;
@@ -26,8 +27,11 @@ public final class ChatPlaceholders {
     private final InlineArts arts;
     private final ChatConfig config;
     private final RankTooltip tooltips;
+    private final AfkService afk;
 
-    public ChatPlaceholders(NicknameService nicknames, ChannelSelection selection, InlineArts arts, ChatConfig config, RankTooltip tooltips) {
+    public ChatPlaceholders(NicknameService nicknames, ChannelSelection selection, InlineArts arts, ChatConfig config, RankTooltip tooltips,
+                            AfkService afk) {
+        this.afk = afk;
         this.nicknames = nicknames;
         this.selection = selection;
         this.arts = arts;
@@ -46,9 +50,22 @@ public final class ChatPlaceholders {
         Placeholders.registerServer(id("rank"), (context, argument) -> context.hasServerPlayer()
                 ? PlaceholderResult.value(rank(context))
                 : PlaceholderResult.invalid("No player"));
+        // The plain variants are for tab list mods, which read only literal text (see TabText)
+        Placeholders.registerServer(id("rank_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(rank(context)))
+                : PlaceholderResult.invalid("No player"));
+        Placeholders.registerServer(id("name_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(name(context.serverPlayer())))
+                : PlaceholderResult.invalid("No player"));
         Placeholders.registerServer(id("channel"), (context, argument) -> context.hasServerPlayer()
                 ? PlaceholderResult.value(selection.current(context.serverPlayer()).id())
                 : PlaceholderResult.invalid("No player"));
+    }
+
+    /** The nickname of the player, or their name, in the AFK color when they are AFK and have no rank to carry it. */
+    private Component name(ServerPlayer player) {
+        Component shown = nicknames.nicknameOf(player.getUUID()).orElseGet(() -> Component.literal(player.getGameProfile().name()));
+        return afk.shadeName(player, shown, this::hasRank);
     }
 
     /**
@@ -62,12 +79,21 @@ public final class ChatPlaceholders {
         if (icon.isEmpty() && prefix.getString().isBlank()) {
             return Component.empty();
         }
-        Component drawn = icon.isEmpty() ? prefix : arts.wrap(prefix, icon);
+        // An AFK player's rank is the prefix in the AFK color for everyone: an image cannot be recolored, so it gives way
+        boolean shaded = !prefix.getString().isBlank() && afk.isAfk(context.serverPlayer());
+        Component drawn = shaded ? afk.shade(prefix) : icon.isEmpty() ? prefix : arts.wrap(prefix, icon);
         // Pointing at the rank shows its title and description, when the group has them. LuckPerms gives them already read, with the colors
         // and styles their text asks for, so they are kept as they are and not turned back into plain text.
         Optional<Style> tooltip = tooltips.styleOf(luckperms(context, "meta", config.rankTitleMeta.get()).orElse(Component.empty()),
                 luckperms(context, "meta", config.rankDescriptionMeta.get()).orElse(Component.empty()));
         return Component.empty().append(tooltip.<Component>map(style -> drawn.copy().withStyle(style)).orElse(drawn)).append(Component.literal(" "));
+    }
+
+    /** Whether the player has a rank to show: a prefix or an image. */
+    public boolean hasRank(ServerPlayer player) {
+        ServerPlaceholderContext context = ServerPlaceholderContext.of(player);
+        return !luckperms(context, "prefix", null).orElse(Component.empty()).getString().isBlank()
+                || !meta(context, config.rankIconMeta.get()).isEmpty();
     }
 
     /** The value of a LuckPerms meta key for the player of the context, as written; empty when the group has none. */

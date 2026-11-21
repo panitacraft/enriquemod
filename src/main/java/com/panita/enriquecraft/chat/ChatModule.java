@@ -15,11 +15,14 @@ import com.panita.enriquecraft.chat.message.SenderNameView;
 import com.panita.enriquecraft.chat.message.SudoView;
 import com.panita.enriquecraft.chat.message.SystemMessageView;
 import com.panita.enriquecraft.chat.message.WelcomeView;
+import com.panita.enriquecraft.chat.service.AfkService;
 import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.chat.service.ClientNames;
 import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
+import com.panita.enriquecraft.chat.service.NameChanges;
 import com.panita.enriquecraft.chat.service.NicknameService;
+import com.panita.enriquecraft.chat.service.TabNames;
 import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.ReplyTracker;
@@ -69,7 +72,10 @@ public final class ChatModule implements EnriquecraftModule {
         ChannelSelection selection = new ChannelSelection(channels);
         NicknameService nicknames = new NicknameService(services.get(WorldData.class), parser, config, Instant::now);
         Messenger messenger = services.get(Messenger.class);
-        SenderNameView names = new SenderNameView(messenger, nicknames);
+        AfkService afk = new AfkService(System::currentTimeMillis, config.afkEnabled::get, config.afkTimeoutSeconds::get, config.afkColor::get);
+        ChatPlaceholders placeholders = new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config,
+                new RankTooltip(config.tooltipWidth::get), afk);
+        SenderNameView names = new SenderNameView(messenger, nicknames, afk, placeholders::hasRank);
         var knownSkins = services.get(WorldData.class).register(SKINS_FILE, KnownSkins.CODEC, KnownSkins.EMPTY);
         SkinMemory skins = new SkinMemory(knownSkins::get, knownSkins::set);
         ChatHeads heads = new ChatHeads(config.heads::get, skins, new HeadTooltip(formatter));
@@ -93,11 +99,13 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(NicknameView.class, new NicknameView(messenger, config));
         services.register(ClientNames.class, new ClientNames());
         services.register(KnownPlayers.class, new KnownPlayers());
-        new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config,
-                new RankTooltip(config.tooltipWidth::get)).register();
+        services.register(AfkService.class, afk);
+        placeholders.register();
         SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
-        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config));
+        TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
+        services.register(TabNames.class, tabNames);
+        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config), tabNames);
     }
 }

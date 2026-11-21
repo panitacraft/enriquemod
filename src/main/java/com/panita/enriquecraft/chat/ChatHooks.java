@@ -6,6 +6,7 @@ import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.NicknameService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.SystemMessages;
+import com.panita.enriquecraft.chat.service.TabNames;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -30,9 +31,11 @@ public final class ChatHooks {
     private final PrivateMessages privateMessages;
     private final ChatService chat;
     private final MotdService motd;
+    private final TabNames tabNames;
 
     private ChatHooks(NicknameService nicknames, SystemMessages systemMessages, PrivateMessages privateMessages, ChatService chat,
-                      MotdService motd) {
+                      MotdService motd, TabNames tabNames) {
+        this.tabNames = tabNames;
         this.nicknames = nicknames;
         this.systemMessages = systemMessages;
         this.privateMessages = privateMessages;
@@ -41,8 +44,13 @@ public final class ChatHooks {
     }
 
     static void install(NicknameService nicknames, SystemMessages systemMessages, PrivateMessages privateMessages, ChatService chat,
-                        MotdService motd) {
-        instance = new ChatHooks(nicknames, systemMessages, privateMessages, chat, motd);
+                        MotdService motd, TabNames tabNames) {
+        instance = new ChatHooks(nicknames, systemMessages, privateMessages, chat, motd, tabNames);
+    }
+
+    /** The name of a player in the tab list, or null when the game's own entry stays. */
+    public @Nullable Component tabNameOf(ServerPlayer player) {
+        return tabNames.nameOf(player);
     }
 
     public static @Nullable ChatHooks get() {

@@ -2,6 +2,7 @@ package com.panita.enriquecraft.profile.service;
 
 import com.panita.enriquecraft.Enriquecraft;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.message.TabText;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
@@ -38,6 +39,13 @@ public final class EmblemPlaceholders {
                 : PlaceholderResult.invalid("No player"));
         Placeholders.registerServer(id("emblems_lore"), (context, argument) -> context.hasServerPlayer()
                 ? PlaceholderResult.value(lore(profiles.emblemsOf(context.serverPlayer())))
+                : PlaceholderResult.invalid("No player"));
+        // The plain variants are for tab list mods, which read only literal text (see TabText)
+        Placeholders.registerServer(id("emblems_system_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(system(profiles.emblemsOf(context.serverPlayer()).prank())))
+                : PlaceholderResult.invalid("No player"));
+        Placeholders.registerServer(id("emblems_lore_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(lore(profiles.emblemsOf(context.serverPlayer()))))
                 : PlaceholderResult.invalid("No player"));
     }
 

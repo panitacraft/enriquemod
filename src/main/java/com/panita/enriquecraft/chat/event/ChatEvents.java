@@ -32,6 +32,20 @@ public final class ChatEvents {
                 }
             });
 
+    /** A player started or stopped being AFK. Never called for a player on the PIN screen or one who never shows as AFK. */
+    public static final Event<AfkChanged> AFK = EventFactory.createArrayBacked(AfkChanged.class,
+            listeners -> (player, afk) -> {
+                for (AfkChanged listener : listeners) {
+                    listener.onAfkChanged(player, afk);
+                }
+            });
+
+    @FunctionalInterface
+    public interface AfkChanged {
+
+        void onAfkChanged(ServerPlayer player, boolean afk);
+    }
+
     @FunctionalInterface
     public interface MessageSent {
 

@@ -22,7 +22,14 @@ public final class ChatPermissions {
     /** Changing the nickname of another player. */
     public static final String NICK_OTHERS = ROOT + ".others";
 
+    /** Never showing as AFK. Nobody has it unless the permission manager grants it. */
+    public static final String AFK_BYPASS = Enriquecraft.MOD_ID + ".chat.afk.bypass";
+
     private ChatPermissions() {
+    }
+
+    public static boolean canBypassAfk(ServerPlayer player) {
+        return Permissions.check(player, AFK_BYPASS, false);
     }
 
     public static Set<ChatCapability> capabilitiesOf(ServerPlayer player) {

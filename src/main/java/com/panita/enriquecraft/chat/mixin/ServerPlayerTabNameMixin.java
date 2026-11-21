@@ -9,17 +9,24 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Shows the nickname of a player in the tab list. Players without one keep the game's own entry.
+ * Shows the name the module builds for a player in the tab list or, when it does not build one, their nickname. Players with neither keep
+ * the game's own entry.
  */
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerTabNameMixin {
 
     @Inject(method = "getTabListDisplayName", at = @At("HEAD"), cancellable = true)
-    private void enriquecraft$showTheNickname(CallbackInfoReturnable<Component> callback) {
+    private void enriquecraft$showTheName(CallbackInfoReturnable<Component> callback) {
         ChatHooks hooks = ChatHooks.get();
-        Component nickname = hooks == null ? null : hooks.nicknameOf((ServerPlayer) (Object) this);
-        if (nickname != null) {
-            callback.setReturnValue(nickname);
+        if (hooks == null) {
+            return;
+        }
+        ServerPlayer player = (ServerPlayer) (Object) this;
+        // The module's own line when it builds the tab list, else the nickname alone
+        Component name = hooks.tabNameOf(player);
+        Component shown = name != null ? name : hooks.nicknameOf(player);
+        if (shown != null) {
+            callback.setReturnValue(shown);
         }
     }
 }

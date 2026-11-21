@@ -5,6 +5,7 @@ import com.panita.enriquecraft.chat.event.ChatEvents;
 import com.panita.enriquecraft.chat.event.SystemEvent;
 import com.panita.enriquecraft.core.event.CoreEvents;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
+import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.service.GameReporter;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
 import net.minecraft.network.chat.Component;
@@ -20,10 +21,12 @@ public final class GameEventsListener implements ModListener {
 
     private final GameReporter reporter;
     private final PlayerInfos infos;
+    private final DiscordConfig config;
 
-    public GameEventsListener(GameReporter reporter, PlayerInfos infos) {
+    public GameEventsListener(GameReporter reporter, PlayerInfos infos, DiscordConfig config) {
         this.reporter = reporter;
         this.infos = infos;
+        this.config = config;
     }
 
     @Override
@@ -31,6 +34,11 @@ public final class GameEventsListener implements ModListener {
         ChatEvents.MESSAGE.register(message ->
                 reporter.chat(message.channel().id(), infos.of(message.sender()), message.text(), message.emote()));
         ChatEvents.SYSTEM.register(this::system);
+        ChatEvents.AFK.register((player, afk) -> {
+            if (config.reportAfk.get()) {
+                reporter.afk(infos.of(player), afk);
+            }
+        });
         AuthEvents.PLAYER_READY.register(player -> reporter.ready(infos.of(player)));
         CoreEvents.BROADCAST.register(reporter::broadcast);
     }
