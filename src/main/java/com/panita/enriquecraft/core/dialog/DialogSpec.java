@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import net.minecraft.world.item.ItemStack;
-
 /**
  * The description of a dialog: a title, some lines of text, inputs and buttons. It says nothing about how the
  * game draws it; {@link DialogFactory} turns it into a game dialog, and {@link DialogPayloadReader} uses it to
@@ -17,9 +15,10 @@ import net.minecraft.world.item.ItemStack;
  *
  * @param cancel the button that Escape presses, shown under the others; empty when Escape just closes the dialog
  * @param width  how wide the text, the inputs and the buttons are drawn, in pixels; buttons in columns share it
+ * @param pinned whether the two buttons are the ones the game keeps at the bottom, side by side, instead of among the content
  */
 public record DialogSpec(Component title, List<DialogBlock> body, List<DialogField> fields, List<DialogButton> buttons,
-                         Optional<DialogButton> cancel, int columns, int width, boolean closeableWithEscape) {
+                         Optional<DialogButton> cancel, int columns, int width, boolean closeableWithEscape, boolean pinned) {
 
     private static final int MAX_FIELDS = 16;
     private static final int MAX_BUTTONS = 16;
@@ -36,8 +35,11 @@ public record DialogSpec(Component title, List<DialogBlock> body, List<DialogFie
         if (fields.size() > MAX_FIELDS || buttons.size() > MAX_BUTTONS) {
             throw new IllegalArgumentException("A dialog takes at most " + MAX_FIELDS + " fields and " + MAX_BUTTONS + " buttons");
         }
-        if (buttons.isEmpty()) {
+        if (buttons.isEmpty() && cancel.isEmpty()) {
             throw new IllegalArgumentException("A dialog needs at least one button");
+        }
+        if (pinned && (buttons.size() != 2 || cancel.isPresent())) {
+            throw new IllegalArgumentException("A pinned pair is exactly two buttons and no cancel button");
         }
         if (columns < 1 || columns > MAX_COLUMNS) {
             throw new IllegalArgumentException("columns must be between 1 and " + MAX_COLUMNS);
@@ -84,6 +86,7 @@ public record DialogSpec(Component title, List<DialogBlock> body, List<DialogFie
         private int columns = 2;
         private int width = DEFAULT_WIDTH;
         private boolean closeableWithEscape = true;
+        private boolean pinned;
 
         private Builder(Component title) {
             this.title = title;
@@ -91,12 +94,6 @@ public record DialogSpec(Component title, List<DialogBlock> body, List<DialogFie
 
         public Builder body(Component text) {
             body.add(new DialogBlock.Message(text));
-            return this;
-        }
-
-        /** An item drawn large with text beside it, in the body. */
-        public Builder item(ItemStack icon, Component text, int size) {
-            body.add(new DialogBlock.Item(icon, text, size));
             return this;
         }
 
@@ -113,6 +110,18 @@ public record DialogSpec(Component title, List<DialogBlock> body, List<DialogFie
 
         public Builder button(DialogButton button) {
             buttons.add(button);
+            return this;
+        }
+
+        /**
+         * Two buttons the game keeps at the bottom of the screen side by side, as it does the cancel button, and so they stay in
+         * view however long the dialog is. Escape presses the second one, so make it the one that closes. A dialog with a pinned
+         * pair has no other buttons.
+         */
+        public Builder pinned(DialogButton first, DialogButton second) {
+            buttons.add(first);
+            buttons.add(second);
+            pinned = true;
             return this;
         }
 
@@ -135,7 +144,7 @@ public record DialogSpec(Component title, List<DialogBlock> body, List<DialogFie
         }
 
         public DialogSpec build() {
-            return new DialogSpec(title, body, fields, buttons, cancel, columns, width, closeableWithEscape);
+            return new DialogSpec(title, body, fields, buttons, cancel, columns, width, closeableWithEscape, pinned);
         }
     }
 }

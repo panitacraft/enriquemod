@@ -135,20 +135,27 @@ class DialogFactoryTest {
     }
 
     @Test
-    void anItemBlockIsDrawnAtItsSizeWithItsTextBesideIt() {
+    void aPinnedPairIsAConfirmationWhoseSecondButtonIsWhatEscapePresses() {
         DialogSpec spec = DialogSpec.builder(Component.literal("Profile")).width(260)
-                .item(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PLAYER_HEAD), Component.literal("Ana"), 48)
-                .button(new DialogButton("close", Component.literal("Close"))).build();
+                .pinned(new DialogButton("edit", Component.literal("Edit")), new DialogButton("close", Component.literal("Close"))).build();
+
+        net.minecraft.server.dialog.ConfirmationDialog dialog = assertInstanceOf(net.minecraft.server.dialog.ConfirmationDialog.class,
+                DialogFactory.build(spec, "t"));
+
+        assertEquals("edit", keyOf(dialog.yesButton()));
+        assertEquals("close", keyOf(dialog.noButton()));
+        assertEquals(128, dialog.yesButton().button().width());
+        assertTrue(Dialog.DIRECT_CODEC.encodeStart(MinecraftTestSupport.ops(), dialog).result().isPresent());
+    }
+
+    @Test
+    void aDialogMayHaveOnlyACancelButton() {
+        DialogSpec spec = DialogSpec.builder(Component.literal("Profile")).cancel(new DialogButton("close", Component.literal("Close"))).build();
 
         MultiActionDialog dialog = assertInstanceOf(MultiActionDialog.class, DialogFactory.build(spec, "t"));
 
-        net.minecraft.server.dialog.body.ItemBody body = assertInstanceOf(net.minecraft.server.dialog.body.ItemBody.class, dialog.common().body().getFirst());
-        assertEquals(48, body.width());
-        assertEquals(48, body.height());
-        assertFalse(body.showTooltip());
-        // The text beside the item takes what the item leaves
-        assertEquals(260 - 48 - 4, body.description().orElseThrow().width());
-        assertTrue(Dialog.DIRECT_CODEC.encodeStart(MinecraftTestSupport.ops(), dialog).result().isPresent());
+        assertTrue(dialog.actions().isEmpty());
+        assertEquals("close", keyOf(dialog.exitAction().orElseThrow()));
     }
 
     @Test

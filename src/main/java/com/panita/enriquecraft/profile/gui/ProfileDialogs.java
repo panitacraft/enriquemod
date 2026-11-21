@@ -9,6 +9,7 @@ import com.panita.enriquecraft.core.dialog.DialogValues;
 import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
+import com.panita.enriquecraft.core.ui.PlayerHeads;
 import com.panita.enriquecraft.profile.ProfilePermissions;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.data.ProfileDetails;
@@ -43,7 +44,9 @@ import java.util.Optional;
 final class ProfileDialogs {
 
     private static final int WIDTH = 260;
-    private static final int HEAD_SIZE = 48;
+    /** The color of the title of a field, apart from its value, which stays white. */
+    private static final int TITLE_COLOR = 0x8FD3FF;
+    private static final int VALUE_COLOR = 0xFFFFFF;
     private static final int BIO_LINES = 6;
     private static final int TOOLTIP_BIO = 60;
 
@@ -104,51 +107,45 @@ final class ProfileDialogs {
 
     private boolean look(ServerPlayer player, ProfileMenu menu, ProfileSubject subject) {
         DialogSpec.Builder spec = DialogSpec.builder(menu.title()).width(WIDTH).columns(2);
-        spec.item(ProfileMenu.head(subject), identity(menu, subject), HEAD_SIZE);
+        spec.body(identity(menu, subject));
         List<Component> about = new ArrayList<>(List.of(factory.text(ProfileMessages.Dialogs.HEADING_ABOUT),
                 line(ProfileMessages.Menu.FIELD_BIRTHDAY, subject.profile().flatMap(profile -> profile.birthday())
                         .map(birthday -> factory.text(BirthdayView.date(birthday))).orElseGet(menu::none))));
         if (!subject.details().bio().isEmpty()) {
-            about.add(line(ProfileMessages.Menu.FIELD_BIO, Component.literal(subject.details().bio())));
+            // A description has several lines, so it starts under its title
+            about.add(block(ProfileMessages.Menu.FIELD_BIO, Component.literal(subject.details().bio())));
         }
         spec.body(join(about));
         List<Component> game = new ArrayList<>(List.of(factory.text(ProfileMessages.Dialogs.HEADING_GAME),
                 line(ProfileMessages.Menu.FIELD_PLAY_TIME, subject.playSeconds().stream()
                         .mapToObj(seconds -> value(Durations.format(Duration.ofSeconds(seconds)))).findFirst().orElseGet(menu::none)),
                 line(ProfileMessages.Menu.FIELD_DEATHS, subject.deaths().stream().mapToObj(deaths -> value(String.valueOf(deaths))).findFirst().orElseGet(menu::none)),
-                line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(subject.details()))));
+                line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(subject.details(), VALUE_COLOR))));
         if (ProfilePermissions.canSeeStaffInfo(player)) {
             subject.profile().ifPresent(profile -> game.add(factory.text(Message.plain(ProfileMessages.Menu.LINE_ACCOUNT)
                     .with("id", profile.userId())
                     .with("mode", factory.text(subject.mode() == AuthMode.PREMIUM ? ProfileMessages.Menu.MODE_PREMIUM : ProfileMessages.Menu.MODE_PIN)))));
         }
         spec.body(join(game));
+        DialogButton close = new DialogButton(CLOSE, factory.text(ProfileMessages.Edit.DIALOG_CLOSE));
         if (menu.isSelf()) {
-            spec.button(new DialogButton(EDIT, factory.text(ProfileMessages.Edit.DIALOG_EDIT)));
-            spec.button(new DialogButton(REFRESH, factory.text(ProfileMessages.Edit.DIALOG_REFRESH)));
-            spec.cancel(new DialogButton(CLOSE, factory.text(ProfileMessages.Edit.DIALOG_CLOSE)));
+            // Edit and close stay at the bottom, in view; Escape presses the second
+            spec.pinned(new DialogButton(EDIT, factory.text(ProfileMessages.Edit.DIALOG_EDIT)), close);
         } else {
-            spec.button(new DialogButton(CLOSE, factory.text(ProfileMessages.Edit.DIALOG_CLOSE)));
+            spec.cancel(close);
         }
         return dialogs.show(player, spec.build(), (viewer, button, values) -> {
-            switch (button) {
-                case EDIT -> {
-                    menu.edit(true);
-                    show(viewer, menu);
-                }
-                case REFRESH -> refresher.refreshSelf(viewer).thenAccept(result -> viewer.level().getServer().execute(() -> {
-                    view.selfRefresh(viewer, result);
-                    show(viewer, menu);
-                }));
-                default -> { }
+            if (EDIT.equals(button)) {
+                menu.edit(true);
+                show(viewer, menu);
             }
         });
     }
 
-    /** Who the player is, beside their head: rank, name and nationality, pronouns, the emblems they show and their prank level. */
+    /** Who the player is: their head, rank, name and nationality, pronouns, the emblems they show and their prank level. */
     private Component identity(ProfileMenu menu, ProfileSubject subject) {
         PlayerEmblems emblems = subject.emblems();
-        MutableComponent name = Component.empty();
+        MutableComponent name = Component.empty().append(PlayerHeads.glyph(subject.id(), subject.skin())).append(Component.literal(" "));
         menu.rank(subject).ifPresent(name::append);
         name.append(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
         emblems.nationality().ifPresent(nationality -> name.append(Component.literal(" ")).append(tooltip.glyph(nationality)));
@@ -168,7 +165,7 @@ final class ProfileDialogs {
     private boolean hub(ServerPlayer player, ProfileMenu menu, ProfileSubject subject) {
         PlayerEmblems emblems = subject.emblems();
         DialogSpec.Builder spec = DialogSpec.builder(menu.title()).width(WIDTH).columns(2);
-        spec.item(ProfileMenu.head(subject), identity(menu, subject), HEAD_SIZE);
+        spec.body(identity(menu, subject));
         spec.body(factory.text(ProfileMessages.Dialogs.HUB_HINT));
         String pronouns = subject.details().pronouns();
         String bio = subject.details().bio();
@@ -176,11 +173,12 @@ final class ProfileDialogs {
                 line(ProfileMessages.Menu.FIELD_PRONOUNS, pronouns.isEmpty() ? menu.none() : value(pronouns)),
                 line(ProfileMessages.Menu.FIELD_BIO, bio.isEmpty() ? menu.none() : value(bio.length() > TOOLTIP_BIO ? bio.substring(0, TOOLTIP_BIO) + "…" : bio)))))));
         spec.button(new DialogButton(HUB_BASE, factory.text(ProfileMessages.Dialogs.HUB_BASE), Optional.of(join(List.of(
-                line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(subject.details())),
+                line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(subject.details(), VALUE_COLOR)),
                 factory.text(subject.details().shareLocation() ? ProfileMessages.Dialogs.LOCATOR_SHARED : ProfileMessages.Dialogs.LOCATOR_HIDDEN))))));
         spec.button(new DialogButton(HUB_EMBLEMS, factory.text(ProfileMessages.Dialogs.HUB_EMBLEMS), Optional.of(join(emblems.slots().stream()
                 .map(tooltip::title).toList()))));
         spec.button(new DialogButton(HUB_PRANK, factory.text(ProfileMessages.Dialogs.HUB_PRANK), Optional.of(tooltip.title(emblems.prank()))));
+        spec.button(new DialogButton(REFRESH, factory.text(ProfileMessages.Edit.DIALOG_REFRESH)));
         spec.cancel(new DialogButton(DONE, factory.text(ProfileMessages.Edit.DIALOG_DONE)));
         return dialogs.show(player, spec.build(), (viewer, button, values) -> {
             switch (button) {
@@ -188,6 +186,10 @@ final class ProfileDialogs {
                 case HUB_BASE -> base(viewer, menu);
                 case HUB_EMBLEMS -> emblems(viewer, menu);
                 case HUB_PRANK -> prank(viewer, menu);
+                case REFRESH -> refresher.refreshSelf(viewer).thenAccept(result -> viewer.level().getServer().execute(() -> {
+                    view.selfRefresh(viewer, result);
+                    show(viewer, menu);
+                }));
                 default -> {
                     menu.edit(false);
                     show(viewer, menu);
@@ -223,7 +225,7 @@ final class ProfileDialogs {
     private boolean base(ServerPlayer player, ProfileMenu menu) {
         ProfileDetails saved = details.detailsOf(player);
         DialogSpec spec = DialogSpec.builder(factory.text(ProfileMessages.Dialogs.HUB_BASE)).width(WIDTH).columns(1)
-                .body(line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(saved)))
+                .body(line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(saved, VALUE_COLOR)))
                 .body(factory.text(ProfileMessages.Dialogs.BASE_NOTE))
                 .field(new DialogField.Toggle(LOCATOR, factory.text(ProfileMessages.Edit.LOCATOR), saved.shareLocation()))
                 .button(new DialogButton(MARK_BASE, factory.text(ProfileMessages.Edit.BASE_MARK), Optional.of(factory.text(ProfileMessages.Edit.BASE_MARK_LORE))))
@@ -352,14 +354,23 @@ final class ProfileDialogs {
 
     // ---- text helpers
 
-    /** A field as one line: its title in white and its value as given. */
+    /** The title of a field, in a color of its own so it stands apart from the value. */
+    private Component title(String name) {
+        return Component.literal(factory.text(name).getString()).withColor(TITLE_COLOR);
+    }
+
+    /** A field as one line: its title and its value as given. */
     private Component line(String name, Component value) {
-        return Component.empty().append(Component.literal(factory.text(name).getString()).withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(" ")).append(value);
+        return Component.empty().append(title(name)).append(Component.literal(" ")).append(value);
+    }
+
+    /** A field whose value takes several lines: the value starts under the title. */
+    private Component block(String name, Component value) {
+        return Component.empty().append(title(name)).append(Component.literal("\n")).append(value);
     }
 
     private Component value(String text) {
-        return Component.literal(text).withStyle(ChatFormatting.GRAY);
+        return Component.literal(text);
     }
 
     /** Pieces of text one under the other. */

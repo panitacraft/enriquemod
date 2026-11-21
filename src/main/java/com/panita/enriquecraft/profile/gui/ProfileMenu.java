@@ -352,9 +352,13 @@ final class ProfileMenu extends UiMenu {
 
     /** The base as the block it is on, which a click copies, and its dimension; or that there is none. */
     Component baseValue(ProfileDetails details) {
-        // The position keeps its click that copies it, and takes the gray of the other values
+        return baseValue(details, VALUE_COLOR);
+    }
+
+    /** The same, with the position in the color of the other values of the screen it is shown in; it keeps its click that copies it. */
+    Component baseValue(ProfileDetails details, int color) {
         return details.base().map(base -> factory().text(Message.plain(ProfileMessages.Menu.BASE_VALUE)
-                        .with("position", CoordinateView.position(base.x(), base.y(), base.z()).copy().withColor(VALUE_COLOR))
+                        .with("position", CoordinateView.position(base.x(), base.y(), base.z()).copy().withColor(color))
                         .with("dimension", CoordinateView.dimension(base.dimension()))))
                 .orElseGet(this::none);
     }

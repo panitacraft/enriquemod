@@ -3,17 +3,16 @@ package com.panita.enriquecraft.core.dialog;
 import com.panita.enriquecraft.Enriquecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.server.dialog.ActionButton;
 import net.minecraft.server.dialog.CommonButtonData;
 import net.minecraft.server.dialog.CommonDialogData;
+import net.minecraft.server.dialog.ConfirmationDialog;
 import net.minecraft.server.dialog.Dialog;
 import net.minecraft.server.dialog.DialogAction;
 import net.minecraft.server.dialog.Input;
 import net.minecraft.server.dialog.MultiActionDialog;
 import net.minecraft.server.dialog.action.CustomAll;
 import net.minecraft.server.dialog.body.DialogBody;
-import net.minecraft.server.dialog.body.ItemBody;
 import net.minecraft.server.dialog.body.PlainMessage;
 import net.minecraft.server.dialog.input.BooleanInput;
 import net.minecraft.server.dialog.input.InputControl;
@@ -33,7 +32,7 @@ final class DialogFactory {
     /** The id every button of every dialog answers with; the server tells dialogs apart by the token. */
     static final Identifier CLICK_ID = Identifier.fromNamespaceAndPath(Enriquecraft.MOD_ID, "dialog");
 
-    /** The space the game leaves between the buttons of a row and between an item and its text. */
+    /** The space the game leaves between the buttons of a row. */
     private static final int GAP = 4;
 
     private DialogFactory() {
@@ -45,6 +44,10 @@ final class DialogFactory {
         // The game pauses a single-player world for a dialog by default; this one is a form, not a menu.
         CommonDialogData common = new CommonDialogData(spec.title(), Optional.empty(), spec.closeableWithEscape(), false,
                 DialogAction.CLOSE, body, inputs);
+        if (spec.pinned()) {
+            int half = (spec.width() - GAP) / 2;
+            return new ConfirmationDialog(common, action(spec.buttons().get(0), token, half), action(spec.buttons().get(1), token, half));
+        }
         // Buttons of a row share the width of the dialog, so a row lines up with the inputs and the text above it
         int rowButtonWidth = (spec.width() - GAP * (spec.columns() - 1)) / spec.columns();
         List<ActionButton> actions = spec.buttons().stream().map(button -> action(button, token, rowButtonWidth)).toList();
@@ -55,8 +58,6 @@ final class DialogFactory {
     private static DialogBody body(DialogBlock block, int width) {
         return switch (block) {
             case DialogBlock.Message message -> new PlainMessage(message.text(), width);
-            case DialogBlock.Item item -> new ItemBody(ItemStackTemplate.fromNonEmptyStack(item.icon()),
-                    Optional.of(new PlainMessage(item.text(), Math.max(1, width - item.size() - GAP))), false, false, item.size(), item.size());
         };
     }
 
