@@ -34,9 +34,6 @@ public final class ProfileMessages {
         public static final String FIELD_BASE = "<white>Ubicación de la base:";
         public static final String FIELD_PRANK = "<white>Nivel de Pranks:";
         public static final String BASE_VALUE = "<gray>{position} <gray>({dimension})";
-        public static final String LINE_ACCOUNT = "<gray>Cuenta Panita: <white>{id} <gray>({mode})";
-        public static final String MODE_PREMIUM = "premium";
-        public static final String MODE_PIN = "con PIN";
         public static final String NOT_FOUND = "No hay ningún jugador llamado <white>{name}</white> en este servidor.";
         public static final String EMBLEM_DETAIL = "ver el emblema";
         public static final String EDIT = "<yellow>Editar perfil";

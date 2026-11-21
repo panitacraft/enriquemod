@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.profile.gui;
 
-import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.core.dialog.DialogButton;
 import com.panita.enriquecraft.core.dialog.DialogField;
 import com.panita.enriquecraft.core.dialog.DialogService;
@@ -10,7 +9,6 @@ import com.panita.enriquecraft.core.gui.MenuFactory;
 import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.ui.PlayerHeads;
-import com.panita.enriquecraft.profile.ProfilePermissions;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.data.ProfileDetails;
 import com.panita.enriquecraft.profile.message.BirthdayView;
@@ -116,11 +114,6 @@ final class ProfileDialogs {
                         .mapToObj(seconds -> value(Durations.format(Duration.ofSeconds(seconds)))).findFirst().orElseGet(menu::none)),
                 line(ProfileMessages.Menu.FIELD_DEATHS, subject.deaths().stream().mapToObj(deaths -> value(String.valueOf(deaths))).findFirst().orElseGet(menu::none)),
                 line(ProfileMessages.Menu.FIELD_BASE, menu.baseValue(subject.details(), VALUE_COLOR))));
-        if (ProfilePermissions.canSeeStaffInfo(player)) {
-            subject.profile().ifPresent(profile -> game.add(factory.text(Message.plain(ProfileMessages.Menu.LINE_ACCOUNT)
-                    .with("id", profile.userId())
-                    .with("mode", factory.text(subject.mode() == AuthMode.PREMIUM ? ProfileMessages.Menu.MODE_PREMIUM : ProfileMessages.Menu.MODE_PIN)))));
-        }
         spec.body(join(game));
         DialogButton close = new DialogButton(CLOSE, factory.text(ProfileMessages.Edit.DIALOG_CLOSE));
         if (menu.isSelf()) {

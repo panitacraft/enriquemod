@@ -1,6 +1,5 @@
 package com.panita.enriquecraft.profile.gui;
 
-import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.core.message.Durations;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messages;
@@ -13,7 +12,6 @@ import com.panita.enriquecraft.core.ui.PlayerHeads;
 import com.panita.enriquecraft.core.ui.PlayerModels;
 import com.panita.enriquecraft.core.ui.UiBuilder;
 import com.panita.enriquecraft.core.ui.UiMenu;
-import com.panita.enriquecraft.profile.ProfilePermissions;
 import com.panita.enriquecraft.profile.data.ProfileDetails;
 import com.panita.enriquecraft.profile.message.BirthdayView;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
@@ -305,13 +303,6 @@ final class ProfileMenu extends UiMenu {
                 menus.edits().locator(toggle.player(), toggle.checked());
                 refresh();
             }));
-        }
-        if (ProfilePermissions.canSeeStaffInfo(viewer())) {
-            subject.profile().ifPresent(profile -> {
-                lines.add(new UiElement.Spacer());
-                lines.add(label(factory().text(Message.plain(ProfileMessages.Menu.LINE_ACCOUNT).with("id", profile.userId())
-                        .with("mode", factory().text(subject.mode() == AuthMode.PREMIUM ? ProfileMessages.Menu.MODE_PREMIUM : ProfileMessages.Menu.MODE_PIN)))));
-            });
         }
         return lines;
     }

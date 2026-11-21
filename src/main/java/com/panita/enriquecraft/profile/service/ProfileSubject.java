@@ -1,7 +1,6 @@
 package com.panita.enriquecraft.profile.service;
 
 import com.mojang.authlib.GameProfile;
-import com.panita.enriquecraft.auth.data.AuthMode;
 import com.panita.enriquecraft.profile.client.ModProfile;
 import com.panita.enriquecraft.profile.data.ProfileDetails;
 
@@ -24,9 +23,4 @@ import java.util.UUID;
  */
 public record ProfileSubject(String name, UUID id, boolean online, Optional<GameProfile> skin, Optional<ModProfile> profile,
                              PlayerEmblems emblems, ProfileDetails details, OptionalLong playSeconds, OptionalLong deaths) {
-
-    /** Whether the name belongs to a Microsoft account, which only staff are told. */
-    public AuthMode mode() {
-        return AuthMode.of(id, name);
-    }
 }
