@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 
-import java.util.stream.Stream;
 
 /**
  * The placeholders that put a player's emblems around their name, for every text that resolves them (the lines of chat, and mods
@@ -48,12 +47,12 @@ public final class EmblemPlaceholders {
     }
 
     /**
-     * The emblems the player chose, then a stand-in for each place they have not filled, each preceded by a space so they stand apart
+     * The emblems the player put in each place, a stand-in for each place they left empty, each preceded by a space so they stand apart
      * from the name before them.
      */
     public Component lore(PlayerEmblems emblems) {
         MutableComponent text = Component.empty();
-        for (EmblemView emblem : Stream.concat(emblems.chosen().stream(), emblems.empty().stream()).toList()) {
+        for (EmblemView emblem : emblems.slots()) {
             text.append(Component.literal(" ")).append(drawn(emblem));
         }
         return text;

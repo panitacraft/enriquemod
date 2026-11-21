@@ -76,11 +76,6 @@ public record EmblemSelections(List<Entry> entries, List<Prank> pranks) {
         return new EmblemSelections(updated, pranks);
     }
 
-    /** The same choices without this player's emblems, so they are back to the default. Their prank level is kept. */
-    public EmblemSelections without(int userId) {
-        return new EmblemSelections(entries.stream().filter(entry -> entry.userId() != userId).toList(), pranks);
-    }
-
     /** The prank level the player chose and when; empty when they never did, which shows the first level. */
     public Optional<Prank> prankOf(int userId) {
         return pranks.stream().filter(prank -> prank.userId() == userId).findFirst();

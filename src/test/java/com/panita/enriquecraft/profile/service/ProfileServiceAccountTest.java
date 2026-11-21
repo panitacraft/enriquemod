@@ -55,14 +55,14 @@ class ProfileServiceAccountTest {
 
     @Test
     void aLinkedPlayerHasTheEmblemsAndThePrankTheyChoseWhetherOrNotTheyAreOnline() {
-        cache.put(UUID.randomUUID(), new ModProfile(7, Optional.of("Alex"), "alex", List.of(emblem("a", 1), emblem("b", 2), emblem("c", 3))));
+        cache.put(UUID.randomUUID(), new ModProfile(7, Optional.of("Alex"), "alex", Optional.empty(), List.of(emblem("a", 1), emblem("b", 2), emblem("c", 3))));
         selections.set(EmblemSelections.EMPTY.with(7, List.of("c", "a")).withPrank(7, "enrique6_prank_2", NOW));
 
         PlayerEmblems emblems = service.emblemsOf("aLEX");
 
         assertEquals("enrique6_prank_2", emblems.prank().id());
         assertEquals(List.of("c", "a"), ids(emblems.chosen()));
-        assertEquals(1, emblems.empty().size());
+        assertEquals(List.of("c", "a", "no_emblem"), ids(emblems.slots()));
     }
 
     @Test
@@ -73,7 +73,7 @@ class ProfileServiceAccountTest {
 
         assertEquals("enrique6_prank_1", emblems.prank().id());
         assertEquals(List.of(), emblems.chosen());
-        assertEquals(3, emblems.empty().size());
+        assertEquals(3, emblems.slots().size());
     }
 
     @Test
@@ -82,12 +82,12 @@ class ProfileServiceAccountTest {
 
         assertEquals("enrique6_prank_0", emblems.prank().id());
         assertEquals(List.of(), emblems.chosen());
-        assertEquals(3, emblems.empty().size());
+        assertEquals(3, emblems.slots().size());
     }
 
     @Test
     void anotherAccountsEmblemsAreNeverShown() {
-        cache.put(UUID.randomUUID(), new ModProfile(99, Optional.of("Sam"), "sam", List.of(emblem("secret", 1))));
+        cache.put(UUID.randomUUID(), new ModProfile(99, Optional.of("Sam"), "sam", Optional.empty(), List.of(emblem("secret", 1))));
 
         assertEquals(List.of(), ids(service.emblemsOf("Alex").chosen()));
     }

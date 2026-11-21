@@ -114,8 +114,41 @@ public final class UiBuilder {
      */
     public UiElement.TextInput input(Component hint, String value, int maxLength, Consumer<UiSubmit> action) {
         int id = nextId++;
-        inputs.put(id, new UiInputHandler(maxLength, action));
-        return new UiElement.TextInput(id, hint, value, maxLength);
+        UiElement.TextInput input = new UiElement.TextInput(id, hint, value, maxLength);
+        inputs.put(id, new UiInputHandler(maxLength, false, action));
+        return input;
+    }
+
+    /**
+     * A field the player types several lines into; newlines are kept in the value. It reaches the server exactly as a
+     * {@link #input} does, so the action must not assume how the value arrived: a chest asks for it in chat, as one line.
+     *
+     * @param hint      names what the value is for
+     * @param value     what the field holds now
+     * @param maxLength the longest value the action accepts, newlines included, at most {@link UiElement.TextArea#MAX_LENGTH}
+     * @param lines     how many lines tall the field is drawn before it scrolls
+     * @param width     how wide the field is drawn, in GUI pixels
+     * @param action    runs on the server with the confirmed value; an empty value means the field was cleared
+     */
+    public UiElement.TextArea textArea(Component hint, String value, int maxLength, int lines, int width,
+                                       Consumer<UiSubmit> action) {
+        int id = nextId++;
+        UiElement.TextArea area = new UiElement.TextArea(id, hint, value, maxLength, lines, width);
+        inputs.put(id, new UiInputHandler(maxLength, true, action));
+        return area;
+    }
+
+    /**
+     * A box the player checks or unchecks. The action receives the state the player asked for; the menu is then
+     * expected to refresh itself so the box shows it.
+     *
+     * @param checked whether the box is checked now
+     */
+    public UiElement.Toggle toggle(Component label, boolean checked, Consumer<UiToggle> action) {
+        int id = nextId++;
+        // A toggle is reported as a choice between two options: 0 is unchecked and 1 is checked.
+        selects.put(id, new UiSelectHandler(2, select -> action.accept(new UiToggle(select.player(), select.option() == 1))));
+        return new UiElement.Toggle(id, label, checked);
     }
 
     /**
@@ -127,11 +160,20 @@ public final class UiBuilder {
      * @param field the field whose value is sent
      */
     public UiElement.Button submitButton(Component label, UiElement.TextInput field) {
+        return submitButton(label, field.id());
+    }
+
+    /** The confirm button of a form whose field is a text area; see {@link #submitButton(Component, UiElement.TextInput)}. */
+    public UiElement.Button submitButton(Component label, UiElement.TextArea field) {
+        return submitButton(label, field.id());
+    }
+
+    private UiElement.Button submitButton(Component label, int fieldId) {
         int id = nextId++;
         // The press itself is never sent while the client companion submits the field instead.
         handlers.put(id, click -> { });
         return new UiElement.Button(id, ButtonRole.CONFIRM, ItemStack.EMPTY, label, List.of(), "",
-                UiElement.Button.NO_TINT, false, field.id());
+                UiElement.Button.NO_TINT, false, fieldId);
     }
 
     /**

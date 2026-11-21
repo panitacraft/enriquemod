@@ -140,12 +140,15 @@ final class ChestLayout {
     private void put(int slot, UiElement element) {
         MenuItem item = switch (element) {
             case UiElement.Button button -> MenuItem.button(stack(button), click -> handler(button.id()).accept(UiClick.from(click)));
-            case UiElement.TextInput input -> MenuItem.button(stack(input), click -> edit(input, click));
+            case UiElement.TextInput input -> MenuItem.button(stack(input.hint(), input.value()), click -> edit(input.id(), input.hint(), click));
+            case UiElement.TextArea area -> MenuItem.button(stack(area.hint(), area.value()), click -> edit(area.id(), area.hint(), click));
+            case UiElement.Toggle toggle -> MenuItem.button(stack(toggle), click -> flip(toggle, click));
             case UiElement.Label label -> MenuItem.display(factory.item(Items.PAPER).name(label.text()).build());
             case UiElement.Spacer ignored -> null;
             case UiElement.Page ignored -> null;
             case UiElement.Divider ignored -> null;
             case UiElement.Rule ignored -> null;
+            case UiElement.Note ignored -> null;
             case UiElement.PinPad ignored -> null;
             case UiElement.Detail detail -> detail(detail);
             case UiElement.Dropdown dropdown -> MenuItem.button(stack(dropdown), click -> choose(dropdown, click));
@@ -218,26 +221,46 @@ final class ChestLayout {
         }
     }
 
-    private ItemStack stack(UiElement.TextInput input) {
+    /** A text field or area as a name tag; the chat takes one line, so the lines of an area are shown joined. */
+    private ItemStack stack(Component hint, String value) {
         List<Component> lore = new ArrayList<>();
-        if (!input.value().isEmpty()) {
-            lore.add(factory.text(Message.plain(Messages.Gui.INPUT_CURRENT).with("value", input.value())));
+        if (!value.isEmpty()) {
+            lore.add(factory.text(Message.plain(Messages.Gui.INPUT_CURRENT).with("value", value.replace('\n', ' '))));
         }
         lore.add(factory.text(Messages.Gui.INPUT_EDIT));
         lore.add(factory.text(Messages.Gui.INPUT_CLEAR));
-        return factory.item(Items.NAME_TAG).name(input.hint()).loreLines(lore).build();
+        return factory.item(Items.NAME_TAG).name(hint).loreLines(lore).build();
     }
 
-    private void edit(UiElement.TextInput input, MenuClick click) {
-        UiInputHandler handler = layout.inputs().get(input.id());
+    private void edit(int id, Component hint, MenuClick click) {
+        UiInputHandler handler = layout.inputs().get(id);
         if (handler == null) {
-            throw new IllegalStateException("The field " + input.id() + " has no action");
+            throw new IllegalStateException("The field " + id + " has no action");
         }
         ServerPlayer player = click.player();
         if (click.isRight()) {
             handler.action().accept(new UiSubmit(player, ""));
         } else if (click.isLeft()) {
-            prompter.ask(player, input.hint(), answer -> handler.action().accept(new UiSubmit(player, clamp(answer, handler.maxLength()))));
+            prompter.ask(player, hint, answer -> handler.action().accept(new UiSubmit(player, clamp(answer, handler.maxLength()))));
+        }
+    }
+
+    /** An emerald when checked and gunpowder when not; a left click asks for the opposite state. */
+    private ItemStack stack(UiElement.Toggle toggle) {
+        List<Component> lore = List.of(
+                factory.text(toggle.checked() ? Messages.Gui.TOGGLE_ON : Messages.Gui.TOGGLE_OFF),
+                Component.empty(),
+                ClickHints.left(factory, Messages.Gui.TOGGLE_FLIP));
+        return factory.item(toggle.checked() ? Items.EMERALD : Items.GUNPOWDER).name(toggle.label()).loreLines(lore).build();
+    }
+
+    private void flip(UiElement.Toggle toggle, MenuClick click) {
+        UiSelectHandler handler = layout.selects().get(toggle.id());
+        if (handler == null) {
+            throw new IllegalStateException("The toggle " + toggle.id() + " has no action");
+        }
+        if (click.isLeft()) {
+            handler.action().accept(new UiSelect(click.player(), toggle.checked() ? 0 : 1));
         }
     }
 

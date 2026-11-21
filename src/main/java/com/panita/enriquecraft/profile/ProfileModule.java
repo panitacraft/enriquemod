@@ -1,6 +1,9 @@
 package com.panita.enriquecraft.profile;
 
+import com.panita.enriquecraft.auth.service.HeldPlayers;
+import com.panita.enriquecraft.chat.service.SkinMemory;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.dialog.DialogService;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -13,6 +16,7 @@ import com.panita.enriquecraft.profile.client.HttpEmblemApi;
 import com.panita.enriquecraft.profile.config.ProfileConfig;
 import com.panita.enriquecraft.profile.data.CachedProfiles;
 import com.panita.enriquecraft.profile.data.EmblemSelections;
+import com.panita.enriquecraft.profile.data.ProfileDetailsBook;
 import com.panita.enriquecraft.profile.gui.OpenMenus;
 import com.panita.enriquecraft.profile.gui.ProfileMenus;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
@@ -20,10 +24,13 @@ import com.panita.enriquecraft.profile.message.ProfileView;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
 import com.panita.enriquecraft.profile.service.EmblemPlaceholders;
 import com.panita.enriquecraft.profile.service.EmblemResolver;
+import com.panita.enriquecraft.profile.service.LocatorBarService;
 import com.panita.enriquecraft.profile.service.ProfileCache;
+import com.panita.enriquecraft.profile.service.ProfileDetailsService;
 import com.panita.enriquecraft.profile.service.ProfileLoader;
 import com.panita.enriquecraft.profile.service.ProfileRefresher;
 import com.panita.enriquecraft.profile.service.ProfileService;
+import com.panita.enriquecraft.profile.service.ProfileSubjects;
 import com.panita.enriquecraft.profile.service.RefreshCooldown;
 
 import java.time.Instant;
@@ -37,6 +44,7 @@ public final class ProfileModule implements EnriquecraftModule {
 
     private static final String SELECTIONS_FILE = "emblem_selections.snbt";
     private static final String CACHE_FILE = "profile_cache.snbt";
+    private static final String DETAILS_FILE = "profile_details.snbt";
 
     @Override
     public Optional<Class<?>> messages() {
@@ -54,6 +62,8 @@ public final class ProfileModule implements EnriquecraftModule {
         LinkedPlayers linked = services.get(LinkedPlayers.class);
         ProfileService profiles = new ProfileService(cache, resolver, linked, selections::get, selections::set, Instant::now,
                 config.prankCooldownSeconds::get);
+        var details = services.get(WorldData.class).register(DETAILS_FILE, ProfileDetailsBook.CODEC, ProfileDetailsBook.EMPTY);
+        ProfileDetailsService detailsService = new ProfileDetailsService(linked, details::get, details::set);
         ProfileLoader loader = new ProfileLoader(new HttpEmblemApi(services.get(ApiAccess.class)), linked, cache, config.editionId::get);
         RefreshCooldown cooldown = new RefreshCooldown(config.refreshCooldownSeconds::get, Instant::now);
 
@@ -68,6 +78,9 @@ public final class ProfileModule implements EnriquecraftModule {
         services.register(EmblemTooltip.class, tooltip);
         services.register(EmblemResolver.class, resolver);
         services.register(ProfileService.class, profiles);
+        services.register(ProfileDetailsService.class, detailsService);
+        LocatorBarService locatorBar = new LocatorBarService(player -> detailsService.detailsOf(player).shareLocation());
+        services.register(LocatorBarService.class, locatorBar);
         services.register(RefreshCooldown.class, cooldown);
         ProfileRefresher refresher = new ProfileRefresher(loader, profiles, cooldown, config.cacheSeconds::get,
                 services.get(LinkConfig.class).autoFetch::get);
@@ -75,7 +88,8 @@ public final class ProfileModule implements EnriquecraftModule {
 
         services.register(ProfileView.class, view);
         services.register(ProfileRefresher.class, refresher);
+        ProfileSubjects subjects = new ProfileSubjects(profiles, detailsService, services.get(HeldPlayers.class), services.get(SkinMemory.class));
         services.register(ProfileMenus.class, new ProfileMenus(services.get(UiService.class), profiles, refresher, view, tooltip, config,
-                services.get(Messenger.class), openMenus));
+                services.get(Messenger.class), openMenus, subjects, detailsService, locatorBar, services.get(DialogService.class)));
     }
 }

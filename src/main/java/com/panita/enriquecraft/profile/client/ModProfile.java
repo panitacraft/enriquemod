@@ -9,9 +9,11 @@ import java.util.Optional;
  * @param userId      the Panita account
  * @param ign         the Minecraft name the member gave, if they gave one
  * @param discordName their Discord name
+ * @param birthday    their birthday, if they set one on the website
  * @param emblems     the emblems of the asked edition and the system emblems, in the API's order
  */
-public record ModProfile(int userId, Optional<String> ign, String discordName, List<ApiEmblem> emblems) {
+public record ModProfile(int userId, Optional<String> ign, String discordName, Optional<Birthday> birthday,
+                         List<ApiEmblem> emblems) {
 
     public ModProfile {
         emblems = List.copyOf(emblems);

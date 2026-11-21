@@ -67,6 +67,11 @@ public final class ProfileService {
         return cache.get(player);
     }
 
+    /** What the API last said of the player with this Minecraft name, who may not be online; empty when they are not on the list. */
+    public Optional<ModProfile> profileOf(String name) {
+        return linked.byName(name).flatMap(account -> cache.byAccount(account.userId()));
+    }
+
     /**
      * The emblems of the player as this server shows them. The prank level does not need the API, only the Panita account the player
      * is listed under; the emblems after the name need what the API said of them.
@@ -108,9 +113,11 @@ public final class ProfileService {
         accountOf(player).ifPresent(userId -> write.accept(read.get().with(userId, emblems)));
     }
 
-    /** Back to the default: the first emblems the player holds. The prank level is a choice of its own and is kept. */
-    public void resetChoice(ServerPlayer player) {
-        accountOf(player).ifPresent(userId -> write.accept(read.get().without(userId)));
+    /** How long the player must still wait to change their prank level; empty when they may change it now (the bypass is not considered). */
+    public Optional<Duration> prankWait(ServerPlayer player) {
+        return accountOf(player).flatMap(userId -> read.get().prankOf(userId))
+                .map(current -> Duration.between(clock.get(), current.changedAt().plusSeconds(prankCooldownSeconds.getAsInt())))
+                .filter(Duration::isPositive);
     }
 
     /**

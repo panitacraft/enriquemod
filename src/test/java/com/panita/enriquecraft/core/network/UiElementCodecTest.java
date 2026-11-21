@@ -98,6 +98,7 @@ final class UiElementCodecTest {
         buffer.writeByte(2);
         buffer.writeVarInt(1);
         buffer.writeVarInt(1);
+        buffer.writeBoolean(false);
         buffer.writeVarInt(2);
         buffer.writeByte(5);
         buffer.writeByte(5);

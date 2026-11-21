@@ -74,7 +74,7 @@ final class UiPayloadsTest {
         RegistryFriendlyByteBuf buffer = MinecraftTestSupport.buffer();
         buffer.writeVarInt(1);
         buffer.writeVarInt(1);
-        buffer.writeUtf("x".repeat(1000), 1000);
+        buffer.writeUtf("x".repeat(UiElement.TextArea.MAX_LENGTH + 1), UiElement.TextArea.MAX_LENGTH + 1);
 
         assertThrows(DecoderException.class,
                 () -> UiSubmitC2S.STREAM_CODEC.decode(buffer));

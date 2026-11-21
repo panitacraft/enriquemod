@@ -2,6 +2,7 @@ package com.panita.enriquecraft.client.ui;
 
 import com.panita.enriquecraft.client.art.ArtItems;
 import com.mojang.blaze3d.platform.InputConstants;
+import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiClickC2S;
 import com.panita.enriquecraft.core.network.UiClosedC2S;
 import com.panita.enriquecraft.core.network.UiDropC2S;
@@ -23,7 +24,10 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import com.panita.enriquecraft.client.art.InlineArtTextures;
+
 import java.util.List;
+import java.util.Map;
 
 /**
  * A screen the server described, laid out like a modal: a header with the title and a close button,
@@ -97,6 +101,11 @@ final class ServerUiScreen extends Screen implements UiActions {
     private long duration = OPEN_MILLIS;
     private boolean fadeIn = true;
 
+    // The values of a form still to send: the server takes one action at a time, so each waits a few ticks after the one before
+    private static final int SUBMIT_GAP_TICKS = 3;
+    private final java.util.ArrayDeque<Map.Entry<Integer, String>> queuedSubmits = new java.util.ArrayDeque<>();
+    private int submitDelay;
+    private int artGeneration = InlineArtTextures.generation();
     // A draggable button pressed and not yet released: it is a click unless the mouse moves far enough.
     private @Nullable UiButtonWidget dragCandidate;
     private double dragStartX;
@@ -155,6 +164,7 @@ final class ServerUiScreen extends Screen implements UiActions {
 
     @Override
     protected void init() {
+        artGeneration = InlineArtTextures.generation();
         parts = ScreenParts.split(root);
         UiLayouts layouts = layout(0, false, 0);
         // A panel taller than the window gives the difference back through its scroll areas; when that is not
@@ -223,6 +233,16 @@ final class ServerUiScreen extends Screen implements UiActions {
         // A screen that asks for a PIN cannot be dismissed: there is nothing to go back to.
         UiButtonWidget close = locked() ? null
                 : UiButtonWidget.glyph(font, "✕", null, true, true, (mouse, shift) -> closeAll());
+        // Edit is a small icon beside close.
+        LinearLayout headerEnd = LinearLayout.horizontal().spacing(4);
+        for (UiElement.Button action : parts.headerActions()) {
+            headerEnd.addChild(UiButtonWidget.glyph(font, "✎", action.label(), false, true,
+                    (mouse, shift) -> press(action.id(), mouse, shift)), settings -> settings.alignVerticallyMiddle());
+        }
+        if (close != null) {
+            headerEnd.addChild(close, settings -> settings.alignVerticallyMiddle());
+        }
+        headerEnd.arrangeElements();
 
         LayoutElement body = layouts.build(parts.body());
         arrange(body);
@@ -244,13 +264,13 @@ final class ServerUiScreen extends Screen implements UiActions {
         arrange(footerEnd);
 
         int footerWidth = footerStart.getWidth() + footerMiddle.getWidth() + footerEnd.getWidth() + 2 * GROUP_GAP;
-        int headerWidth = headerStart.getWidth() + (close == null ? 0 : GROUP_GAP + close.getWidth());
+        int headerWidth = headerStart.getWidth() + (headerEnd.getWidth() == 0 ? 0 : GROUP_GAP + headerEnd.getWidth());
         int contentWidth = Math.max(MIN_WIDTH, Math.max(body.getWidth(), Math.max(headerWidth, footerWidth)));
 
         header = new FrameLayout(contentWidth, HEADER_HEIGHT);
         header.addChild(headerStart, settings -> settings.alignHorizontallyLeft().alignVerticallyMiddle());
-        if (close != null) {
-            header.addChild(close, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
+        if (headerEnd.getWidth() > 0) {
+            header.addChild(headerEnd, settings -> settings.alignHorizontallyRight().alignVerticallyMiddle());
         }
 
         FrameLayout bodyFrame = new FrameLayout(contentWidth, 0);
@@ -302,6 +322,30 @@ final class ServerUiScreen extends Screen implements UiActions {
     @Override
     public void submit(int elementId, String text) {
         ClientPlayNetworking.send(new UiSubmitC2S(sessionId, elementId, text));
+    }
+
+    @Override
+    public void submitAll(List<Map.Entry<Integer, String>> fields) {
+        if (fields.isEmpty()) {
+            return;
+        }
+        submit(fields.getFirst().getKey(), fields.getFirst().getValue());
+        queuedSubmits.addAll(fields.subList(1, fields.size()));
+        submitDelay = SUBMIT_GAP_TICKS;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        // A line of text that holds a picture was measured before the picture came; lay the screen out again with its real width
+        if (artGeneration != InlineArtTextures.generation()) {
+            rebuildWidgets();
+        }
+        if (!queuedSubmits.isEmpty() && --submitDelay <= 0) {
+            Map.Entry<Integer, String> next = queuedSubmits.poll();
+            submit(next.getKey(), next.getValue());
+            submitDelay = SUBMIT_GAP_TICKS;
+        }
     }
 
     @Override

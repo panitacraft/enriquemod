@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ResolvableProfile;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -32,6 +33,12 @@ public final class PlayerHeads {
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return head;
+    }
+
+    /** A player's head to put in a line of text, with the skin of a profile the server holds, or found by id when it holds none. */
+    public static MutableComponent glyph(UUID player, Optional<GameProfile> skin) {
+        ResolvableProfile profile = skin.map(ResolvableProfile::createResolved).orElseGet(() -> ResolvableProfile.createUnresolved(player));
+        return Component.object(new PlayerSprite(profile, true));
     }
 
     /** The head, a space and then the name, to put in front of a player's name in a line of text. */

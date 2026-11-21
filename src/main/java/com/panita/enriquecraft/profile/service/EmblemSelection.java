@@ -1,54 +1,51 @@
 package com.panita.enriquecraft.profile.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * The editing of the list of emblems a player chose to show, as pure logic so every menu does it the same way. Lists are never
- * changed: each step gives a new one.
+ * The editing of the emblems a player shows, as pure logic so every menu does it the same way. Lists are never changed: each step
+ * gives a new one. A list holds one id for each place, in order, and an empty string for a place with nothing in it.
  */
 public final class EmblemSelection {
-
-    /** What toggling an emblem did. */
-    public enum Change {
-        ADDED,
-        REMOVED,
-        /** The list is already as long as it may be, so nothing changed. */
-        FULL
-    }
-
-    /**
-     * @param emblems the list after the step
-     * @param change  what the step did
-     */
-    public record Toggled(List<String> emblems, Change change) {
-    }
 
     private EmblemSelection() {
     }
 
-    /** Puts an emblem away when it is shown, and adds it to the end when it is not and there is room. */
-    public static Toggled toggle(List<String> chosen, String id, int max) {
-        List<String> updated = new ArrayList<>(chosen);
-        if (updated.remove(id)) {
-            return new Toggled(updated, Change.REMOVED);
+    /**
+     * What choosing an emblem for a place does: a place that holds the emblem gives it up; a place takes any other emblem, and when
+     * that emblem was shown in another place, the two places trade (an empty place included).
+     *
+     * @param placed the id in each place now, empty strings for empty places
+     * @param slot   the place the player is changing, counted from 0
+     * @param max    how many places there are
+     * @return the list to keep: one id per place, without the empty places at the end
+     */
+    public static List<String> place(List<String> placed, int slot, String id, int max) {
+        List<String> updated = new ArrayList<>(placed);
+        while (updated.size() < max) {
+            updated.add("");
         }
-        if (updated.size() >= max) {
-            return new Toggled(updated, Change.FULL);
+        int at = updated.indexOf(id);
+        if (slot < 0 || slot >= updated.size()) {
+            return trimmed(updated);
         }
-        updated.add(id);
-        return new Toggled(updated, Change.ADDED);
+        if (at == slot) {
+            updated.set(slot, "");
+        } else if (at >= 0) {
+            Collections.swap(updated, slot, at);
+        } else {
+            updated.set(slot, id);
+        }
+        return trimmed(updated);
     }
 
-    /** The dragged emblem takes the place of the one it is dropped on; the others keep their order. */
-    public static List<String> move(List<String> chosen, String dragged, String onto) {
-        int from = chosen.indexOf(dragged);
-        int to = chosen.indexOf(onto);
-        if (from < 0 || to < 0 || from == to) {
-            return List.copyOf(chosen);
+    private static List<String> trimmed(List<String> places) {
+        int end = places.size();
+        while (end > 0 && places.get(end - 1).isEmpty()) {
+            end--;
         }
-        List<String> updated = new ArrayList<>(chosen);
-        updated.add(to, updated.remove(from));
-        return updated;
+        return List.copyOf(places.subList(0, end));
     }
 }

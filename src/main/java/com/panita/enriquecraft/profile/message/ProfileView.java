@@ -6,6 +6,8 @@ import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import com.panita.enriquecraft.profile.service.PlayerEmblems;
 import com.panita.enriquecraft.profile.service.ProfileLoader;
+import com.panita.enriquecraft.profile.data.ProfileDetails;
+import com.panita.enriquecraft.profile.service.ProfileDetailsService;
 import com.panita.enriquecraft.profile.service.ProfileRefresher;
 import com.panita.enriquecraft.profile.service.ProfileService;
 import net.minecraft.commands.CommandSourceStack;
@@ -84,6 +86,30 @@ public final class ProfileView {
         emblems.pranks().stream().skip(1).forEach(level -> messenger.deliver(reader,
                 messenger.format(Message.plain(ProfileMessages.Prank.LIST_ENTRY).with("title", level.title()).with("id", level.id())).copy()
                         .withStyle(style -> style.withClickEvent(new ClickEvent.SuggestCommand("/prank set " + level.id())).withHoverEvent(hover))));
+    }
+
+    public void notAllowed(ServerPlayer player) {
+        messenger.send(player, Message.error(ProfileMessages.Menu.NOT_ALLOWED).prefixed());
+    }
+
+    /** What saving a detail of the profile came to: the given message when it was saved, the reason when it was not. */
+    public void saved(ServerPlayer player, ProfileDetailsService.Outcome outcome, Message success) {
+        messenger.send(player, switch (outcome) {
+            case SAVED -> success.prefixed();
+            case TOO_LONG -> Message.warning(ProfileMessages.Edit.BIO_TOO_LONG).prefixed().with("max", ProfileDetails.BIO_MAX);
+            case PRONOUNS_TOO_LONG -> Message.warning(ProfileMessages.Edit.PRONOUNS_TOO_LONG).prefixed().with("max", ProfileDetails.PRONOUNS_MAX);
+            case NOT_LINKED -> Message.warning(ProfileMessages.Edit.NOT_LINKED).prefixed();
+        });
+    }
+
+    /** The player's choice about the locator bar, once it is saved. */
+    public static Message locatorChanged(boolean shared) {
+        return Message.success(shared ? ProfileMessages.Edit.LOCATOR_ON : ProfileMessages.Edit.LOCATOR_OFF);
+    }
+
+    /** The player marked a base. */
+    public static Message baseMarked(Component position) {
+        return Message.success(ProfileMessages.Edit.BASE_SAVED).with("position", position);
     }
 
     private static Message announcement(Component player, String level) {

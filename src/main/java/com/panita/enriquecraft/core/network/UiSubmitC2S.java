@@ -16,7 +16,8 @@ public record UiSubmitC2S(int sessionId, int elementId, String text) implements 
     public static final StreamCodec<ByteBuf, UiSubmitC2S> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, UiSubmitC2S::sessionId,
             ByteBufCodecs.VAR_INT, UiSubmitC2S::elementId,
-            ByteBufCodecs.stringUtf8(UiElement.TextInput.MAX_LENGTH), UiSubmitC2S::text,
+            // Only what a text area can hold fits the wire; UiSessions holds a single-line field to its own, smaller limit.
+            ByteBufCodecs.stringUtf8(UiElement.TextArea.MAX_LENGTH), UiSubmitC2S::text,
             UiSubmitC2S::new);
 
     @Override

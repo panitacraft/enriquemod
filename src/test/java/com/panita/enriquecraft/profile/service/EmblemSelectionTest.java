@@ -1,69 +1,42 @@
 package com.panita.enriquecraft.profile.service;
 
-import com.mojang.serialization.JsonOps;
-import com.panita.enriquecraft.profile.data.EmblemSelections;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EmblemSelectionTest {
 
     @Test
-    void anEmblemIsAddedAtTheEndWhenThereIsRoom() {
-        EmblemSelection.Toggled toggled = EmblemSelection.toggle(List.of("a"), "b", 3);
-
-        assertEquals(List.of("a", "b"), toggled.emblems());
-        assertEquals(EmblemSelection.Change.ADDED, toggled.change());
+    void anEmblemReplacesTheOneInThePlaceItIsChosenFor() {
+        assertEquals(List.of("a", "x", "c"), EmblemSelection.place(List.of("a", "b", "c"), 1, "x", 3));
     }
 
     @Test
-    void anEmblemThatIsShownIsPutAway() {
-        EmblemSelection.Toggled toggled = EmblemSelection.toggle(List.of("a", "b", "c"), "b", 3);
-
-        assertEquals(List.of("a", "c"), toggled.emblems());
-        assertEquals(EmblemSelection.Change.REMOVED, toggled.change());
+    void choosingTheEmblemOfThePlaceEmptiesIt() {
+        assertEquals(List.of("a", "", "c"), EmblemSelection.place(List.of("a", "b", "c"), 1, "b", 3));
     }
 
     @Test
-    void aFullListTakesNoMore() {
-        EmblemSelection.Toggled toggled = EmblemSelection.toggle(List.of("a", "b"), "c", 2);
-
-        assertEquals(List.of("a", "b"), toggled.emblems());
-        assertEquals(EmblemSelection.Change.FULL, toggled.change());
+    void anEmblemShownElsewhereTradesPlaces() {
+        assertEquals(List.of("c", "b", "a"), EmblemSelection.place(List.of("a", "b", "c"), 0, "c", 3));
     }
 
     @Test
-    void aDraggedEmblemTakesThePlaceOfTheOneItIsDroppedOn() {
-        assertEquals(List.of("c", "a", "b"), EmblemSelection.move(List.of("a", "b", "c"), "c", "a"));
-        assertEquals(List.of("b", "c", "a"), EmblemSelection.move(List.of("a", "b", "c"), "a", "c"));
+    void anEmblemCanStandAloneInTheLastPlace() {
+        assertEquals(List.of("", "", "x"), EmblemSelection.place(List.of("", "", ""), 2, "x", 3));
+        assertEquals(List.of("", "", "x"), EmblemSelection.place(List.of(), 2, "x", 3));
     }
 
     @Test
-    void movingToItselfOrToSomethingUnknownChangesNothing() {
-        assertEquals(List.of("a", "b"), EmblemSelection.move(List.of("a", "b"), "a", "a"));
-        assertEquals(List.of("a", "b"), EmblemSelection.move(List.of("a", "b"), "a", "x"));
+    void movingAnEmblemToAnEmptyPlaceLeavesItsOldPlaceEmpty() {
+        assertEquals(List.of("", "", "a"), EmblemSelection.place(List.of("a"), 2, "a", 3));
     }
 
     @Test
-    void theChoicesOfPlayersAreKeptByTheirPanitaAccount() {
-        EmblemSelections selections = EmblemSelections.EMPTY.with(7, List.of("a", "b")).with(9, List.of());
-
-        assertEquals(Optional.of(List.of("a", "b")), selections.of(7));
-        assertEquals(Optional.of(List.of()), selections.of(9));
-        assertEquals(Optional.empty(), selections.of(1));
-        assertEquals(Optional.empty(), selections.without(7).of(7));
-        assertEquals(Optional.of(List.of("c")), selections.with(7, List.of("c")).of(7));
-    }
-
-    @Test
-    void theChoicesSurviveAWriteAndARead() {
-        EmblemSelections selections = EmblemSelections.EMPTY.with(7, List.of("a", "b")).with(9, List.of());
-
-        var json = EmblemSelections.CODEC.encodeStart(JsonOps.INSTANCE, selections).getOrThrow();
-
-        assertEquals(selections, EmblemSelections.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow());
+    void theEmptyPlacesAtTheEndAreNotKept() {
+        assertEquals(List.of(), EmblemSelection.place(List.of("a"), 0, "a", 3));
+        assertEquals(List.of("a"), EmblemSelection.place(List.of("a", "b"), 1, "b", 3));
     }
 }

@@ -28,10 +28,11 @@ public final class ChatMessages {
         }
     }
 
-    /** What pointing at the head of a player says: whether their account is a Microsoft one. */
+    /** What pointing at the head of a player says: whether their account is a Microsoft one, and that a click opens the profile. */
     public static final class Head {
         public static final String PREMIUM = "<green>Cuenta premium";
         public static final String NO_PREMIUM = "<gray>Cuenta no premium";
+        public static final String PROFILE = "<gray>Clic para ver el perfil";
 
         private Head() {
         }

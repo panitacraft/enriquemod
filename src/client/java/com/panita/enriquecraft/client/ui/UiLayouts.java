@@ -1,9 +1,9 @@
 package com.panita.enriquecraft.client.ui;
 
-import com.panita.enriquecraft.core.network.ButtonRole;
 import com.panita.enriquecraft.core.network.UiElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.FrameLayout;
@@ -12,14 +12,17 @@ import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.layouts.SpacerElement;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
 import com.panita.enriquecraft.core.ui.PlayerModels;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Turns a screen description into vanilla layouts and widgets. The client sizes everything with its
@@ -37,12 +40,12 @@ final class UiLayouts {
     private static final int MIN_SCROLL_HEIGHT = 30;
     private static final int COMPACT_ICON = 32;
     /** The box of the player's model, as tall as a player is in the inventory screen is. */
-    private static final int MODEL_WIDTH = 80;
-    private static final int MODEL_HEIGHT = 140;
+    private static final int MODEL_WIDTH = 56;
+    private static final int MODEL_HEIGHT = 96;
 
     /** Where an element sits, since a spacer and a button mean something different in each place. */
     private enum Place {
-        COLUMN, ROW, GRID, FOOTER
+        COLUMN, ROW, GRID, LARGE_GRID, FOOTER
     }
 
     private final Font font;
@@ -53,9 +56,9 @@ final class UiLayouts {
     private final boolean compact;
     private final boolean flatScrolls;
     private final int maxWidth;
-    private final Map<Integer, UiInputWidget> inputs = new HashMap<>();
-    private final List<UiInputWidget> inputOrder = new ArrayList<>();
-    private UiInputWidget bodyInput;
+    private final Map<Integer, Supplier<String>> inputs = new LinkedHashMap<>();
+    private final List<AbstractWidget> inputOrder = new ArrayList<>();
+    private AbstractWidget bodyInput;
     private boolean hasScroll;
 
     /**
@@ -91,7 +94,7 @@ final class UiLayouts {
     }
 
     /** The first text field in the body, which the screen focuses so the player can start typing; null if none. */
-    UiInputWidget bodyInput() {
+    AbstractWidget bodyInput() {
         return bodyInput;
     }
 
@@ -139,18 +142,25 @@ final class UiLayouts {
     /** A text field, remembered by id so a confirm button can send what it holds. */
     private UiInputWidget input(UiElement.TextInput input) {
         UiInputWidget widget = new UiInputWidget(font, input, actions);
-        inputs.put(input.id(), widget);
+        inputs.put(input.id(), widget::getValue);
         inputOrder.add(widget);
         return widget;
     }
 
-    /** What a footer button does when pressed: a form's confirm sends its field's value, any other button presses. */
+    /** A multi-line field, remembered by id like a one-line one. */
+    private LayoutElement textArea(UiElement.TextArea area) {
+        UiTextAreaWidget widget = new UiTextAreaWidget(font, area, maxWidth);
+        inputs.put(area.id(), widget::getValue);
+        inputOrder.add(widget.field());
+        return widget.layout();
+    }
+
+    /** What a footer button does when pressed: a form's confirm sends the value of every field of the form, any other button presses. */
     private UiButtonWidget.Press pressOf(UiElement.Button button) {
         if (button.submits() != UiElement.Button.NO_INPUT) {
             return (mouse, shift) -> {
-                UiInputWidget field = inputs.get(button.submits());
-                if (field != null) {
-                    actions.submit(button.submits(), field.getValue());
+                if (inputs.containsKey(button.submits())) {
+                    actions.submitAll(inputs.entrySet().stream().map(field -> Map.entry(field.getKey(), field.getValue().get())).toList());
                 }
             };
         }
@@ -161,9 +171,19 @@ final class UiLayouts {
         LinearLayout row = LinearLayout.horizontal().spacing(SPACING);
         boolean gap = false;
         boolean any = false;
+        List<UiVerticalRuleWidget> rules = new ArrayList<>();
         for (UiElement child : children) {
             if (child instanceof UiElement.Spacer) {
                 gap = true;
+                continue;
+            }
+            // A divider between the elements of a row is a vertical line as tall as the row
+            if (child instanceof UiElement.Divider) {
+                UiVerticalRuleWidget rule = new UiVerticalRuleWidget();
+                rules.add(rule);
+                row.addChild(rule, settings -> settings.paddingHorizontal(GAP / 2));
+                gap = false;
+                any = true;
                 continue;
             }
             if (gap && any) {
@@ -181,6 +201,11 @@ final class UiLayouts {
             gap = false;
             any = true;
         }
+        if (!rules.isEmpty()) {
+            row.arrangeElements();
+            rules.forEach(rule -> rule.setHeight(row.getHeight()));
+            row.arrangeElements();
+        }
         return row;
     }
 
@@ -191,6 +216,7 @@ final class UiLayouts {
             case UiElement.Grid grid -> grid(grid);
             case UiElement.Scroll scroll -> scroll(scroll);
             case UiElement.Label label -> text(label.text());
+            case UiElement.Note note -> new UiNoteWidget(font, note.lines());
             case UiElement.Page page -> text(Component.literal(page.page() + " / " + page.pages()));
             // In a row, a pressable detail is a card; elsewhere it is the full view of one thing.
             case UiElement.Detail detail -> place == Place.ROW && detail.iconId() != UiElement.Detail.NOT_PRESSABLE
@@ -198,17 +224,27 @@ final class UiLayouts {
                             (mouse, shift) -> actions.press(detail.iconId(), mouse, shift))
                     : detail(detail);
             case UiElement.TextInput input -> input(input);
+            case UiElement.TextArea area -> textArea(area);
+            case UiElement.Toggle toggle -> new UiToggleWidget(font, toggle, actions);
             case UiElement.Dropdown dropdown -> dropdown(dropdown);
             case UiElement.Divider ignored -> new UiDividerWidget();
             case UiElement.Rule ignored -> new UiRuleWidget();
             case UiElement.PinPad pad -> new UiPinPadWidget(font, pad, actions, compact);
             case UiElement.Button button -> switch (place) {
                 case GRID -> UiButtonWidget.cell(font, button, actions);
+                case LARGE_GRID -> UiButtonWidget.tile(font, button, actions);
                 case FOOTER -> footerButton(button);
-                default -> UiButtonWidget.action(font, button, actions);
+                default -> switch (button.role()) {
+                    case EMBLEM -> UiButtonWidget.emblem(font, button, actions);
+                    default -> UiButtonWidget.action(font, button, actions);
+                };
             };
             // Grid cells keep their size so the grid stays aligned; elsewhere a spacer is just a gap.
-            case UiElement.Spacer ignored -> place == Place.GRID ? new UiCellWidget() : SpacerElement.height(SPACING);
+            case UiElement.Spacer ignored -> switch (place) {
+                case GRID -> new UiCellWidget(UiButtonWidget.CELL_SIZE);
+                case LARGE_GRID -> new UiCellWidget(UiButtonWidget.TILE_SIZE);
+                default -> SpacerElement.height(SPACING);
+            };
         };
     }
 
@@ -277,7 +313,7 @@ final class UiLayouts {
         if (!detail.icon().isEmpty()) {
             int size = largeIconSize(detail.icon());
             LayoutElement icon = PlayerModels.isModel(detail.icon())
-                    ? new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT)
+                    ? model(detail.icon())
                     : detail.iconId() == UiElement.Detail.NOT_PRESSABLE
                     ? new UiItemWidget(detail.icon(), size)
                     : UiButtonWidget.big(font, detail.icon(), size, detail.iconTooltip(),
@@ -291,6 +327,15 @@ final class UiLayouts {
         }
         detail.lines().forEach(line -> column.addChild(new UiLineWidget(font, line), settings -> settings.alignHorizontallyCenter()));
         return column;
+    }
+
+    /** The model of the viewer, or of the player whose profile the head holds; the head's item when that profile is missing. */
+    private LayoutElement model(ItemStack head) {
+        if (PlayerModels.isViewer(head)) {
+            return new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT);
+        }
+        ResolvableProfile profile = head.get(DataComponents.PROFILE);
+        return profile == null ? new UiItemWidget(head, COMPACT_ICON) : new UiPlayerModelWidget(MODEL_WIDTH, MODEL_HEIGHT, profile);
     }
 
     /** A title that is a text field once clicked, with a check beside it that appears when the value changed. */
@@ -349,7 +394,7 @@ final class UiLayouts {
                 overlay = label;
                 child = new UiElement.Spacer();
             }
-            layout.addChild(build(child, Place.GRID), index / grid.columns(), index % grid.columns());
+            layout.addChild(build(child, grid.large() ? Place.LARGE_GRID : Place.GRID), index / grid.columns(), index % grid.columns());
         }
         if (overlay == null) {
             return layout;

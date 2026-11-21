@@ -11,8 +11,8 @@ import net.minecraft.network.chat.Component;
  */
 final class UiCellWidget extends AbstractWidget {
 
-    UiCellWidget() {
-        super(0, 0, UiButtonWidget.CELL_SIZE, UiButtonWidget.CELL_SIZE, Component.empty());
+    UiCellWidget(int size) {
+        super(0, 0, size, size, Component.empty());
         active = false;
     }
 

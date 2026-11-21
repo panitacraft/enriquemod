@@ -9,7 +9,6 @@ import com.panita.enriquecraft.profile.data.PrankLevel;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -24,7 +23,7 @@ import java.util.regex.Pattern;
 public final class ProfileConfig implements ModConfig {
 
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
-    private static final List<String> CATEGORIES = List.of("system", "emblem", "local_emblem");
+    private static final List<String> CATEGORIES = List.of("emblem", "local_emblem");
     private static final String PRANK_IMAGES = "https://res.cloudinary.com/panita/image/upload/v1794522697/panita-extra/pranks/";
     private static final List<String> PRANK_WORDS = List.of("zero", "one", "two", "three");
     private static final List<String> PRANK_COLORS = List.of("white", "yellow", "gold", "red");
@@ -35,7 +34,7 @@ public final class ProfileConfig implements ModConfig {
     public final ConfigValue<List<PrankLevel>> pranks;
     public final ConfigValue<Integer> prankCooldownSeconds;
     public final ConfigValue<String> emptyEmblemImage;
-    public final ConfigValue<String> systemPrefixes;
+    public final ConfigValue<String> nationalityPrefix;
     public final ConfigValue<Integer> loreMax;
     public final ConfigValue<Integer> refreshCooldownSeconds;
     public final ConfigValue<Integer> cacheSeconds;
@@ -62,10 +61,10 @@ public final class ProfileConfig implements ModConfig {
                         + "trusted image host, or empty for text only. Ending it in #size=<n> (2 to 12) draws it n GUI pixels tall; ordinary\n"
                         + "emblems are 10 and the text is 8.",
                 value -> value.isEmpty() || ArtLinks.isTrusted(value), "must be empty or an https address on a trusted image host");
-        systemPrefixes = builder.string("systemPrefixes", "nationality_",
-                "System emblems of the Panita API players can choose to show, by the start of their id, separated by commas. Empty offers\n"
-                        + "none.",
-                ProfileConfig::isIdList, "must be ids made of letters, digits, - or _, separated by commas");
+        nationalityPrefix = builder.string("nationalityPrefix", "nationality_",
+                "The start of the id of the nationality emblem of the Panita API, which the profile shows beside the name. A player cannot\n"
+                        + "change it in game. Empty shows none.",
+                value -> value.isEmpty() || ID.matcher(value).matches(), "must be empty or made of letters, digits, - or _");
         loreMax = builder.intRange("loreMax", 3, 0, 10, "The most emblems a player can choose to show next to their name, after it.");
         refreshCooldownSeconds = builder.intRange("refreshCooldownSeconds", 60, 0, 86_400,
                 "Seconds a player must wait before refreshing their own profile again with /profile refresh. 0 turns the wait off.");
@@ -80,13 +79,8 @@ public final class ProfileConfig implements ModConfig {
                         + "An emblem with no entry looks as its category does (categoryLooks).",
                 new LooksType(value -> ID.matcher(value).matches(), "emblem id"));
         categoryLooks = builder.custom("categoryLooks", defaultCategoryLooks(),
-                "How an emblem with no entry in looks is drawn, by its category: system, emblem or local_emblem.",
-                new LooksType(CATEGORIES::contains, "category (system, emblem or local_emblem)"));
-    }
-
-    /** The ids of a setting written as names separated by commas, without blanks. */
-    public static List<String> idsOf(String setting) {
-        return Arrays.stream(setting.split(",")).map(String::strip).filter(id -> !id.isEmpty()).toList();
+                "How an emblem with no entry in looks is drawn, by its category: emblem or local_emblem.",
+                new LooksType(CATEGORIES::contains, "category (emblem or local_emblem)"));
     }
 
     /** Four levels, each plain and plus, with the images and the colors (white, yellow, gold, red) the server was designed with. */
@@ -110,13 +104,8 @@ public final class ProfileConfig implements ModConfig {
 
     private static Map<String, EmblemLook> defaultCategoryLooks() {
         Map<String, EmblemLook> defaults = new LinkedHashMap<>();
-        defaults.put("system", new EmblemLook("●", "gold"));
         defaults.put("emblem", new EmblemLook("○", "gray"));
         defaults.put("local_emblem", new EmblemLook("○", "gray"));
         return Collections.unmodifiableMap(defaults);
-    }
-
-    private static boolean isIdList(String value) {
-        return value.isBlank() || idsOf(value).stream().allMatch(id -> ID.matcher(id).matches());
     }
 }

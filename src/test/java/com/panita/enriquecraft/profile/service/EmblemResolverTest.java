@@ -30,7 +30,7 @@ class EmblemResolverTest {
     }
 
     private static ModProfile profile(ApiEmblem... emblems) {
-        return new ModProfile(7, Optional.of("Alex"), "alex", List.of(emblems));
+        return new ModProfile(7, Optional.of("Alex"), "alex", Optional.empty(), List.of(emblems));
     }
 
     private static List<String> ids(List<EmblemView> views) {
@@ -86,7 +86,7 @@ class EmblemResolverTest {
         assertEquals("enrique6_prank_1", emblems.prank().id());
         assertEquals(List.of(), emblems.chosen());
         assertEquals(List.of(), emblems.selectable());
-        assertEquals(3, emblems.empty().size());
+        assertEquals(List.of("no_emblem", "no_emblem", "no_emblem"), ids(emblems.slots()));
     }
 
     @Test
@@ -101,25 +101,27 @@ class EmblemResolverTest {
     }
 
     @Test
-    void theStaffEmblemAndTheNationalityAreChosenLikeAnyOther() {
+    void theStaffEmblemIsChosenLikeAnyOther() {
         PlayerEmblems emblems = resolve(profile(
-                emblem("nationality_co", EmblemCategory.SYSTEM, 1),
-                emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 2),
-                emblem("hero", EmblemCategory.EMBLEM, 3),
-                emblem("extra", EmblemCategory.EMBLEM, 4)), Optional.empty());
+                emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 1),
+                emblem("hero", EmblemCategory.EMBLEM, 2),
+                emblem("extra", EmblemCategory.EMBLEM, 3),
+                emblem("more", EmblemCategory.EMBLEM, 4)), Optional.empty());
 
-        assertEquals(List.of("nationality_co", "enriquecraft6_staff", "hero", "extra"), ids(emblems.selectable()));
-        assertEquals(List.of("nationality_co", "enriquecraft6_staff", "hero"), ids(emblems.chosen()));
+        assertEquals(List.of("enriquecraft6_staff", "hero", "extra", "more"), ids(emblems.selectable()));
+        assertEquals(List.of("enriquecraft6_staff", "hero", "extra"), ids(emblems.chosen()));
     }
 
     @Test
-    void aSystemEmblemTheServerDoesNotAcceptNeverShows() {
+    void aSystemEmblemNeverShowsExceptTheNationalityWhichStandsApart() {
         PlayerEmblems emblems = resolve(profile(
+                emblem("nationality_co", EmblemCategory.SYSTEM, 1),
                 emblem("veterano", EmblemCategory.SYSTEM, 1),
                 emblem("master_of_lens", EmblemCategory.SYSTEM, 2)), Optional.empty());
 
         assertEquals(List.of(), ids(emblems.selectable()));
         assertEquals(List.of(), ids(emblems.chosen()));
+        assertEquals(Optional.of("nationality_co"), emblems.nationality().map(EmblemView::id));
     }
 
     @Test
@@ -128,11 +130,21 @@ class EmblemResolverTest {
         PlayerEmblems full = resolve(profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.EMBLEM, 2),
                 emblem("c", EmblemCategory.EMBLEM, 3)), Optional.empty());
 
-        assertEquals(List.of("no_emblem", "no_emblem"), ids(one.empty()));
+        assertEquals(List.of("a", "no_emblem", "no_emblem"), ids(one.slots()));
         assertEquals(Optional.of("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=3"),
-                one.empty().getFirst().iconUrl());
-        assertEquals(new EmblemLook("○", "dark_gray"), one.empty().getFirst().look());
-        assertTrue(full.empty().isEmpty());
+                one.slots().get(1).iconUrl());
+        assertEquals(new EmblemLook("○", "dark_gray"), one.slots().get(1).look());
+        assertEquals(List.of("a", "b", "c"), ids(full.slots()));
+    }
+
+    @Test
+    void anyPlaceCanBeLeftEmptyWhileAnotherIsFilled() {
+        PlayerEmblems emblems = resolve(profile(emblem("a", EmblemCategory.EMBLEM, 1), emblem("b", EmblemCategory.EMBLEM, 2)),
+                Optional.of(List.of("", "", "b")));
+
+        assertEquals(List.of("no_emblem", "no_emblem", "b"), ids(emblems.slots()));
+        assertEquals(List.of("b"), ids(emblems.chosen()));
+        assertEquals(List.of("", "", "b"), emblems.placedIds());
     }
 
     @Test
@@ -182,7 +194,6 @@ class EmblemResolverTest {
     @Test
     void anEmblemLooksAsItsOwnEntryOrElseAsItsCategory() {
         assertEquals(new EmblemLook("★", "#ff5555"), resolver.lookOf(emblem("enriquecraft6_staff", EmblemCategory.LOCAL_EMBLEM, 1)));
-        assertEquals(new EmblemLook("●", "gold"), resolver.lookOf(emblem("nationality_co", EmblemCategory.SYSTEM, 1)));
         assertEquals(new EmblemLook("○", "gray"), resolver.lookOf(emblem("hero", EmblemCategory.EMBLEM, 1)));
         assertEquals(new EmblemLook("○", "gray"), resolver.lookOf(emblem("rey", EmblemCategory.TITLE, 1)));
     }

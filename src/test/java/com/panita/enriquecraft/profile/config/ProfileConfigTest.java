@@ -51,14 +51,7 @@ class ProfileConfigTest {
                 config.pranks.get().getLast().image());
         assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522806/panita-extra/emblems/no_emblem.png#size=3", config.emptyEmblemImage.get());
         assertEquals(new EmblemLook("★", "#ff5555"), config.looks.get().get("enriquecraft6_staff"));
-        assertEquals(new EmblemLook("●", "gold"), config.categoryLooks.get().get("system"));
         assertEquals(new EmblemLook("○", "gray"), config.categoryLooks.get().get("emblem"));
-    }
-
-    @Test
-    void idListsAreSplitOnCommasWithoutBlanks() {
-        assertEquals(List.of("staff", "owner"), ProfileConfig.idsOf(" staff , owner ,, "));
-        assertEquals(List.of(), ProfileConfig.idsOf(""));
     }
 
     @Test
@@ -139,8 +132,8 @@ class ProfileConfigTest {
         ConfigManager manager = new ConfigManager(directory);
         ProfileConfig config = manager.bind("profile", ProfileConfig.class);
 
-        assertEquals(List.of("system", "emblem", "local_emblem"), List.copyOf(config.categoryLooks.get().keySet()));
-        assertThrows(InvalidValueException.class, () -> new LooksType(List.of("system")::contains, "category")
+        assertEquals(List.of("emblem", "local_emblem"), List.copyOf(config.categoryLooks.get().keySet()));
+        assertThrows(InvalidValueException.class, () -> new LooksType(List.of("emblem")::contains, "category")
                 .parse(json("{\"title\": {\"icon\": \"★\", \"color\": \"gold\"}}")));
     }
 }

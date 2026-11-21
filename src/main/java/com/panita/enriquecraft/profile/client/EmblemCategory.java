@@ -6,7 +6,7 @@ import java.util.Optional;
 /** The kinds of emblem the Panita API has. */
 public enum EmblemCategory {
 
-    /** Given by the system (nationality, veteran, awards); never tied to an edition. */
+    /** Given by the system (nationality, veteran, awards); never tied to an edition. Only the nationality is shown by this server. */
     SYSTEM("system"),
     /** A global emblem with an icon. */
     EMBLEM("emblem"),

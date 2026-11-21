@@ -81,6 +81,8 @@ public final class InlineArtTextures {
     }
 
     private static final Map<String, Entry> ENTRIES = new HashMap<>();
+    /** Counts the glyphs that got their image, so a screen laid out before it can lay itself out again. */
+    private static int generation;
     private static final ExecutorService WORKER = Executors.newFixedThreadPool(2, task -> {
         Thread thread = new Thread(task, "enriquecraft-inline-art");
         thread.setDaemon(true);
@@ -89,6 +91,11 @@ public final class InlineArtTextures {
     private static final ImageFetcher FETCHER = new ImageFetcher(WORKER, MAX_BYTES, Duration.ofSeconds(8));
 
     private InlineArtTextures() {
+    }
+
+    /** Changes whenever an image becomes ready: text laid out before that was measured with the room of a letter for it. */
+    public static int generation() {
+        return generation;
     }
 
     /** The glyphs of a font of this mod's images, when the description is one; the client's font code calls this for every font it draws. */
@@ -384,6 +391,7 @@ public final class InlineArtTextures {
         entry.scale = scale;
         entry.texture = register(client, "inline_art/" + id + "_x" + scale, pixels);
         entry.glyph.show(entry.texture, pixels.width() / (float) scale, pixels.height() / (float) scale);
+        generation++;
         // The lines that hold the glyph were laid out before it had its width
         client.gui.hud.getChat().rescaleChat();
     }
