@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
@@ -102,6 +103,15 @@ public final class AfkService {
     /** Whether the player shows as AFK: idle, and not one of those who never do. */
     public boolean isAfk(ServerPlayer player) {
         return isIdle(player.getUUID()) && !ChatPermissions.canBypassAfk(player);
+    }
+
+    /**
+     * The name of a player in the AFK color when they are AFK and have no rank, which would carry the color otherwise.
+     *
+     * @param hasRank only asked when the player is AFK
+     */
+    public Component shadeName(ServerPlayer player, Component name, Predicate<ServerPlayer> hasRank) {
+        return isAfk(player) && !hasRank.test(player) ? shade(name) : name;
     }
 
     /** The text in the AFK color. */

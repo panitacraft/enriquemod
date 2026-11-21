@@ -5,6 +5,7 @@ import com.panita.enriquecraft.chat.channel.ChannelSelection;
 import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.message.RankTooltip;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.message.TabText;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.api.ServerPlaceholderContext;
@@ -49,9 +50,22 @@ public final class ChatPlaceholders {
         Placeholders.registerServer(id("rank"), (context, argument) -> context.hasServerPlayer()
                 ? PlaceholderResult.value(rank(context))
                 : PlaceholderResult.invalid("No player"));
+        // The plain variants are for tab list mods, which read only literal text (see TabText)
+        Placeholders.registerServer(id("rank_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(rank(context)))
+                : PlaceholderResult.invalid("No player"));
+        Placeholders.registerServer(id("name_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(name(context.serverPlayer())))
+                : PlaceholderResult.invalid("No player"));
         Placeholders.registerServer(id("channel"), (context, argument) -> context.hasServerPlayer()
                 ? PlaceholderResult.value(selection.current(context.serverPlayer()).id())
                 : PlaceholderResult.invalid("No player"));
+    }
+
+    /** The nickname of the player, or their name, in the AFK color when they are AFK and have no rank to carry it. */
+    private Component name(ServerPlayer player) {
+        Component shown = nicknames.nicknameOf(player.getUUID()).orElseGet(() -> Component.literal(player.getGameProfile().name()));
+        return afk.shadeName(player, shown, this::hasRank);
     }
 
     /**

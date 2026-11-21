@@ -43,16 +43,13 @@ public final class SenderNameView {
         return decorated(player, Component.literal(realName(player)));
     }
 
-    private Component shaded(ServerPlayer player, Component shown) {
-        return afk.isAfk(player) && !hasRank.test(player) ? afk.shade(shown) : shown;
-    }
 
     private Component decorated(ServerPlayer player, Component shown) {
         String name = realName(player);
         Component tooltip = messenger.format(Message.plain(ChatMessages.Format.NAME_HOVER)
                 .with("nickname", nicknames.nicknameOf(player.getUUID()).orElse(shown))
                 .with("name", name), player);
-        return shaded(player, shown).copy().withStyle(style -> style
+        return afk.shadeName(player, shown, hasRank).copy().withStyle(style -> style
                 .withHoverEvent(new HoverEvent.ShowText(tooltip))
                 .withClickEvent(new ClickEvent.SuggestCommand("/msg " + name + " ")));
     }
