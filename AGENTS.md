@@ -59,6 +59,12 @@ The server mod is installed on the server and is the only required part. Players
 - Every authorized commit must have the owner as the only author. No `Co-Authored-By` trailers, no tool or AI attribution, no other authorship in commit messages, pull request descriptions, or metadata. This rule overrides any default attribution behavior of any tool.
 - Do not change git configuration.
 
+### Versioning
+
+- The version is `mod_version` in `gradle.properties`; it names the jars and is the version Fabric Loader shows. It follows Semantic Versioning, `MAJOR.MINOR.PATCH`, and starts at `1.0.0`, the first stable release.
+- Every time a new branch is pushed to the remote, bump `mod_version` first, by how much the branch changes: patch (`x.y.Z`) for fixes and small tweaks, minor (`x.Y.0`) for new features or a noticeable set of changes, major (`X.0.0`) only for breaking changes, such as a change that makes an existing server or client jar incompatible, or a config or data file that must be recreated. Commit the bump on that branch as `repo, build: bump the version to X.Y.Z`.
+- `NetworkProtocol.VERSION` is a separate number for the client and server handshake and is not the mod version.
+
 ### Commit convention
 
 Every commit MUST follow [Conventional Commits](https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13), adapted to lead with the area the change belongs to instead of a parenthetical scope:
