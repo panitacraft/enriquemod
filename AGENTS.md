@@ -14,11 +14,11 @@ This file is the source of truth for how work is done in this project. Every con
   - Placeholder API (`eu.pb4:placeholder-api`, LGPL-3.0): text tags and placeholders. Keep its license file intact when distributing.
   - Fabric Permissions API (`me.lucko:fabric-permissions-api`): LuckPerms-compatible permission nodes.
 - **Approved test libraries** (test scope only, never shipped): JUnit 5, and `fabric-loader-junit` (starts a minimal Fabric Loader inside tests, which Placeholder API needs to parse text).
-- **Bundled assets** (client companion only): the Poppins SemiBold font, used for screen titles, under the SIL Open Font License. Its license file sits beside it in `src/client/resources/assets/enriquecraft/font/` and must ship with the jar. The icon of the Panita Bot (8x8, the owner's own artwork, no license), a one-glyph font used as the head of Discord messages. Add a font or any other third-party asset only with the owner's approval, and keep its license next to it.
+- **Bundled assets** (client companion only): the Poppins SemiBold font, used for screen titles, under the SIL Open Font License. Its license file sits beside it in `client/src/main/resources/assets/enriquecraft/font/` and must ship with the jar. The icon of the Panita Bot (8x8, the owner's own artwork, no license), a one-glyph font used as the head of Discord messages. Add a font or any other third-party asset only with the owner's approval, and keep its license next to it.
 
 ## 2. Non-Negotiable Constraint: Server-Authoritative With an Optional Client Companion
 
-The mod is installed on the server and is the only required part. Players MUST be able to join with a vanilla client and get the full vanilla-compatible experience. Players who install the mod on their client get an enhanced experience on top of it. The client companion is always optional and never required.
+The server mod is installed on the server and is the only required part. Players MUST be able to join with a vanilla client and get the full vanilla-compatible experience. Players who install the mod on their client get an enhanced experience on top of it. The client companion is always optional and never required.
 
 ### Server rules
 - All game logic, state, and validation live on the server. The server is the single source of truth.
@@ -26,26 +26,26 @@ The mod is installed on the server and is the only required part. Players MUST b
 - The server never trusts data received from a client. Validate everything.
 - Do not add anything a vanilla client would reject on join: custom blocks, items, entities, block entities, or custom registry entries. Use vanilla content only, unless the owner approves otherwise.
 - Do not require a resource pack or any client-side asset for the vanilla experience.
-- Server code in `src/main` must never reference client classes (`net.minecraft.client.*`, Fabric API client modules). Client classes do not exist on a dedicated server and crash it.
+- Code in `server` and `common` must never reference client classes (`net.minecraft.client.*`, Fabric API client modules). Client classes do not exist on a dedicated server and crash it.
 
 ### Client companion rules
-- Client-only code lives in `src/client` and only adds enhancements. It never changes server rules or gameplay.
+- Client-only code lives in the `client` project and only adds enhancements. It never changes server rules or gameplay.
 - Every client-enhanced feature must have a defined vanilla fallback, implemented on the server, and both must be delivered together.
 - The server sends custom payloads only to players whose client has announced support for that channel (`ServerPlayNetworking.canSend` or the configuration-phase equivalent). Never send custom payloads to a client that has not announced support.
-- Payload types, codecs, and the protocol version are shared in `src/main` (`network` package). Client and server exchange the protocol version on join. On a mismatch, the server treats that player as vanilla.
+- Payload types, codecs, and the protocol version are shared in the `common` project (`network` packages), and `NetworkProtocol.registerPayloads()` registers them; the server mod and the client companion each call it once at startup. Client and server exchange the protocol version on join. On a mismatch, the server treats that player as vanilla.
 - Client mixins are declared in the client mixin config and target client classes only.
 - Whether a player's client offers an enhancement is answered by one service, `ClientCapabilities.supports(player, ClientFeature)`. Features call it and fall back to vanilla on false; they never inspect protocol versions or channels themselves. A new enhancement adds one `ClientFeature` value, and the client adds it to its announced set only once it implements it.
 - The client sends `HelloC2S` on join, only after checking `ClientPlayNetworking.canSend`, because sending a payload the server did not register throws. What it announces is untrusted: the server accepts it only for the exact protocol version and only for features it knows.
 
 ### Environment
-- `fabric.mod.json` uses `"environment": "*"` and declares the client entrypoint, since the capability announcement is the first client enhancement.
-- Client-only text and key names live in `src/client/resources/assets/enriquecraft/lang/en_us.json`, written in Spanish like all player-visible text. The client's keys (the staff menu on U and the profile menu on P, rebindable in the controls) only run a server command, so the server keeps deciding who may do what; they do nothing on a server without the mod.
+- The mod ships as three jars from one repository. `server` (mod id `enriquecraft`, `"environment": "server"`) is what a host installs. `client` (mod id `enriquecraft-client`, `"environment": "client"`, the `client` entrypoint) is the optional companion a player installs. `common` (mod id `enriquecraft-common`, `"environment": "*"`) holds only the protocol and helpers both sides share, and is bundled inside the other two jars (jar-in-jar), never installed alone. The server jar does not run in a singleplayer world; test it with `./gradlew :server:runServer` and the client with `./gradlew :client:runClient`. A class goes into `common` only when the client really needs it; everything else stays in `server`.
+- Client-only text and key names live in `client/src/main/resources/assets/enriquecraft/lang/en_us.json`, written in Spanish like all player-visible text. The client's keys (the staff menu on U and the profile menu on P, rebindable in the controls) only run a server command, so the server keeps deciding who may do what; they do nothing on a server without the mod.
 
 ## 3. Language and Communication
 
 ### Code and repository
 - All code, identifiers, comments, Javadoc, logs, commit messages, and documentation are written in English.
-- End-user-facing text (anything the player sees in game) is written in Spanish. Vanilla clients cannot resolve custom translation keys, so text sent by the server must be literal text components built on the server. Keep all such text in a dedicated message class or server-side resource file. Text shown only by the client companion may use translation keys with lang files in `src/client/resources`. Never scatter player-visible strings across Java classes.
+- End-user-facing text (anything the player sees in game) is written in Spanish. Vanilla clients cannot resolve custom translation keys, so text sent by the server must be literal text components built on the server. Keep all such text in a dedicated message class or server-side resource file. Text shown only by the client companion may use translation keys with lang files in `client/src/main/resources`. Never scatter player-visible strings across Java classes.
 
 ### Communication with the project owner
 - Use simple, clear, understandable English.
@@ -221,14 +221,14 @@ Every module follows the same layout:
 | `mixin` | Mixin classes (server-safe only). Thin, delegating. |
 | `event` | Fabric events (`EventFactory`) and their payload records, for the modules that follow this one (`AuthEvents`, `ChatEvents`). |
 
-The client companion lives in `src/client`, in the package `com.panita.enriquecraft.client`, with its own entrypoint (`EnriquecraftClient`), payload handlers, rendering, HUD, screens (`client.ui` shows the screens the server describes), and client mixins (`client.mixin`). It only adds enhancements.
+The client companion lives in the `client` project, in the package `com.panita.enriquecraft.client`, with its own entrypoint (`EnriquecraftClient`), payload handlers, rendering, HUD, screens (`client.ui` shows the screens the server describes), and client mixins (`client.mixin`). It only adds enhancements.
 
 Rules:
-- The build uses split source sets. `src/main` holds server code and the shared protocol. `src/client` holds the client companion and client resources.
-- `src/main` never depends on `src/client`. `src/client` may depend on `src/main`. The scanner never scans client packages.
+- The build has three Gradle projects. `server/src/main` holds the server mod and `server/src/test` its tests. `client/src/main` holds the client companion and its resources. `common/src/main` holds the shared protocol and helpers (payloads and their codecs, `ClientFeature`, `UiElement`, `ArtLinks`, the image decoding and fetching helpers), keeping the package names they had, so a class moves between projects without changing its imports.
+- `common` depends on neither `server` nor `client`; both depend on `common`, and `server` and `client` never depend on each other. The scanner never scans client packages.
 - The entrypoint only registers modules. Commands and listeners are never registered by hand.
 - Dependencies point inward: presentation and listeners depend on services, never the reverse.
-- The client mixin config is `enriquecraft.client.mixins.json` (in `src/client/resources`, declared in `fabric.mod.json` for the client environment only); a client enhancement that needs a mixin adds it there, in `client.mixin`, kept thin and delegating to `client.chat` and the like.
+- The client mixin config is `enriquecraft.client.mixins.json` (in `client/src/main/resources`, declared in the `fabric.mod.json` of the client jar); a client enhancement that needs a mixin adds it there, in `client.mixin`, kept thin and delegating to `client.chat` and the like.
 - A module that needs mixins has its own config, `enriquecraft.<module>.mixins.json`, listed in `fabric.mod.json`, whose package is `<module>.mixin`. Mixin forbids loading any other class from that package, so it holds only mixins. A mixin is not built by the service registry, so it reaches services through one static class in the module root (`AuthHooks`), installed when the module loads; without it every mixin leaves vanilla behavior untouched. This hooks class is the only static access to services.
 - Fabric events cannot be unregistered, so modules cannot be enabled or disabled while the server runs.
 
@@ -387,8 +387,8 @@ Rules:
 
 - Maintain context of the whole project at all times: current state, recent changes, and goals. Every new implementation must integrate with what already exists.
 - Read the relevant existing code before changing it.
-- Verify changes by building: `./gradlew build`, which also runs the tests (and `./gradlew compileJava compileClientJava` for a quick check). Report failures honestly.
-- Logic that does not need the Minecraft runtime (for example the config framework and validators) must have unit tests in `src/test` using JUnit 5. A bug fix starts with a test that reproduces it when that is practical. Tests run from `build/test-run`.
+- Verify changes by building: `./gradlew build`, which builds the three jars and runs the tests (and `./gradlew compileJava` for a quick check). Report failures honestly.
+- Logic that does not need the Minecraft runtime (for example the config framework and validators) must have unit tests in `server/src/test` using JUnit 5. A bug fix starts with a test that reproduces it when that is practical. Tests run from `server/build/test-run`.
 - Tests that need Minecraft items or components call `MinecraftTestSupport.bootstrap()`; menus are checked without a player through `MenuTesting`. Behavior that needs a real player (teleporting, giving items, death capture) is checked on a dev server with Fabric's `FakePlayer`; force-load the chunk first, because no entity exists in an inactive chunk.
 - Do not include unrelated refactors in a feature change. Keep changes scoped to the request.
 - If a request violates any rule in this file, ask the owner "are you sure?" and state which rule is affected before doing anything.
