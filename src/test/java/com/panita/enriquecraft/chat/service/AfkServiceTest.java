@@ -2,10 +2,12 @@ package com.panita.enriquecraft.chat.service;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,6 +78,23 @@ class AfkServiceTest {
         enabled.set(false);
 
         assertFalse(afk.isIdle(player));
+    }
+
+    @Test
+    void aChangeIsReportedOnceInEachDirection() {
+        assertEquals(Optional.empty(), afk.transition(player, false));
+        assertEquals(Optional.of(true), afk.transition(player, true));
+        assertEquals(Optional.empty(), afk.transition(player, true));
+        assertEquals(Optional.of(false), afk.transition(player, false));
+    }
+
+    @Test
+    void aPlayerWhoLeftStartsOverNotAfk() {
+        afk.transition(player, true);
+
+        afk.forget(player);
+
+        assertEquals(Optional.empty(), afk.transition(player, false));
     }
 
     @Test

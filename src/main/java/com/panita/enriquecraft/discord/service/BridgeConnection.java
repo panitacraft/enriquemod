@@ -158,6 +158,7 @@ public final class BridgeConnection implements FrameSink {
     }
 
     /** Whether the bot said, in its welcome, that it offers an optional feature such as {@code media_upload}. */
+    @Override
     public boolean offers(String feature) {
         synchronized (lock) {
             return state == State.CONNECTED && features.contains(feature);

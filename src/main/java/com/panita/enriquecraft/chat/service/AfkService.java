@@ -7,7 +7,10 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
@@ -36,6 +39,8 @@ public final class AfkService {
     }
 
     private final Map<UUID, Activity> seen = new HashMap<>();
+    /** Players last reported as AFK, so a change is reported once. */
+    private final Set<UUID> shown = new HashSet<>();
     private final LongSupplier clockMillis;
     private final BooleanSupplier enabled;
     private final IntSupplier timeoutSeconds;
@@ -66,6 +71,25 @@ public final class AfkService {
 
     public void forget(UUID id) {
         seen.remove(id);
+        shown.remove(id);
+    }
+
+    /**
+     * Compares the state of a player with the one last reported.
+     *
+     * @return the new state when it changed (true: now AFK), empty when it did not
+     */
+    public Optional<Boolean> transition(UUID id, boolean afkNow) {
+        boolean before = shown.contains(id);
+        if (before == afkNow) {
+            return Optional.empty();
+        }
+        if (afkNow) {
+            shown.add(id);
+        } else {
+            shown.remove(id);
+        }
+        return Optional.of(afkNow);
     }
 
     /** Whether the player has been inactive for the timeout. A player never seen is not idle. */

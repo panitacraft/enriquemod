@@ -1,5 +1,7 @@
 package com.panita.enriquecraft.chat.listeners;
 
+import com.panita.enriquecraft.auth.service.HeldPlayers;
+import com.panita.enriquecraft.chat.event.ChatEvents;
 import com.panita.enriquecraft.chat.service.AfkService;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -19,12 +21,15 @@ import net.minecraft.world.entity.player.Player;
 public final class AfkListener implements ModListener {
 
     private static final int LOOK_INTERVAL_TICKS = 10;
+    private static final int REPORT_INTERVAL_TICKS = 20;
 
     private final AfkService afk;
+    private final HeldPlayers held;
     private int ticks;
 
-    public AfkListener(AfkService afk) {
+    public AfkListener(AfkService afk, HeldPlayers held) {
         this.afk = afk;
+        this.held = held;
     }
 
     @Override
@@ -34,6 +39,11 @@ public final class AfkListener implements ModListener {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (++ticks % LOOK_INTERVAL_TICKS == 0) {
                 server.getPlayerList().getPlayers().forEach(player -> afk.observe(player.getUUID(), player.getYRot(), player.getXRot()));
+            }
+            if (ticks % REPORT_INTERVAL_TICKS == 0) {
+                // The color needs no timer, since it is worked out per line; this is only for who follows the change
+                server.getPlayerList().getPlayers().stream().filter(player -> !held.isHeld(player)).forEach(player ->
+                        afk.transition(player.getUUID(), afk.isAfk(player)).ifPresent(now -> ChatEvents.AFK.invoker().onAfkChanged(player, now)));
             }
         });
         // Handlers that only watch return true, so they never decide whether the message is sent

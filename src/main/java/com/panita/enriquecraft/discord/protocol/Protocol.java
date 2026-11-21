@@ -21,6 +21,8 @@ public final class Protocol {
     public static final String FEATURE_MEDIA_UPLOAD = "media_upload";
     /** The optional feature of showing what a Discord reply answers, announced in the hello. */
     public static final String FEATURE_REPLY = "reply";
+    /** Only in the bot's welcome: it understands the {@code afk} and {@code back} events, so the mod may send them. */
+    public static final String FEATURE_AFK = "afk";
     /** The longest name of the author of the message a reply answers; longer is cut by the bot and refused here. */
     public static final int MAX_REPLY_AUTHOR = 80;
     /** The most images of one message that travel in a frame. */

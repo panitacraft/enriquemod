@@ -20,6 +20,7 @@ class GameReporterTest {
 
     private final List<OutFrame> sent = new ArrayList<>();
     private Set<String> bridged = Set.of("global");
+    private Set<String> offered = Set.of();
     private final GameReporter reporter = new GameReporter(new FrameSink() {
         @Override
         public void send(OutFrame frame) {
@@ -29,6 +30,11 @@ class GameReporterTest {
         @Override
         public boolean bridges(String channel) {
             return bridged.contains(channel);
+        }
+
+        @Override
+        public boolean offers(String feature) {
+            return offered.contains(feature);
         }
     });
 
@@ -144,6 +150,38 @@ class GameReporterTest {
     @Test
     void doesNotReportABroadcastThatIsNothingButMarkup() {
         reporter.broadcast("<red></red>");
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
+    void reportsAfkAndBackToABotThatOffersIt() {
+        offered = Set.of("afk");
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.afk(JAVI, true);
+        reporter.afk(JAVI, false);
+
+        assertEquals(List.of(event(EventKind.AFK, Optional.of(JAVI), Optional.empty(), Optional.empty()),
+                event(EventKind.BACK, Optional.of(JAVI), Optional.empty(), Optional.empty())), sent);
+    }
+
+    @Test
+    void tellsNothingAboutAfkToABotThatDoesNotOfferIt() {
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.afk(JAVI, true);
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
+    void tellsNothingAboutAfkOfAPlayerWhoWasNeverReady() {
+        offered = Set.of("afk");
+
+        reporter.afk(JAVI, true);
 
         assertTrue(sent.isEmpty());
     }

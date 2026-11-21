@@ -3,6 +3,7 @@ package com.panita.enriquecraft.discord.service;
 import com.panita.enriquecraft.discord.protocol.EventKind;
 import com.panita.enriquecraft.discord.protocol.OutFrame;
 import com.panita.enriquecraft.discord.protocol.PlayerInfo;
+import com.panita.enriquecraft.discord.protocol.Protocol;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -66,6 +67,16 @@ public final class GameReporter {
 
     public void advanced(PlayerInfo player, String text, Optional<String> key) {
         event(EventKind.ADVANCEMENT, Optional.of(player), Optional.of(PlainText.event(text)), key);
+    }
+
+    /**
+     * A player became AFK or came back. Only told to a bot that offers the feature, since one that does not know the kinds could
+     * refuse the frame, and only for players who were reported as in.
+     */
+    public void afk(PlayerInfo player, boolean afk) {
+        if (ready.contains(player.uuid()) && sink.offers(Protocol.FEATURE_AFK)) {
+            event(afk ? EventKind.AFK : EventKind.BACK, Optional.of(player), Optional.empty(), Optional.empty());
+        }
     }
 
     /** @param raw what staff wrote, which may carry text tags and color codes */
