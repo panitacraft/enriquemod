@@ -148,7 +148,6 @@ final class ProfileDialogs {
         MutableComponent name = Component.empty().append(PlayerHeads.glyph(subject.id(), subject.skin())).append(Component.literal(" "));
         menu.rank(subject).ifPresent(name::append);
         name.append(Component.literal(subject.name()).withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD));
-        emblems.nationality().ifPresent(nationality -> name.append(Component.literal(" ")).append(tooltip.glyph(nationality)));
         MutableComponent text = Component.empty().append(name);
         if (!subject.details().pronouns().isEmpty()) {
             text.append(Component.literal("\n" + subject.details().pronouns()).withStyle(ChatFormatting.GRAY));
