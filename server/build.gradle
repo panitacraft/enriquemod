@@ -1,0 +1,36 @@
+loom {
+    mods {
+        "enriquecraft" {
+            sourceSet sourceSets.main
+        }
+    }
+
+    runs {
+        server {
+            // Keeps the dev server's world and config where they already were.
+            runDir "../run"
+        }
+    }
+}
+
+dependencies {
+    include(implementation(project(":lib")))
+
+    // Bundled inside the mod jar so servers do not need to install them separately.
+    include(implementation("eu.pb4:placeholder-api:${rootProject.placeholder_api_version}"))
+    include(implementation("me.lucko:fabric-permissions-api:${rootProject.permissions_api_version}"))
+
+    // Unit tests only; nothing here is shipped in the mod jar.
+    testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    // Starts a minimal Fabric Loader inside tests, which Placeholder API needs to parse text.
+    testImplementation "net.fabricmc:fabric-loader-junit:${rootProject.loader_version}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
+    // Minecraft's logging writes a logs folder into the working directory; keep it out of the repository.
+    workingDir = file("build/test-run")
+    doFirst { workingDir.mkdirs() }
+}

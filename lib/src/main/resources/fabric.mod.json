@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "enriquecraft-lib",
+  "version": "${version}",
+  "name": "Enriquecraft Lib",
+  "description": "Protocol shared by the Enriquecraft server mod and its client companion",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

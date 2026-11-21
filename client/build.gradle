@@ -1,0 +1,11 @@
+loom {
+    mods {
+        "enriquecraft-client" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    include(implementation(project(":lib")))
+}

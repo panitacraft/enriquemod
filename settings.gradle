@@ -7,3 +7,8 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
+rootProject.name = 'enriquecraft'
+
+// lib: the protocol and the helpers both sides share. server: the mod for hosting. client: the optional companion.
+include 'lib', 'server', 'client'

@@ -1,0 +1,57 @@
+name: Release
+
+# Publishes a GitHub release when master carries a version that has no release yet.
+# The version is mod_version in gradle.properties; a push that does not bump it releases nothing.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version
+        id: version
+        run: echo "value=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d '\r')" >> "$GITHUB_OUTPUT"
+
+      - name: Check for an existing release
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.value }}" >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-java@v4
+        if: steps.existing.outputs.found == 'false'
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.existing.outputs.found == 'false'
+
+      - name: Build and test
+        if: steps.existing.outputs.found == 'false'
+        run: ./gradlew build
+
+      - name: Publish the release
+        if: steps.existing.outputs.found == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.value }}" \
+            "dist/enriquecraft-server-${{ steps.version.outputs.value }}.jar" \
+            "dist/enriquecraft-client-${{ steps.version.outputs.value }}.jar" \
+            --target "${{ github.sha }}" \
+            --title "Enriquecraft ${{ steps.version.outputs.value }}" \
+            --generate-notes
