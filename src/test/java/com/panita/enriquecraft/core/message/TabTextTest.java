@@ -35,7 +35,8 @@ class TabTextTest {
     @Test
     void anImageTranslationBecomesItsFallbackTextInItsColor() {
         Component glyph = Component.literal("☠").withStyle(ChatFormatting.RED);
-        Component art = Component.translatableWithFallback("enriquecraft.art.v1", "%1$s", glyph, Component.literal("image"));
+        // The fallback picks the image's glyph, as the companion's language does when the server knows it
+        Component art = Component.translatableWithFallback("enriquecraft.art.v1", "%2$s", glyph, Component.literal(""));
 
         Component plain = TabText.plain(art);
 
