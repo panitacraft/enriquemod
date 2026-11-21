@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.chat.config;
 
 import com.panita.enriquecraft.chat.channel.ChannelDefinition;
+import com.panita.enriquecraft.chat.text.AfkColor;
 import com.panita.enriquecraft.core.framework.config.ConfigSectionBuilder;
 import com.panita.enriquecraft.core.framework.config.ConfigValue;
 import com.panita.enriquecraft.core.framework.config.ModConfig;
@@ -22,6 +23,9 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Integer> nicknameMinLength;
     public final ConfigValue<Integer> nicknameMaxLength;
     public final ConfigValue<Integer> nicknameCooldownSeconds;
+    public final ConfigValue<Boolean> afkEnabled;
+    public final ConfigValue<Integer> afkTimeoutSeconds;
+    public final ConfigValue<String> afkColor;
     public final ConfigValue<Boolean> joinMessage;
     public final ConfigValue<Boolean> firstJoinMessage;
     public final ConfigValue<Boolean> leaveMessage;
@@ -68,6 +72,14 @@ public final class ChatConfig implements ModConfig {
                 "The most characters a nickname can have, not counting its colors and styles.");
         nicknameCooldownSeconds = builder.intRange("nickname.cooldownSeconds", 300, 0, 86_400,
                 "Seconds a player must wait before changing their nickname again. 0 turns the wait off.");
+        afkEnabled = builder.bool("afk.enabled", true,
+                "Shows a player who has been inactive in the AFK color, in place of the color of their rank (or of their name, when they have\n"
+                        + "no rank). Nothing is announced. Activity is turning the view, speaking, and using or attacking something.");
+        afkTimeoutSeconds = builder.intRange("afk.timeoutSeconds", 300, 10, 86_400,
+                "Seconds without activity after which a player shows as AFK.");
+        afkColor = builder.string("afk.color", AfkColor.DEFAULT,
+                "The color of the rank and name of a player who is AFK: a color code such as &7, or a hex color such as #aaaaaa.",
+                AfkColor::isValid, AfkColor.RULE);
         joinMessage = builder.bool("events.join.enabled", true, "Shows a message in chat when a player joins.");
         firstJoinMessage = builder.bool("events.firstJoin.enabled", true,
                 "Shows a message of its own when a player joins for the first time. When it is off that join gets the normal message.");
