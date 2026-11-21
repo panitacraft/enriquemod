@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "enriquecraft-client",
+  "version": "${version}",
+  "name": "Enriquecraft Client",
+  "description": "Optional client companion for the Enriquecraft server",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/enriquecraft/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.panita.enriquecraft.client.EnriquecraftClient"
+    ]
+  },
+  "mixins": [
+    "enriquecraft.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
