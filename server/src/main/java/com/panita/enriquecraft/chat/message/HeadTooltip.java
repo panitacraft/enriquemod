@@ -17,7 +17,7 @@ import java.util.Optional;
  */
 public final class HeadTooltip {
 
-    private static final String PROFILE_COMMAND = "/profile ";
+    private static final String PROFILE_COMMAND = "/profile view ";
 
     private final MessageFormatter formatter;
 
