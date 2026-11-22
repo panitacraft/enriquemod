@@ -56,6 +56,6 @@ class HeadTooltipTest {
         ClickEvent.RunCommand click = assertInstanceOf(ClickEvent.RunCommand.class,
                 tooltip.styleOf("Alex", Optional.of(AuthMode.PREMIUM)).getClickEvent());
 
-        assertEquals("/profile Alex", click.command());
+        assertEquals("/profile view Alex", click.command());
     }
 }

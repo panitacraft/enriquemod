@@ -10,7 +10,8 @@ public final class ProfileMessages {
     }
 
     public static final class Commands {
-        public static final String PROFILE_DESCRIPTION = "Muestra tu perfil o el de otro jugador";
+        public static final String PROFILE_DESCRIPTION = "Muestra tu perfil";
+        public static final String VIEW_DESCRIPTION = "Muestra el perfil de otro jugador";
         public static final String EDIT_DESCRIPTION = "Edita tu perfil";
         public static final String REFRESH_DESCRIPTION = "Actualiza tus emblemas desde Panitacraft";
         public static final String REFRESH_ALL_DESCRIPTION = "Actualiza los emblemas de todos los jugadores conectados";

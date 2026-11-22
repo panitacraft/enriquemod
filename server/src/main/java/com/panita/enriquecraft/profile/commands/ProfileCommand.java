@@ -1,9 +1,7 @@
 package com.panita.enriquecraft.profile.commands;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.panita.enriquecraft.chat.service.KnownPlayers;
 import com.panita.enriquecraft.core.framework.command.CommandPermissions;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
@@ -12,33 +10,28 @@ import com.panita.enriquecraft.profile.gui.ProfileMenus;
 import com.panita.enriquecraft.profile.message.ProfileMessages;
 import com.panita.enriquecraft.profile.message.ProfileView;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionLevel;
 
 import java.util.List;
 
 /**
- * {@code /profile} (also {@code /perfil}): a player's profile. Running it opens your own; with a player's name it opens theirs. The
- * console gets the list of what the command can do.
+ * {@code /profile} (also {@code /perfil}): opens your own profile. Another player's is {@code /profile view <player>}. The console
+ * gets the list of what the command can do.
  */
 @CommandSpec(name = "profile", aliases = "perfil", description = ProfileMessages.Commands.PROFILE_DESCRIPTION, clickable = true)
 public final class ProfileCommand implements ModCommand {
 
     private static final String NAME = "profile";
-    private static final String PLAYER_ARGUMENT = "player";
     private static final List<String> PATH = List.of(NAME);
 
     private final HelpView helpView;
     private final ProfileMenus menus;
-    private final KnownPlayers known;
     private final ProfileView view;
 
-    public ProfileCommand(HelpView helpView, ProfileMenus menus, KnownPlayers known, ProfileView view) {
+    public ProfileCommand(HelpView helpView, ProfileMenus menus, ProfileView view) {
         this.helpView = helpView;
         this.menus = menus;
-        this.known = known;
         this.view = view;
     }
 
@@ -53,20 +46,6 @@ public final class ProfileCommand implements ModCommand {
             }
             return Command.SINGLE_SUCCESS;
         });
-        builder.then(Commands.argument(PLAYER_ARGUMENT, StringArgumentType.word())
-                .suggests((context, suggestions) -> SharedSuggestionProvider.suggest(known.namesOn(context.getSource().getServer()), suggestions))
-                .executes(context -> {
-                    ServerPlayer player = context.getSource().getPlayer();
-                    if (player == null) {
-                        helpView.sendUsage(context.getSource(), NAME);
-                        return 0;
-                    }
-                    if (!allowed(context.getSource(), player)) {
-                        return 0;
-                    }
-                    menus.openOf(player, StringArgumentType.getString(context, PLAYER_ARGUMENT));
-                    return Command.SINGLE_SUCCESS;
-                }));
     }
 
     /** A clickable command is always in the tree, so the permission is checked here, as the game would have. */

@@ -25,6 +25,13 @@ public final class ModerationMessages {
         }
     }
 
+    public static final class ClientMods {
+        public static final String SCREEN = "{{PREFIX}}\n<red>No se permite jugar con <white>{mod}</white> en este servidor.</red>\n<gray>Quítalo de tu cliente para poder entrar.";
+
+        private ClientMods() {
+        }
+    }
+
     public static final class Ban {
         public static final String DESCRIPTION = "Banea a un jugador, para siempre o por un tiempo";
         public static final String SCREEN_PERMANENT = "{{PREFIX}}\n<red>Estás baneado permanentemente de este servidor.</red>\n<gray>Motivo: <white>{reason}";
