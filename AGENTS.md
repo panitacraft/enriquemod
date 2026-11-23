@@ -209,6 +209,10 @@ com.panita.enriquecraft
    ├─ commands/ service/ mixin/
    ├─ data/                 MuteRecord, Mutes
    └─ message/              ModerationMessages (Spanish text) and the views (KickView, BanView, MuteView, Reasons)
+└─ qol/                     small conveniences for players: /sharecoordinates (see Quality of life)
+   ├─ QolModule.java
+   ├─ config/ commands/ service/
+   └─ message/              QolMessages (Spanish text) and CoordinateShareView
 ```
 
 Every module follows the same layout:
@@ -348,6 +352,12 @@ Rules:
 - Mute: `/mute <player> [time|permanent] [reason]` and `/unmute <player>` (by the name the player was muted under, suggested from the muted ones). Mutes are stored in `mutes.snbt` (`MuteBook`, by player id, with the time they end); an ended mute is ignored and dropped at the next change. A muted player cannot write in a channel, use `/me`, `/msg`, `/tell`, `/w` or `/r`, and is told why each time; the staff channel stays open to them, since only staff can use it. Messages from a muted player never fire `ChatEvents.MESSAGE`, so nothing is sent to Discord. `/say` is for operators and `/teammsg` is not covered.
 - Client mods: the server cannot read a client's mods, only the channels the client announces it listens on (`ClientboundPlayChannelEvents.REGISTER`, sent right after the join). `ClientModListener` kicks a player whose client announces a channel of `moderation.clientMods.blockedChannels` (channel id to the name shown, default `worldinfo:world_id` for JourneyMap and VoxelMap; Xaero's mods use channels of their own and are not blocked), with the screen of `ClientModView`. It is best effort: a client that does not announce the channel, or a modified one, is not caught, and it is only checked when the client announces it. `moderation.clientMods.enabled` turns it off. A player never needs the companion for this.
 - Staff see the result of `/ban`, `/mute` and `/unmute` as command feedback (`CommandSourceStack.sendSuccess`, so operators are told like for any game command).
+
+### Quality of life
+- The qol module holds small conveniences for players. It is registered after chat, since it asks `MuteService` and `HeldPlayers` before it lets a player speak.
+- `/sharecoordinates [player]` (aliases `/c`, `/coords`, `/coordinateshare`; open to everyone) ports the command of the same name of Tezzlar III. Without an argument it tells every player, and the console, where the sender is; with a player it tells only that player and tells the sender it was done; a sender who picks themselves is only shown their own position. The player argument is the game's, so a nickname stands for the player. The position is the block position and the dimension is named as staff menus name it (`Dimensions.displayName`), both read when the line is built.
+- The texts are `QolMessages.ShareCoordinates` (public, private, self, confirmation, not online, disabled) and use the arguments `{player}`, `{x}`, `{y}`, `{z}` and `{dimension}`, with legacy color codes and placeholders resolved for the player the line is about. The settings are `qol.shareCoordinates.enabled`, `.playSound`, `.soundPublic` and `.soundPrivate` (ids of sounds of the game, checked against the registry). The public sound is played to each reader at their own position; the private one to the receiver and the sender. When the command is off the sender is told so.
+- A muted player shares nothing, and a player on the PIN screen neither shares nor receives (a held receiver is answered as not online). Nothing is sent to Discord.
 
 ### Link
 - The link module keeps the whitelist in step with the Panita accounts. It only reads: `GET /v1/mod/players` of `panita-api` with the `mod` service key, through the JDK `HttpClient` (no dependency added). It never sends anything to the API and never contacts Discord; the Discord bridge is a later module.
