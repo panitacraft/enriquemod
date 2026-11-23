@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.chat.message;
 
 import com.panita.enriquecraft.chat.event.SystemEvent;
+import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import net.minecraft.network.chat.Component;
@@ -16,12 +17,16 @@ import java.util.Collection;
 public final class SystemMessageView {
 
     private final Messenger messenger;
+    private final ChatHeads heads;
 
-    public SystemMessageView(Messenger messenger) {
+    public SystemMessageView(Messenger messenger, ChatHeads heads) {
         this.messenger = messenger;
+        this.heads = heads;
     }
 
     /**
+     * The line starts with the head of the player, as a line they write does; the head is left out when {@code chat.heads} is off.
+     *
      * @param announceFirst whether a join is the first one of the player and has the message for that
      */
     public Component line(SystemEvent event, boolean announceFirst) {
@@ -36,7 +41,8 @@ public final class SystemMessageView {
             case SystemEvent.Advanced advanced -> Message.plain(ChatMessages.Events.ADVANCEMENT)
                     .with("player", player).with("message", advanced.message());
         };
-        return messenger.format(message, event.player());
+        Component line = messenger.format(message, event.player());
+        return heads.of(event.player()).<Component>map(head -> Component.empty().append(head).append(line)).orElse(line);
     }
 
     public void deliver(MinecraftServer server, Collection<ServerPlayer> readers, Component line) {

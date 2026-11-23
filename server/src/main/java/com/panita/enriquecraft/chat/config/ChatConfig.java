@@ -50,7 +50,8 @@ public final class ChatConfig implements ModConfig {
                 "must be 1 to 32 characters long, without spaces");
         heads = builder.bool("heads", true,
                 "Starts each line of a player in chat with their head, which any client draws at the size of the text. Players with the client\n"
-                        + "mod see it beside the line instead. Lines of Discord members, private messages and the game's own messages have none.");
+                        + "mod see it beside the line instead. The messages about a player (joined, left, died, advancement) and lines\n"
+                        + "of Discord members carry one too. Private messages have none.");
         rankIconMeta = builder.string("rankIconMeta", "rank_icon",
                 "The LuckPerms meta key whose value is the https address of the image of a rank (set it on the group with\n"
                         + "/lp group <group> meta set <key> <address>). Players with the client mod see that image in place of the prefix of the\n"
