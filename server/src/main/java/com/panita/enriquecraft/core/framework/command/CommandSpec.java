@@ -39,4 +39,12 @@ public @interface CommandSpec {
      * {@link CommandPermissions#canUse} itself.
      */
     boolean clickable() default false;
+
+    /**
+     * Whether this top-level command takes the place of a command another mod registered under the same literal (Carpet has its own
+     * {@code /profile}). Brigadier merges two commands of one name and the one registered last wins the executor, which depends on the
+     * order the mods load in, so the commands that need to win are registered again once the whole tree is built, replacing whatever
+     * stands under their name or alias.
+     */
+    boolean overrides() default false;
 }

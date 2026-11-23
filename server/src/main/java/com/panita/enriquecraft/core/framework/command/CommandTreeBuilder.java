@@ -2,12 +2,15 @@ package com.panita.enriquecraft.core.framework.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Turns {@link CommandEntry}s into Brigadier nodes. This is the only class that contains Brigadier
@@ -18,6 +21,31 @@ public final class CommandTreeBuilder {
     public void registerOn(CommandDispatcher<CommandSourceStack> dispatcher, CommandEntry entry) {
         for (LiteralCommandNode<CommandSourceStack> node : build(entry)) {
             dispatcher.getRoot().addChild(node);
+        }
+    }
+
+    /**
+     * Registers the command and its aliases after removing whatever the root already has under those literals, so nothing another mod
+     * put there (its executor, its subcommands, its requirement) is left in the way.
+     */
+    public void replaceOn(CommandDispatcher<CommandSourceStack> dispatcher, CommandEntry entry) {
+        CommandNode<CommandSourceStack> root = dispatcher.getRoot();
+        for (LiteralCommandNode<CommandSourceStack> node : build(entry)) {
+            // Brigadier has no way to remove a node; parsing also looks in the table of literals, so both tables are cleared.
+            childTable(root, "children").remove(node.getName());
+            childTable(root, "literals").remove(node.getName());
+            root.addChild(node);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, ?> childTable(CommandNode<CommandSourceStack> node, String field) {
+        try {
+            Field table = CommandNode.class.getDeclaredField(field);
+            table.setAccessible(true);
+            return (Map<String, ?>) table.get(node);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Brigadier no longer has the table '" + field + "' of command nodes", exception);
         }
     }
 

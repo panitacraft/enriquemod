@@ -3,6 +3,7 @@ package com.panita.enriquecraft.core;
 import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.core.dialog.DialogService;
 import com.panita.enriquecraft.core.framework.command.CommandCatalog;
+import com.panita.enriquecraft.core.framework.command.CommandRegistry;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -61,6 +62,6 @@ public final class CoreModule implements EnriquecraftModule {
         services.register(ServerInfoService.class, new ServerInfoService());
         DialogService dialogs = new DialogService();
         services.register(DialogService.class, dialogs);
-        CoreHooks.install(dialogs);
+        CoreHooks.install(dialogs, services.get(CommandRegistry.class));
     }
 }

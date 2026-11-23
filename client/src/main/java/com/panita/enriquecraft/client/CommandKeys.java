@@ -19,7 +19,7 @@ final class CommandKeys {
 
     static void register() {
         open("key.enriquecraft.staff_menu", InputConstants.KEY_U, "staff");
-        open("key.enriquecraft.profile_menu", InputConstants.KEY_P, "profile");
+        open("key.enriquecraft.profile_menu", InputConstants.KEY_P, "perfil");
     }
 
     private static void open(String translationKey, int defaultKey, String command) {

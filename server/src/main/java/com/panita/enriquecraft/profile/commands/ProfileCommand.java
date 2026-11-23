@@ -19,7 +19,7 @@ import java.util.List;
  * {@code /profile} (also {@code /perfil}): opens your own profile. Another player's is {@code /profile view <player>}. The console
  * gets the list of what the command can do.
  */
-@CommandSpec(name = "profile", aliases = "perfil", description = ProfileMessages.Commands.PROFILE_DESCRIPTION, clickable = true)
+@CommandSpec(name = "profile", aliases = "perfil", description = ProfileMessages.Commands.PROFILE_DESCRIPTION, clickable = true, overrides = true)
 public final class ProfileCommand implements ModCommand {
 
     private static final String NAME = "profile";
