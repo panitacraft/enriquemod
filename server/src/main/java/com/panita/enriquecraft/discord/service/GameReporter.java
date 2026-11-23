@@ -60,6 +60,13 @@ public final class GameReporter {
         event(first ? EventKind.FIRST_JOIN : EventKind.JOIN, Optional.of(player), Optional.empty(), Optional.empty());
     }
 
+    /** A player who was hidden appeared: reported as a join, unless they were already reported as in. */
+    public void revealed(PlayerInfo player) {
+        if (ready.add(player.uuid())) {
+            event(EventKind.JOIN, Optional.of(player), Optional.empty(), Optional.empty());
+        }
+    }
+
     public void left(PlayerInfo player) {
         arrivedForTheFirstTime.remove(player.uuid());
         if (ready.remove(player.uuid())) {

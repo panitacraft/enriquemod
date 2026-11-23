@@ -9,6 +9,7 @@ import com.panita.enriquecraft.discord.DiscordPermissions;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.service.GameReporter;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
+import com.panita.enriquecraft.discord.service.PlayerVisibility;
 import com.panita.enriquecraft.staff.data.Dimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -27,11 +28,13 @@ public final class GameEventsListener implements ModListener {
     private final GameReporter reporter;
     private final PlayerInfos infos;
     private final DiscordConfig config;
+    private final PlayerVisibility visibility;
 
-    public GameEventsListener(GameReporter reporter, PlayerInfos infos, DiscordConfig config) {
+    public GameEventsListener(GameReporter reporter, PlayerInfos infos, DiscordConfig config, PlayerVisibility visibility) {
         this.reporter = reporter;
         this.infos = infos;
         this.config = config;
+        this.visibility = visibility;
     }
 
     @Override
@@ -45,7 +48,12 @@ public final class GameEventsListener implements ModListener {
             }
         });
         ChatEvents.COORDINATES.register((player, position, dimension) -> reporter.coordinates(infos.of(player), positionText(position, dimension)));
-        AuthEvents.PLAYER_READY.register(player -> reporter.ready(infos.of(player)));
+        // A player who joins hidden is not in the game for Discord until they appear
+        AuthEvents.PLAYER_READY.register(player -> {
+            if (!visibility.isHidden(player)) {
+                reporter.ready(infos.of(player));
+            }
+        });
         CoreEvents.BROADCAST.register(reporter::broadcast);
     }
 
