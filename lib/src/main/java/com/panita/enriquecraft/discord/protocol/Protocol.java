@@ -23,6 +23,10 @@ public final class Protocol {
     public static final String FEATURE_REPLY = "reply";
     /** Only in the bot's welcome: it understands the {@code afk} and {@code back} events, so the mod may send them. */
     public static final String FEATURE_AFK = "afk";
+    /** Only in the bot's welcome: it turns the {@code mentions} of a chat frame into pings, so the mod may send them. */
+    public static final String FEATURE_MENTIONS = "mentions";
+    /** The most Discord members one line of chat can mention. */
+    public static final int MAX_MENTIONS = 5;
     /** The longest name of the author of the message a reply answers; longer is cut by the bot and refused here. */
     public static final int MAX_REPLY_AUTHOR = 80;
     /** The most images of one message that travel in a frame. */

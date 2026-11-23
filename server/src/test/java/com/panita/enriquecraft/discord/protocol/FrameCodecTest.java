@@ -70,7 +70,7 @@ class FrameCodecTest {
 
     @Test
     void encodesAChatLineWithAPlayerWhoHasNoNickname() {
-        JsonObject chat = json(new OutFrame.Chat("global", JAVI, "hola", false));
+        JsonObject chat = json(new OutFrame.Chat("global", JAVI, "hola", false, List.of()));
         JsonObject player = chat.getAsJsonObject("player");
 
         assertEquals("chat", chat.get("type").getAsString());
@@ -84,10 +84,22 @@ class FrameCodecTest {
     }
 
     @Test
+    void encodesTheMentionsOfAChatLineOnlyWhenThereAreSome() {
+        assertFalse(json(new OutFrame.Chat("global", JAVI, "hola", false, List.of())).has("mentions"));
+
+        JsonObject chat = json(new OutFrame.Chat("global", JAVI, "hola @Tezzlar", false,
+                List.of(new OutFrame.Mention("Tezzlar", "222222222222222222"))));
+
+        assertEquals(1, chat.getAsJsonArray("mentions").size());
+        assertEquals("Tezzlar", chat.getAsJsonArray("mentions").get(0).getAsJsonObject().get("name").getAsString());
+        assertEquals("222222222222222222", chat.getAsJsonArray("mentions").get(0).getAsJsonObject().get("discordId").getAsString());
+    }
+
+    @Test
     void encodesTheNicknameWhenThereIsOne() {
         PlayerInfo nicked = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.of("Javi"), false, Optional.empty());
 
-        JsonObject player = json(new OutFrame.Chat("global", nicked, "hola", true)).getAsJsonObject("player");
+        JsonObject player = json(new OutFrame.Chat("global", nicked, "hola", true, List.of())).getAsJsonObject("player");
 
         assertEquals("Javi", player.get("nickname").getAsString());
         assertEquals(false, player.get("premium").getAsBoolean());
@@ -98,8 +110,8 @@ class FrameCodecTest {
         String hash = "292009a4925b58f02c77dadc3ecef07ea4c7472f64e0fdc32ce5522489362680";
         PlayerInfo skinned = new PlayerInfo(JAVI.uuid(), JAVI.name(), Optional.empty(), false, Optional.of(hash));
 
-        assertEquals(hash, json(new OutFrame.Chat("global", skinned, "hola", false)).getAsJsonObject("player").get("skin").getAsString());
-        assertFalse(json(new OutFrame.Chat("global", JAVI, "hola", false)).getAsJsonObject("player").has("skin"));
+        assertEquals(hash, json(new OutFrame.Chat("global", skinned, "hola", false, List.of())).getAsJsonObject("player").get("skin").getAsString());
+        assertFalse(json(new OutFrame.Chat("global", JAVI, "hola", false, List.of())).getAsJsonObject("player").has("skin"));
     }
 
     @Test

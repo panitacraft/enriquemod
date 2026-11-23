@@ -35,6 +35,7 @@ import com.panita.enriquecraft.discord.service.HttpMediaUploader;
 import com.panita.enriquecraft.discord.service.ScreenshotShares;
 import com.panita.enriquecraft.discord.service.ShareTransfers;
 import com.panita.enriquecraft.discord.service.GameReporter;
+import com.panita.enriquecraft.discord.service.Mentions;
 import com.panita.enriquecraft.discord.service.ImageFetcher;
 import com.panita.enriquecraft.discord.service.ImageMaps;
 import com.panita.enriquecraft.discord.service.MediaPreviews;
@@ -123,7 +124,7 @@ public final class DiscordModule implements EnriquecraftModule {
         services.register(ImageMaps.class, imageMaps);
         services.register(ServerInfo.class, info);
         services.register(BridgeConnection.class, connection);
-        services.register(GameReporter.class, new GameReporter(connection));
+        services.register(GameReporter.class, new GameReporter(connection, new Mentions(services.get(LinkedPlayers.class))));
         services.register(PlayerInfos.class, playerInfos);
         services.register(ScreenshotShares.class, shares);
         services.register(DiscordView.class, new DiscordView(services.get(Messenger.class)));
