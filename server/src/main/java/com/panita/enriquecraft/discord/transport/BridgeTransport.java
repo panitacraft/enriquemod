@@ -35,6 +35,12 @@ public interface BridgeTransport {
     /** Sends a text. Texts are sent in the order they were given. */
     CompletableFuture<Void> send(String text);
 
+    /**
+     * Sends an unsolicited pong, which the WebSocket protocol allows as a one-way heartbeat. The bot drops a line that has not
+     * answered its pings in a minute, and this tells it the line is alive even when the answer to a ping was late.
+     */
+    CompletableFuture<Void> heartbeat();
+
     /** Closes the line, if there is one. */
     void close();
 }

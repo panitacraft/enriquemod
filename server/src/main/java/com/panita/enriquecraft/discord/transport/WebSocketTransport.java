@@ -50,6 +50,17 @@ public final class WebSocketTransport implements BridgeTransport {
     }
 
     @Override
+    public synchronized CompletableFuture<Void> heartbeat() {
+        WebSocket current = socket;
+        if (current == null) {
+            return CompletableFuture.failedFuture(new IllegalStateException("not connected"));
+        }
+        // Sent in line with the texts, since the JDK allows one send at a time
+        sends = sends.handle((ok, error) -> null).thenCompose(ignored -> current.sendPong(ByteBuffer.allocate(0))).thenApply(ignored -> null);
+        return sends;
+    }
+
+    @Override
     public synchronized void close() {
         if (socket != null) {
             socket.abort();
@@ -91,7 +102,6 @@ public final class WebSocketTransport implements BridgeTransport {
         @Override
         public CompletionStage<?> onPing(WebSocket webSocket, ByteBuffer message) {
             listener.onPing();
-            webSocket.request(1);
             return WebSocket.Listener.super.onPing(webSocket, message);
         }
 

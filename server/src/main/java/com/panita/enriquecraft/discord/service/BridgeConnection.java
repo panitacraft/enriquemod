@@ -88,6 +88,7 @@ public final class BridgeConnection implements FrameSink {
     private int replacements;
     private Instant since;
     private Instant lastActivity;
+    private Instant lastPing;
     private List<String> channels = List.of();
     private List<String> features = List.of();
     private Optional<String> lastError = Optional.empty();
@@ -242,6 +243,7 @@ public final class BridgeConnection implements FrameSink {
         int mine = ++generation;
         state = State.CONNECTING;
         lastActivity = clock.get();
+        lastPing = null;
         transport.connect(uri, secret.get(), new Line(mine, greeting.get())).whenComplete((ok, error) -> {
             if (error != null) {
                 lost(mine, "could not connect: " + describe(error));
@@ -258,7 +260,9 @@ public final class BridgeConnection implements FrameSink {
         if (cause instanceof WebSocketHandshakeException refused) {
             return "the bot refused the connection (status " + refused.getResponse().statusCode() + ")";
         }
-        return cause.getClass().getSimpleName();
+        String message = cause.getMessage();
+        String kind = cause.getClass().getSimpleName();
+        return message == null || message.isBlank() ? kind : kind + ": " + (message.length() > 120 ? message.substring(0, 120) : message);
     }
 
     private void transmit(String text) {
@@ -283,6 +287,7 @@ public final class BridgeConnection implements FrameSink {
             cancel(watchdog);
             watchdog = null;
             boolean stable = since != null && Duration.between(since, clock.get()).compareTo(STABLE_LINE) >= 0;
+            String detail = describeLine();
             since = null;
             if (state != State.INCOMPATIBLE) {
                 lastError = Optional.of(reason);
@@ -308,13 +313,23 @@ public final class BridgeConnection implements FrameSink {
                 wait = Backoff.delay(attempt, random.getAsDouble());
                 // Said once when the line first goes down; the retries after it would only repeat it
                 if (attempt++ == 0) {
-                    LOGGER.info("The bridge to the Panita Bot is down ({}); it will keep trying with a growing wait", reason);
+                    LOGGER.info("The bridge to the Panita Bot is down ({}{}); it will keep trying with a growing wait", reason, detail);
                 } else {
-                    LOGGER.debug("The bridge to the Panita Bot is still down ({}); trying again in {} ms", reason, wait.toMillis());
+                    LOGGER.debug("The bridge to the Panita Bot is still down ({}{}); trying again in {} ms", reason, detail, wait.toMillis());
                 }
             }
             retry = scheduler.schedule(wait, this::retryNow);
         }
+    }
+
+    /** How long the line that was just lost had been up and when the bot last pinged it, to tell why a line dies. */
+    private String describeLine() {
+        if (since == null) {
+            return "";
+        }
+        Instant now = clock.get();
+        String ping = lastPing == null ? "no ping from the bot seen" : "last ping from the bot " + Duration.between(lastPing, now).toSeconds() + " s ago";
+        return ", after " + Duration.between(since, now).toSeconds() + " s up, " + ping;
     }
 
     private void retryNow() {
@@ -335,6 +350,7 @@ public final class BridgeConnection implements FrameSink {
                 lost(mine, "the bot stopped answering");
                 return;
             }
+            transport.heartbeat();
             watchdog = scheduler.schedule(WATCH_EVERY, () -> watch(mine));
         }
     }
@@ -456,6 +472,7 @@ public final class BridgeConnection implements FrameSink {
             synchronized (lock) {
                 if (mine == generation) {
                     lastActivity = clock.get();
+                    lastPing = lastActivity;
                 }
             }
         }
