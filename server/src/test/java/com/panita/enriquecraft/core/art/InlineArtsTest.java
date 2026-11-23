@@ -46,6 +46,40 @@ class InlineArtsTest {
     }
 
     @Test
+    void anImageWithoutAHeightIsDrawnAtTheHeightOfALine() {
+        Component line = Component.empty().append(arts.wrap(Component.literal("[MIEMBRO]"), URL)).append(Component.literal(" Name"));
+
+        Component resized = arts.withHeight(line, 8);
+
+        Set<String> ids = new HashSet<>();
+        InlineArts.collect(resized, ids);
+        assertEquals(Set.of(ArtLinks.idOf(URL + "#size=8")), ids);
+        assertEquals(line.getString(), resized.getString(), "the text every other client reads is unchanged");
+    }
+
+    @Test
+    void anImageThatAsksForAHeightKeepsIt() {
+        String small = URL + "#size=3";
+        Component line = arts.wrap(Component.literal("o"), small);
+
+        Set<String> ids = new HashSet<>();
+        InlineArts.collect(arts.withHeight(line, 8), ids);
+
+        assertEquals(Set.of(ArtLinks.idOf(small)), ids);
+    }
+
+    @Test
+    void theOriginalLineIsLeftAsItWas() {
+        Component line = arts.wrap(Component.literal("[MIEMBRO]"), URL);
+
+        arts.withHeight(line, 8);
+
+        Set<String> ids = new HashSet<>();
+        InlineArts.collect(line, ids);
+        assertEquals(Set.of(ArtLinks.idOf(URL)), ids);
+    }
+
+    @Test
     void anUntrustedAddressLeavesTheTextAlone() {
         Component text = Component.literal("[MIEMBRO]");
 

@@ -25,6 +25,8 @@ import java.util.UUID;
 public final class TabNames {
 
     private static final int REFRESH_INTERVAL_TICKS = 20;
+    /** The height of the text of a line of the tab list: images are drawn this tall there, not as tall as in chat. */
+    private static final int TEXT_HEIGHT = 8;
 
     private final Messenger messenger;
     private final InlineArts arts;
@@ -46,7 +48,7 @@ public final class TabNames {
         if (!config.tabListEnabled.get() || held.isHeld(player)) {
             return null;
         }
-        return messenger.format(Message.plain(ChatMessages.Format.TAB_NAME), player);
+        return arts.withHeight(messenger.format(Message.plain(ChatMessages.Format.TAB_NAME), player), TEXT_HEIGHT);
     }
 
     /** Called every tick; once a second it sends to everyone the names that changed. */
