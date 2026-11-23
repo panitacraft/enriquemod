@@ -32,6 +32,8 @@ public final class ProfileService {
             UNKNOWN,
             /** The level is the starting one, which cannot be chosen, so a player who has left it cannot return. */
             LOCKED,
+            /** The level is only for the players the config names, and this one is not among them. */
+            RESTRICTED,
             /** The last change was too recent; {@code remaining} says how long is left. */
             COOLDOWN,
             /** The player has no Panita account to keep the choice under. */
@@ -108,6 +110,11 @@ public final class ProfileService {
         return resolver.levels();
     }
 
+    /** The levels the player may choose, lowest first: not the first, which is only where players start, and not those kept for other players. */
+    public List<EmblemView> choosablePranks(ServerPlayer player) {
+        return resolver.choosableLevels(player.getGameProfile().name());
+    }
+
     /** Remembers which emblems the player wants shown, in order. Ids that are not selectable are dropped when read. */
     public void choose(ServerPlayer player, List<String> emblems) {
         accountOf(player).ifPresent(userId -> write.accept(read.get().with(userId, emblems)));
@@ -128,10 +135,11 @@ public final class ProfileService {
      * @param bypass whether the wait is ignored
      */
     public PrankChange choosePrank(ServerPlayer player, String level, boolean bypass) {
-        return accountOf(player).map(userId -> choosePrank(userId, level, bypass)).orElseGet(() -> PrankChange.of(PrankChange.Status.NOT_LINKED));
+        return accountOf(player).map(userId -> choosePrank(userId, player.getGameProfile().name(), level, bypass))
+                .orElseGet(() -> PrankChange.of(PrankChange.Status.NOT_LINKED));
     }
 
-    PrankChange choosePrank(int userId, String level, boolean bypass) {
+    PrankChange choosePrank(int userId, String playerName, String level, boolean bypass) {
         EmblemSelections selections = read.get();
         Optional<EmblemSelections.Prank> current = selections.prankOf(userId);
         String shown = current.map(EmblemSelections.Prank::level).filter(resolver::isPrank).orElseGet(resolver::defaultPrankId);
@@ -143,6 +151,10 @@ public final class ProfileService {
         }
         if (level.equals(resolver.defaultPrankId())) {
             return PrankChange.of(PrankChange.Status.LOCKED);
+        }
+        // Not even the bypass lets a player choose a level that is kept for others
+        if (!resolver.mayChoose(level, playerName)) {
+            return PrankChange.of(PrankChange.Status.RESTRICTED);
         }
         if (!bypass && current.isPresent()) {
             Duration remaining = Duration.between(clock.get(), current.get().changedAt().plusSeconds(prankCooldownSeconds.getAsInt()));

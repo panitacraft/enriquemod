@@ -63,6 +63,16 @@ public final class EmblemResolver {
         return config.pranks.get().stream().anyMatch(level -> level.id().equals(id));
     }
 
+    /** Whether the player with this Minecraft name may choose the level; an id that is not a level is not restricted. */
+    public boolean mayChoose(String id, String playerName) {
+        return config.pranks.get().stream().filter(level -> level.id().equals(id)).allMatch(level -> level.mayBeChosenBy(playerName));
+    }
+
+    /** The levels the player with this Minecraft name may choose: every one but the first, which is only where players start. */
+    public List<EmblemView> choosableLevels(String playerName) {
+        return config.pranks.get().stream().skip(1).filter(level -> level.mayBeChosenBy(playerName)).map(this::view).toList();
+    }
+
     /** Every prank level, lowest first. */
     public List<EmblemView> levels() {
         return config.pranks.get().stream().map(this::view).toList();

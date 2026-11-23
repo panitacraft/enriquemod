@@ -30,7 +30,7 @@ public final class PrankCommand implements ModCommand {
     @Override
     public void configure(LiteralArgumentBuilder<CommandSourceStack> builder) {
         builder.executes(playerOnly.executes((context, player) -> {
-            view.prankList(player, profiles.emblemsOf(player));
+            view.prankList(player, profiles.emblemsOf(player), profiles.choosablePranks(player));
             return Command.SINGLE_SUCCESS;
         }));
     }

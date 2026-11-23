@@ -44,7 +44,11 @@ class ProfileConfigTest {
         assertEquals("enriquecraft6", config.editionId.get());
         assertEquals(3, config.loreMax.get());
         assertEquals(604_800, config.prankCooldownSeconds.get());
-        assertEquals(7, config.pranks.get().size());
+        assertEquals(8, config.pranks.get().size());
+        PrankLevel zeroPlus = config.pranks.get().get(1);
+        assertEquals("enrique6_prank_0_plus", zeroPlus.id());
+        assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522690/panita-extra/pranks/prank_level_zero_plus.png", zeroPlus.image());
+        assertEquals(List.of("Fiendrox", "Javithor360"), zeroPlus.players());
         assertEquals("enrique6_prank_0", config.pranks.get().getFirst().id());
         assertEquals(new EmblemLook("☠⁺", "red"), config.pranks.get().getLast().look());
         assertEquals("https://res.cloudinary.com/panita/image/upload/v1794522697/panita-extra/pranks/prank_level_three_plus.png",
@@ -124,7 +128,31 @@ class ProfileConfigTest {
     void aPrankDescriptionAndImageMayBeLeftOut() {
         List<PrankLevel> parsed = new PranksType().parse(json("[" + level("a", "") + "]"));
 
-        assertEquals(new PrankLevel("a", "T", "", new EmblemLook("☠", "white"), ""), parsed.getFirst());
+        assertEquals(new PrankLevel("a", "T", "", new EmblemLook("☠", "white"), "", List.of()), parsed.getFirst());
+    }
+
+    @Test
+    void aPrankLevelMayNameTheOnlyPlayersWhoCanChooseIt() {
+        List<PrankLevel> parsed = new PranksType().parse(json("[" + level("a", ", \"players\": [\"Fiendrox\", \"Javithor360\"]") + "]"));
+
+        assertEquals(List.of("Fiendrox", "Javithor360"), parsed.getFirst().players());
+        assertEquals(true, parsed.getFirst().mayBeChosenBy("fiendrox"));
+        assertEquals(false, parsed.getFirst().mayBeChosenBy("Someone"));
+    }
+
+    @Test
+    void aLevelWithNoPlayersIsForEveryone() {
+        PrankLevel open = new PranksType().parse(json("[" + level("a", "") + "]")).getFirst();
+
+        assertEquals(List.of(), open.players());
+        assertEquals(true, open.mayBeChosenBy("Anyone"));
+    }
+
+    @Test
+    void thePlayersOfALevelMustBeMinecraftNames() {
+        assertEquals("the players of level 1 ('a') must be a list of Minecraft names", prankRejection("[" + level("a", ", \"players\": \"Fiendrox\"") + "]"));
+        assertEquals("the players of level 1 ('a') must be Minecraft names of 1 to 16 letters, digits or _",
+                prankRejection("[" + level("a", ", \"players\": [\"not a name\"]") + "]"));
     }
 
     @Test

@@ -46,10 +46,9 @@ final class PranksMenu extends UiPagedMenu<EmblemView> {
 
     @Override
     protected List<EmblemView> entries() {
-        List<EmblemView> levels = edits.levels();
+        List<EmblemView> levels = edits.choosableLevels(viewer());
         tooltip.announce(viewer(), levels);
-        // The first level is only where players start, so it is not one to choose
-        return levels.stream().skip(1).toList();
+        return levels;
     }
 
     @Override

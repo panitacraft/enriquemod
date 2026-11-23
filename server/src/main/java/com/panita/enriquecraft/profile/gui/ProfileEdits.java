@@ -38,6 +38,11 @@ final class ProfileEdits {
         return profiles.prankLevels();
     }
 
+    /** The prank levels the player may choose, in the order they are listed. */
+    List<EmblemView> choosableLevels(ServerPlayer player) {
+        return profiles.choosablePranks(player);
+    }
+
     /** The id of the prank level the player shows now. */
     String prankOf(ServerPlayer player) {
         return profiles.emblemsOf(player).prank().id();

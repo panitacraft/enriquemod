@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,17 +29,18 @@ class ProfileServicePrankTest {
 
     private final AtomicReference<EmblemSelections> stored = new AtomicReference<>(EmblemSelections.EMPTY);
     private final AtomicReference<Instant> now = new AtomicReference<>(Instant.parse("2026-11-12T10:00:00Z"));
+    private ProfileConfig config;
     private ProfileService service;
 
     @BeforeEach
     void bind() {
-        ProfileConfig config = new ConfigManager(directory).bind("profile", ProfileConfig.class);
+        config = new ConfigManager(directory).bind("profile", ProfileConfig.class);
         service = new ProfileService(new ProfileCache(now::get, () -> CachedProfiles.EMPTY, cached -> { }), new EmblemResolver(config),
                 new LinkedPlayers(() -> LinkedSnapshot.EMPTY), stored::get, stored::set, now::get, config.prankCooldownSeconds::get);
     }
 
     private ProfileService.PrankChange.Status change(String level, boolean bypass) {
-        return service.choosePrank(USER, level, bypass).status();
+        return service.choosePrank(USER, "Someone", level, bypass).status();
     }
 
     private Optional<String> shown() {
@@ -57,7 +59,7 @@ class ProfileServicePrankTest {
         change("enrique6_prank_2", false);
         now.set(now.get().plus(Duration.ofDays(2)));
 
-        ProfileService.PrankChange refused = service.choosePrank(USER, "enrique6_prank_3", false);
+        ProfileService.PrankChange refused = service.choosePrank(USER, "Someone", "enrique6_prank_3", false);
 
         assertEquals(ProfileService.PrankChange.Status.COOLDOWN, refused.status());
         assertEquals(Duration.ofDays(5), refused.remaining());
@@ -84,9 +86,26 @@ class ProfileServicePrankTest {
     }
 
     @Test
-    void thereIsNoZeroPlusLevelToChoose() {
-        assertEquals(ProfileService.PrankChange.Status.UNKNOWN, change("enrique6_prank_0_plus", false));
+    void theZeroPlusLevelIsOnlyForTheTwoPlayersTheConfigNames() {
+        assertEquals(ProfileService.PrankChange.Status.RESTRICTED, change("enrique6_prank_0_plus", false));
+        assertEquals(ProfileService.PrankChange.Status.RESTRICTED, change("enrique6_prank_0_plus", true));
         assertEquals(Optional.empty(), shown());
+
+        assertEquals(ProfileService.PrankChange.Status.CHANGED, service.choosePrank(USER, "Fiendrox", "enrique6_prank_0_plus", false).status());
+        assertEquals(Optional.of("enrique6_prank_0_plus"), shown());
+        assertEquals(ProfileService.PrankChange.Status.CHANGED, service.choosePrank(USER, "javithor360", "enrique6_prank_1", true).status());
+        assertEquals(ProfileService.PrankChange.Status.CHANGED, service.choosePrank(USER, "JAVITHOR360", "enrique6_prank_0_plus", true).status());
+    }
+
+    @Test
+    void theLevelsAPlayerMayChooseLeaveOutTheStartingOneAndThoseKeptForOthers() {
+        List<String> everyone = new EmblemResolver(config).choosableLevels("Someone").stream().map(EmblemView::id).toList();
+        List<String> allowed = new EmblemResolver(config).choosableLevels("Fiendrox").stream().map(EmblemView::id).toList();
+
+        assertEquals(List.of("enrique6_prank_1", "enrique6_prank_1_plus", "enrique6_prank_2", "enrique6_prank_2_plus", "enrique6_prank_3",
+                "enrique6_prank_3_plus"), everyone);
+        assertEquals("enrique6_prank_0_plus", allowed.getFirst());
+        assertEquals(everyone.size() + 1, allowed.size());
     }
 
     @Test
