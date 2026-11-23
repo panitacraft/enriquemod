@@ -467,4 +467,55 @@ class BridgeConnectionTest {
         transport.listener().onText(WELCOME);
         assertTrue(connection.connected());
     }
+
+    @Test
+    void whenAnotherServerTakesTheLineItWaitsLongInsteadOfTakingItBackAtOnce() {
+        connected();
+
+        transport.listener().onClose(4000, "replaced");
+
+        BridgeConnection.Status status = connection.status();
+        assertEquals(BridgeConnection.State.WAITING, status.state());
+        assertTrue(status.lastError().orElseThrow().contains("another server"));
+        assertEquals(Backoff.afterReplaced(0, 0.5), scheduler.runNext());
+    }
+
+    @Test
+    void beingTakenOverAgainRightAwayWaitsLongerEachTime() {
+        connected();
+        transport.listener().onClose(4000, "replaced");
+        scheduler.runNext();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+        transport.listener().onClose(4000, "replaced");
+
+        assertEquals(Backoff.afterReplaced(1, 0.5), scheduler.runNext());
+    }
+
+    @Test
+    void aLineThatStayedUpForAWhileStartsTheWaitOverWhenItIsTaken() {
+        connected();
+        transport.listener().onClose(4000, "replaced");
+        scheduler.runNext();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+        now = now.plus(Duration.ofMinutes(6));
+
+        transport.listener().onClose(4000, "replaced");
+
+        assertEquals(Backoff.afterReplaced(0, 0.5), scheduler.tasks.get(scheduler.tasks.size() - 1).delay());
+    }
+
+    @Test
+    void askingToReconnectForgetsHowOftenTheLineWasTaken() {
+        connected();
+        transport.listener().onClose(4000, "replaced");
+        connection.reconnect();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+
+        transport.listener().onClose(4000, "replaced");
+
+        assertEquals(Backoff.afterReplaced(0, 0.5), scheduler.tasks.get(scheduler.tasks.size() - 1).delay());
+    }
 }

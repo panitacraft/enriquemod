@@ -45,6 +45,9 @@ public final class Protocol {
         return "https".equals(address.getScheme()) || ("http".equals(address.getScheme()) && local);
     }
 
+    /** Close code of the bot for a line that another mod took over: the bot keeps one mod at a time, and the newest connection wins. */
+    public static final int CLOSE_REPLACED = 4000;
+
     /** Close code of the bot for a mod it does not speak the same protocol with. */
     public static final int CLOSE_PROTOCOL = 4002;
 

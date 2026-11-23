@@ -64,6 +64,8 @@ public final class BridgeConnection implements FrameSink {
     private static final Duration SILENCE_LIMIT = Duration.ofSeconds(90);
     private static final Duration BUFFER_FOR = Duration.ofSeconds(60);
     private static final int BUFFER_MAX = 100;
+    /** A line that stayed up this long before another server took it is a fresh start, not a fight over the line. */
+    private static final Duration STABLE_LINE = Duration.ofMinutes(5);
 
     private final BridgeTransport transport;
     private final Scheduler scheduler;
@@ -83,6 +85,7 @@ public final class BridgeConnection implements FrameSink {
     private State state = State.OFF;
     private int generation;
     private int attempt;
+    private int replacements;
     private Instant since;
     private Instant lastActivity;
     private List<String> channels = List.of();
@@ -125,6 +128,7 @@ public final class BridgeConnection implements FrameSink {
         synchronized (lock) {
             reset();
             attempt = 0;
+            replacements = 0;
             begin();
         }
     }
@@ -264,12 +268,21 @@ public final class BridgeConnection implements FrameSink {
     }
 
     private void lost(int mine, String reason) {
+        lost(mine, reason, false);
+    }
+
+    /**
+     * @param replaced whether another server took the line over: it then waits much longer than after a failure, since coming back
+     *                 at once only takes the line back, and the other server would do the same
+     */
+    private void lost(int mine, String reason, boolean replaced) {
         synchronized (lock) {
             if (mine != generation) {
                 return;
             }
             cancel(watchdog);
             watchdog = null;
+            boolean stable = since != null && Duration.between(since, clock.get()).compareTo(STABLE_LINE) >= 0;
             since = null;
             if (state != State.INCOMPATIBLE) {
                 lastError = Optional.of(reason);
@@ -278,12 +291,27 @@ public final class BridgeConnection implements FrameSink {
                 return;
             }
             state = State.WAITING;
-            Duration wait = Backoff.delay(attempt, random.getAsDouble());
-            // Said once when the line first goes down; the retries after it would only repeat it
-            if (attempt++ == 0) {
-                LOGGER.info("The bridge to the Panita Bot is down ({}); it will keep trying with a growing wait", reason);
+            Duration wait;
+            if (replaced) {
+                if (stable) {
+                    replacements = 0;
+                }
+                wait = Backoff.afterReplaced(replacements, random.getAsDouble());
+                // Said once for each time the line is taken after it was stable; the retries after it would only repeat it
+                if (replacements++ == 0) {
+                    LOGGER.warn("Another server connected to the Panita Bot with the same bridge key and took the line. Waiting {} s before "
+                            + "connecting again; each server needs a bridge key of its own", wait.toSeconds());
+                } else {
+                    LOGGER.debug("The line was taken again; trying again in {} s", wait.toSeconds());
+                }
             } else {
-                LOGGER.debug("The bridge to the Panita Bot is still down ({}); trying again in {} ms", reason, wait.toMillis());
+                wait = Backoff.delay(attempt, random.getAsDouble());
+                // Said once when the line first goes down; the retries after it would only repeat it
+                if (attempt++ == 0) {
+                    LOGGER.info("The bridge to the Panita Bot is down ({}); it will keep trying with a growing wait", reason);
+                } else {
+                    LOGGER.debug("The bridge to the Panita Bot is still down ({}); trying again in {} ms", reason, wait.toMillis());
+                }
             }
             retry = scheduler.schedule(wait, this::retryNow);
         }
@@ -442,6 +470,8 @@ public final class BridgeConnection implements FrameSink {
                     }
                 }
                 lost(mine, "the bot refused the protocol");
+            } else if (code == Protocol.CLOSE_REPLACED) {
+                lost(mine, "another server took the line with the same bridge key (" + code + ")", true);
             } else {
                 lost(mine, "the bot closed the line (" + code + ")");
             }
