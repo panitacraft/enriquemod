@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.PlayerSkinRenderCache;
+import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 
@@ -33,5 +34,14 @@ final class ProfileModelPlayer extends RemotePlayer {
     @Override
     public PlayerSkin getSkin() {
         return skin.get().playerSkin();
+    }
+
+    /**
+     * The layers a player shows are synced from their client's options, which this player never gets, so none would be drawn and most
+     * skins would look bare. Showing them all matches the viewer's own model, which uses their options.
+     */
+    @Override
+    public boolean isModelPartShown(PlayerModelPart part) {
+        return true;
     }
 }
