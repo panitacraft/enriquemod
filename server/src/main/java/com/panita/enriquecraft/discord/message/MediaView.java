@@ -13,8 +13,9 @@ import java.net.URI;
 
 /**
  * How an image of a Discord message shows in the game chat: a label that any client can read, which shows the image on a map
- * when clicked, followed by a link to the original (the game asks the player to confirm before it opens a link). A spoiler does
- * not say its name. Presentation only; the caller has already checked the address.
+ * when clicked (a client companion shows the image when the label is pointed at and opens its viewer when it is clicked),
+ * followed by a link to the original (the game asks the player to confirm before it opens a link). A spoiler does not say its
+ * name or show a preview. Presentation only; the caller has already checked the address.
  */
 public final class MediaView {
 
@@ -34,7 +35,11 @@ public final class MediaView {
             hover = formatter.format(Message.plain(DiscordMessages.Media.HOVER_SPOILER));
         } else {
             label = formatter.format(Message.plain(DiscordMessages.Media.LABEL).with("name", entry.name()));
-            hover = formatter.format(Message.plain(DiscordMessages.Media.HOVER).with("details", MediaLinks.details(entry)));
+            Component forVanilla = formatter.format(Message.plain(DiscordMessages.Media.HOVER).with("details", MediaLinks.details(entry)));
+            Component forCompanion = formatter.format(Message.plain(DiscordMessages.Media.HOVER_VIEW).with("details", MediaLinks.details(entry)));
+            // The same line for every reader: a vanilla client shows the first text, the companion's language file says to show the
+            // second and the client draws the image from the address when the label is pointed at.
+            hover = Component.translatableWithFallback(MediaLinks.HOVER_KEY, "%1$s", forVanilla, forCompanion, entry.url());
         }
         String command = "/imagen " + tokens.issue(entry);
         URI address = URI.create(entry.url());

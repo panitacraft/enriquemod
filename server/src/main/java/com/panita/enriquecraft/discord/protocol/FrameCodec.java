@@ -72,6 +72,16 @@ public final class FrameCodec {
                 json.add("player", player(chat.player()));
                 json.addProperty("text", chat.text());
                 json.addProperty("emote", chat.emote());
+                if (!chat.mentions().isEmpty()) {
+                    JsonArray mentions = new JsonArray();
+                    for (OutFrame.Mention mention : chat.mentions()) {
+                        JsonObject entry = new JsonObject();
+                        entry.addProperty("name", mention.name());
+                        entry.addProperty("discordId", mention.discordId());
+                        mentions.add(entry);
+                    }
+                    json.add("mentions", mentions);
+                }
             }
             case OutFrame.Event event -> {
                 json.addProperty("type", "event");

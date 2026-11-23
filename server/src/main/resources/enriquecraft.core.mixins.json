@@ -4,6 +4,7 @@
   "package": "com.panita.enriquecraft.core.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "CommandsMixin",
     "ServerCommonPacketListenerImplMixin"
   ],
   "injectors": {

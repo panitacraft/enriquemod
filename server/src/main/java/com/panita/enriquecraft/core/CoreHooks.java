@@ -1,6 +1,9 @@
 package com.panita.enriquecraft.core;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.panita.enriquecraft.core.dialog.DialogService;
+import com.panita.enriquecraft.core.framework.command.CommandRegistry;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,13 +21,15 @@ public final class CoreHooks {
     private static volatile @Nullable CoreHooks instance;
 
     private final DialogService dialogs;
+    private final CommandRegistry commands;
 
-    private CoreHooks(DialogService dialogs) {
+    private CoreHooks(DialogService dialogs, CommandRegistry commands) {
         this.dialogs = dialogs;
+        this.commands = commands;
     }
 
-    static void install(DialogService dialogs) {
-        instance = new CoreHooks(dialogs);
+    static void install(DialogService dialogs, CommandRegistry commands) {
+        instance = new CoreHooks(dialogs, commands);
     }
 
     public static @Nullable CoreHooks get() {
@@ -37,5 +42,10 @@ public final class CoreHooks {
      */
     public boolean customClickAction(ServerPlayer player, Identifier id, Optional<Tag> payload) {
         return dialogs.handleClick(player, id, payload);
+    }
+
+    /** The game finished building its command tree, with the commands of every mod in it. */
+    public void commandsBuilt(CommandDispatcher<CommandSourceStack> dispatcher) {
+        commands.claimOverridden(dispatcher);
     }
 }

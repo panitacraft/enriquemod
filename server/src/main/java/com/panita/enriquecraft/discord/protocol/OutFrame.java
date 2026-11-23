@@ -26,8 +26,26 @@ public sealed interface OutFrame {
         }
     }
 
-    /** A line a player wrote in a chat channel; {@code emote} is what they did with {@code /me}. */
-    record Chat(String channel, PlayerInfo player, String text, boolean emote) implements OutFrame {
+    /**
+     * A line a player wrote in a chat channel.
+     *
+     * @param emote    what they did with {@code /me}
+     * @param mentions the Discord members the line mentions, which the bot may ping; empty for most lines
+     */
+    record Chat(String channel, PlayerInfo player, String text, boolean emote, List<Mention> mentions) implements OutFrame {
+
+        public Chat {
+            mentions = List.copyOf(mentions);
+        }
+    }
+
+    /**
+     * A Discord member a line mentions, found by the link list.
+     *
+     * @param name      the Minecraft name as the text spells it after the {@code @}, so the bot can find it there
+     * @param discordId the Discord account of the member
+     */
+    record Mention(String name, String discordId) {
     }
 
     /**

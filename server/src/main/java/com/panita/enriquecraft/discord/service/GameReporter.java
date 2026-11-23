@@ -5,6 +5,7 @@ import com.panita.enriquecraft.discord.protocol.OutFrame;
 import com.panita.enriquecraft.discord.protocol.PlayerInfo;
 import com.panita.enriquecraft.discord.protocol.Protocol;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -21,19 +22,28 @@ public final class GameReporter {
     private final FrameSink sink;
     private final Set<UUID> ready = ConcurrentHashMap.newKeySet();
     private final Set<UUID> arrivedForTheFirstTime = ConcurrentHashMap.newKeySet();
+    private final Mentions mentions;
 
-    public GameReporter(FrameSink sink) {
+    public GameReporter(FrameSink sink, Mentions mentions) {
         this.sink = sink;
+        this.mentions = mentions;
     }
 
-    /** A player wrote in a chat channel, or did something with {@code /me}. */
-    public void chat(String channel, PlayerInfo player, String text, boolean emote) {
+    /**
+     * A player wrote in a chat channel, or did something with {@code /me}.
+     *
+     * @param mayMention whether the player may ping linked Discord members with {@code @name}; it only has an effect on a bot that
+     *                   offers the feature, since one that does not would show the text as it is
+     */
+    public void chat(String channel, PlayerInfo player, String text, boolean emote, boolean mayMention) {
         String id = channel.toLowerCase(Locale.ROOT);
         String plain = PlainText.chat(text);
         if (plain.isEmpty() || !sink.bridges(id)) {
             return;
         }
-        sink.send(new OutFrame.Chat(id, player, plain, emote));
+        // Looked for in the text that travels, so a mention cut off by the size limit is not sent
+        List<OutFrame.Mention> mentioned = mayMention && sink.offers(Protocol.FEATURE_MENTIONS) ? mentions.in(plain) : List.of();
+        sink.send(new OutFrame.Chat(id, player, plain, emote, mentioned));
     }
 
     /** A player connected. It is remembered if it is their first time, to say so when they are ready. */

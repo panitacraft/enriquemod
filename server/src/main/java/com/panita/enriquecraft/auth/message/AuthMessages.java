@@ -107,7 +107,8 @@ public final class AuthMessages {
     /** Shown on the disconnect screen, so a vanilla client can read them. */
     public static final class Refusal {
         public static final String NOT_WHITELISTED = "<red>No estás en la lista blanca de este servidor.</red>\n<gray>Activa tu cuenta con <white>/register</white> en el Discord de Panitacraft.";
-        public static final String BLOCKED = "<red>Demasiados intentos fallidos.</red>\n<gray>Vuelve a intentarlo en <white>{time}</white>.";
+        public static final String STAFF_ONLY = "<red>El servidor solo admite al equipo por ahora.</red>\n<gray>Vuelve a intentarlo más tarde.";
+        public static final String BLOCKED ="<red>Demasiados intentos fallidos.</red>\n<gray>Vuelve a intentarlo en <white>{time}</white>.";
         public static final String ALREADY_ONLINE = "<red>Ya hay alguien conectado con ese nombre.</red>\n<gray>Si eres tú, espera unos segundos y vuelve a intentarlo.";
         public static final String UNAVAILABLE = "<red>No se pudo verificar tu cuenta con Mojang.</red>\n<gray>Inténtalo de nuevo en un momento.";
         public static final String TOO_MANY_ATTEMPTS = "<red>PIN incorrecto demasiadas veces.</red>\n<gray>Vuelve a entrar para intentarlo de nuevo.";

@@ -1,7 +1,6 @@
 package com.panita.enriquecraft.client.share;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.panita.enriquecraft.discord.service.ChatImageLayout;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -82,7 +81,7 @@ final class ShareScreen extends Screen {
             int y = 24 + (room - drawHeight) / 2;
             graphics.blit(RenderPipelines.GUI_TEXTURED, PREVIEW, x, y, 0.0F, 0.0F, drawWidth, drawHeight, sourceWidth, sourceHeight, sourceWidth, sourceHeight);
         }
-        graphics.centeredText(font, Component.translatable("enriquecraft.share.warning").getString(), width / 2, height - 80 + ChatImageLayout.LINE_HEIGHT, WARNING_COLOR);
+        graphics.centeredText(font, Component.translatable("enriquecraft.share.warning").getString(), width / 2, height - 80 + font.lineHeight, WARNING_COLOR);
     }
 
     @Override

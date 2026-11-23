@@ -35,10 +35,12 @@ import com.panita.enriquecraft.discord.service.HttpMediaUploader;
 import com.panita.enriquecraft.discord.service.ScreenshotShares;
 import com.panita.enriquecraft.discord.service.ShareTransfers;
 import com.panita.enriquecraft.discord.service.GameReporter;
+import com.panita.enriquecraft.discord.service.Mentions;
 import com.panita.enriquecraft.discord.service.ImageFetcher;
 import com.panita.enriquecraft.discord.service.ImageMaps;
 import com.panita.enriquecraft.discord.service.MediaPreviews;
 import com.panita.enriquecraft.discord.service.MediaTokens;
+import com.panita.enriquecraft.discord.service.MediaViewer;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
 import com.panita.enriquecraft.discord.service.PlayerRoster;
 import com.panita.enriquecraft.discord.service.QueryAnswers;
@@ -118,12 +120,13 @@ public final class DiscordModule implements EnriquecraftModule {
         router.onQuery(answers::answer);
 
         services.register(MediaTokens.class, tokens);
+        services.register(MediaViewer.class, new MediaViewer(services.get(ClientCapabilities.class), config));
         services.register(ShownMaps.class, shownMaps);
         services.register(ImageView.class, imageView);
         services.register(ImageMaps.class, imageMaps);
         services.register(ServerInfo.class, info);
         services.register(BridgeConnection.class, connection);
-        services.register(GameReporter.class, new GameReporter(connection));
+        services.register(GameReporter.class, new GameReporter(connection, new Mentions(services.get(LinkedPlayers.class))));
         services.register(PlayerInfos.class, playerInfos);
         services.register(ScreenshotShares.class, shares);
         services.register(DiscordView.class, new DiscordView(services.get(Messenger.class)));

@@ -5,6 +5,7 @@ import com.panita.enriquecraft.chat.event.ChatEvents;
 import com.panita.enriquecraft.chat.event.SystemEvent;
 import com.panita.enriquecraft.core.event.CoreEvents;
 import com.panita.enriquecraft.core.framework.listener.ModListener;
+import com.panita.enriquecraft.discord.DiscordPermissions;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.service.GameReporter;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
@@ -31,8 +32,8 @@ public final class GameEventsListener implements ModListener {
 
     @Override
     public void register() {
-        ChatEvents.MESSAGE.register(message ->
-                reporter.chat(message.channel().id(), infos.of(message.sender()), message.text(), message.emote()));
+        ChatEvents.MESSAGE.register(message -> reporter.chat(message.channel().id(), infos.of(message.sender()), message.text(),
+                message.emote(), DiscordPermissions.canMention(message.sender())));
         ChatEvents.SYSTEM.register(this::system);
         ChatEvents.AFK.register((player, afk) -> {
             if (config.reportAfk.get()) {

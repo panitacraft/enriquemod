@@ -4,10 +4,12 @@ import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
+import com.panita.enriquecraft.discord.service.MediaLinks;
 import com.panita.enriquecraft.discord.service.MediaTokens;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -102,5 +104,27 @@ class MediaViewTest {
         String second = ((ClickEvent.RunCommand) view.link(image("a.png", false)).getSiblings().get(0).getStyle().getClickEvent()).command();
 
         assertFalse(first.equals(second));
+    }
+
+    @Test
+    void theHoverOfAnImageIsATranslationThatCarriesTheTextForEachClientAndTheAddress() {
+        Component label = view.link(image("foto.png", false)).getSiblings().get(0);
+        HoverEvent.ShowText hover = assertInstanceOf(HoverEvent.ShowText.class, label.getStyle().getHoverEvent());
+
+        TranslatableContents translation = assertInstanceOf(TranslatableContents.class, hover.value().getContents());
+        assertEquals(MediaLinks.HOVER_KEY, translation.getKey());
+        assertEquals("%1$s", translation.getFallback());
+        assertEquals(3, translation.getArgs().length);
+        assertTrue(((Component) translation.getArgs()[0]).getString().contains("en un mapa"), "the text of a vanilla client");
+        assertFalse(((Component) translation.getArgs()[1]).getString().contains("mapa"), "the text of the companion");
+        assertEquals(URL, translation.getArgs()[2]);
+    }
+
+    @Test
+    void theHoverOfASpoilerIsPlainTextSinceItHasNoPreview() {
+        Component label = view.link(image("secreto.png", true)).getSiblings().get(0);
+        HoverEvent.ShowText hover = assertInstanceOf(HoverEvent.ShowText.class, label.getStyle().getHoverEvent());
+
+        assertFalse(hover.value().getContents() instanceof TranslatableContents);
     }
 }

@@ -63,7 +63,8 @@ public final class AuthModule implements EnriquecraftModule {
         HeldPlayers held = new HeldPlayers(accounts, limiter, config, refusals, screens,
                 services.get(ClientCapabilities.class), new LoginView(services.get(Messenger.class)));
 
-        LoginGate gate = new LoginGate(limiter, lookup, held::isHeld);
+        LoginGate gate = new LoginGate(limiter, lookup, held::isHeld, name -> !config.staffOnlyEnabled.get()
+                || config.staffOnlyPlayers.get().stream().anyMatch(staff -> staff.equalsIgnoreCase(name)));
         WhitelistAdmin whitelistAdmin = new WhitelistAdmin(lookup);
         PlayerDataMigration migration = new PlayerDataMigration();
         WhitelistHandler whitelist = new WhitelistHandler(whitelistAdmin, migration,

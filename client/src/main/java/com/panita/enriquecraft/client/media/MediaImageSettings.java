@@ -1,4 +1,4 @@
-package com.panita.enriquecraft.client.chat;
+package com.panita.enriquecraft.client.media;
 
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -11,21 +11,21 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * The player's own choice about images in the chat, kept in {@code config/enriquecraft-client.properties}. The client fetches
- * the image itself from the host Discord uses, which sees the player's address, so the player can turn it off with
- * {@code chatImages=false}. A missing file or key means on.
+ * The player's own choice about images of the chat, kept in {@code config/enriquecraft-client.properties}. The client fetches the
+ * image itself from the host Discord uses, which sees the player's address, so the player can turn it off with
+ * {@code chatImages=false}: the client then does not announce that it shows images, and the server treats it as a vanilla one (the
+ * label opens the image on a map). It is read when the player joins a server. A missing file or key means on.
  */
-final class ChatImageSettings {
+public final class MediaImageSettings {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChatImageSettings.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MediaImageSettings.class);
     private static final String FILE = "enriquecraft-client.properties";
     private static final String KEY = "chatImages";
 
-    private ChatImageSettings() {
+    private MediaImageSettings() {
     }
 
-    /** Read at each use, so the player can change it without restarting the game. */
-    static boolean enabled() {
+    public static boolean enabled() {
         Path file = FabricLoader.getInstance().getConfigDir().resolve(FILE);
         if (!Files.isRegularFile(file)) {
             return true;

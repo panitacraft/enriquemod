@@ -25,7 +25,7 @@ class LoginGateTest {
     private final LoginGate gate = new LoginGate(new AttemptLimiter(() -> now, () -> 9, () -> Duration.ofMinutes(10), () -> Duration.ofMinutes(15)), new PremiumLookup(name -> {
         asked.incrementAndGet();
         return CompletableFuture.completedFuture(answer);
-    }, () -> now, () -> Duration.ofMinutes(30), () -> 500), player -> false);
+    }, () -> now, () -> Duration.ofMinutes(30), () -> 500), player -> false, name -> true);
 
     private LoginGate.Verdict plan(Optional<Duration> blocked, boolean whitelist, Optional<NameAndId> listed) {
         return plan(blocked, whitelist, false, listed);
@@ -80,6 +80,19 @@ class LoginGateTest {
 
         answer = new PremiumLookup.Result.Missing();
         assertEquals(new LoginGate.Verdict.Proceed(AuthMode.CRACKED, "Other"), gate.plan(Optional.empty(), false, false, Optional.empty(), "Other").join());
+    }
+
+    @Test
+    void aNameTheStaffOnlyModeDoesNotAllowIsRefusedBeforeAnythingIsAskedAboutIt() {
+        LoginGate staffOnly = new LoginGate(new AttemptLimiter(() -> now, () -> 9, () -> Duration.ofMinutes(10), () -> Duration.ofMinutes(15)),
+                new PremiumLookup(name -> {
+                    asked.incrementAndGet();
+                    return CompletableFuture.completedFuture(answer);
+                }, () -> now, () -> Duration.ofMinutes(30), () -> 500), player -> false, name -> false);
+
+        // The refusal needs neither the server nor Mojang
+        assertInstanceOf(LoginGate.Verdict.StaffOnly.class, staffOnly.admit(null, "127.0.0.1", "Other").join());
+        assertEquals(0, asked.get());
     }
 
     @Test

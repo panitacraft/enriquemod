@@ -69,10 +69,50 @@ public final class InlineArts {
         if (!ArtLinks.isTrusted(url)) {
             return text;
         }
-        String id = register(url).orElseThrow();
+        return Component.translatableWithFallback(KEY, "%1$s", text, glyphOf(register(url).orElseThrow()));
+    }
+
+    /**
+     * The same text with every image that has no height of its own drawn at the given height (a line of the tab list, where the images
+     * of the chat are taller than the text). An image whose address already asks for a height keeps it, as the small stand-in of an empty
+     * emblem place does. The text is copied; hovers are left as they are, since they are not drawn in the line.
+     */
+    public Component withHeight(Component text, int height) {
+        MutableComponent copy;
+        if (text.getContents() instanceof TranslatableContents translation) {
+            boolean art = KEY.equals(translation.getKey());
+            Object[] arguments = translation.getArgs().clone();
+            for (int i = 0; i < arguments.length; i++) {
+                if (arguments[i] instanceof Component argument) {
+                    arguments[i] = art && i == 1 ? glyphAt(argument, height) : withHeight(argument, height);
+                }
+            }
+            copy = MutableComponent.create(new TranslatableContents(translation.getKey(), translation.getFallback(), arguments));
+        } else {
+            copy = MutableComponent.create(text.getContents());
+        }
+        copy.setStyle(text.getStyle());
+        text.getSiblings().forEach(sibling -> copy.append(withHeight(sibling, height)));
+        return copy;
+    }
+
+    /** The glyph of the same image asked to be drawn at the height, or the glyph itself when its image already has a height of its own. */
+    private Component glyphAt(Component glyph, int height) {
+        return idOf(glyph)
+                .map(id -> {
+                    synchronized (known) {
+                        return known.get(id);
+                    }
+                })
+                .filter(url -> ArtLinks.sizeOf(url).isEmpty())
+                .flatMap(url -> register(url + "#size=" + height))
+                .map(InlineArts::glyphOf)
+                .orElse(glyph);
+    }
+
+    private static Component glyphOf(String id) {
         Identifier font = Identifier.fromNamespaceAndPath(NetworkProtocol.NAMESPACE, ArtLinks.FONT_PATH + id);
-        MutableComponent glyph = Component.literal(GLYPH).withStyle(style -> style.withFont(new FontDescription.Resource(font)).withColor(0xFFFFFF));
-        return Component.translatableWithFallback(KEY, "%1$s", text, glyph);
+        return Component.literal(GLYPH).withStyle(style -> style.withFont(new FontDescription.Resource(font)).withColor(0xFFFFFF));
     }
 
     /**

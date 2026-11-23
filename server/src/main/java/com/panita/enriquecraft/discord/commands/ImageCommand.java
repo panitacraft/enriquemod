@@ -12,6 +12,7 @@ import com.panita.enriquecraft.discord.message.DiscordMessages;
 import com.panita.enriquecraft.discord.message.ImageView;
 import com.panita.enriquecraft.discord.protocol.MediaEntry;
 import com.panita.enriquecraft.discord.service.ImageMaps;
+import com.panita.enriquecraft.discord.service.MediaViewer;
 import com.panita.enriquecraft.discord.service.MediaTokens;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -23,7 +24,7 @@ import java.util.Optional;
 
 /**
  * {@code /imagen <token>}: what the label of an image in the chat runs when it is clicked. The token stands for an image the
- * server put in the chat; it is not meant to be typed.
+ * server put in the chat; it is not meant to be typed. It opens the viewer of the client companion, or shows the image on a map.
  */
 @CommandSpec(name = "imagen", description = DiscordMessages.Image.COMMAND_DESCRIPTION, clickable = true)
 public final class ImageCommand implements ModCommand {
@@ -35,12 +36,14 @@ public final class ImageCommand implements ModCommand {
     private final MediaTokens tokens;
     private final ImageMaps images;
     private final ImageView view;
+    private final MediaViewer viewer;
 
-    public ImageCommand(PlayerOnly playerOnly, MediaTokens tokens, ImageMaps images, ImageView view) {
+    public ImageCommand(PlayerOnly playerOnly, MediaTokens tokens, ImageMaps images, ImageView view, MediaViewer viewer) {
         this.playerOnly = playerOnly;
         this.tokens = tokens;
         this.images = images;
         this.view = view;
+        this.viewer = viewer;
     }
 
     @Override
@@ -60,7 +63,10 @@ public final class ImageCommand implements ModCommand {
             view.expired(player);
             return 0;
         }
-        images.show(context.getSource().getServer(), player, entry.get());
+        // A client that shows images opens its own viewer; every other player gets the image on a map
+        if (!viewer.open(player, entry.get())) {
+            images.show(context.getSource().getServer(), player, entry.get());
+        }
         return Command.SINGLE_SUCCESS;
     }
 }

@@ -40,7 +40,9 @@ public final class ModuleManager {
         services.register(MessageCatalog.class, messages);
         services.register(WorldData.class, new WorldData());
         services.register(ReloadHooks.class, new ReloadHooks());
-        new CommandRegistry(catalog, new CommandTreeBuilder()).register();
+        CommandRegistry commands = new CommandRegistry(catalog, new CommandTreeBuilder());
+        services.register(CommandRegistry.class, commands);
+        commands.register();
     }
 
     public void register(EnriquecraftModule module) {

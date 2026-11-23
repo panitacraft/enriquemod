@@ -3,6 +3,10 @@ package com.panita.enriquecraft.discord.service;
 import com.panita.enriquecraft.discord.protocol.EventKind;
 import com.panita.enriquecraft.discord.protocol.OutFrame;
 import com.panita.enriquecraft.discord.protocol.PlayerInfo;
+import com.panita.enriquecraft.discord.protocol.Protocol;
+import com.panita.enriquecraft.link.client.LinkedPlayer;
+import com.panita.enriquecraft.link.data.LinkedSnapshot;
+import com.panita.enriquecraft.link.service.LinkedPlayers;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -36,7 +40,8 @@ class GameReporterTest {
         public boolean offers(String feature) {
             return offered.contains(feature);
         }
-    });
+    }, new Mentions(new LinkedPlayers(() -> new LinkedSnapshot(List.of(
+            new LinkedPlayer(2, "Tezzlar", Optional.empty(), "222222222222222222")), Optional.empty()))));
 
     private static OutFrame.Event event(EventKind kind, Optional<PlayerInfo> player, Optional<String> text, Optional<String> key) {
         return new OutFrame.Event(kind, player, text, key);
@@ -44,42 +49,77 @@ class GameReporterTest {
 
     @Test
     void passesAChatLineOfABridgedChannel() {
-        reporter.chat("global", JAVI, "hola", false);
+        reporter.chat("global", JAVI, "hola", false, false);
 
-        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola", false)), sent);
+        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola", false, List.of())), sent);
     }
 
     @Test
     void passesAnEmoteAsAnEmote() {
-        reporter.chat("global", JAVI, "saluda", true);
+        reporter.chat("global", JAVI, "saluda", true, false);
 
-        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "saluda", true)), sent);
+        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "saluda", true, List.of())), sent);
     }
 
     @Test
     void leavesOutAChannelTheBotDoesNotBridge() {
-        reporter.chat("staff", JAVI, "secreto", false);
+        reporter.chat("staff", JAVI, "secreto", false, false);
 
         assertTrue(sent.isEmpty());
     }
 
     @Test
-    void namesTheChannelInLowercase() {
-        reporter.chat("Global", JAVI, "hola", false);
+    void sendsTheMentionsOfAPlayerWhoMayMentionToABotThatOffersThem() {
+        offered = Set.of(Protocol.FEATURE_MENTIONS);
 
-        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola", false)), sent);
+        reporter.chat("global", JAVI, "hola @Tezzlar", false, true);
+
+        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola @Tezzlar", false,
+                List.of(new OutFrame.Mention("Tezzlar", "222222222222222222")))), sent);
+    }
+
+    @Test
+    void sendsNoMentionsForAPlayerWhoMayNot() {
+        offered = Set.of(Protocol.FEATURE_MENTIONS);
+
+        reporter.chat("global", JAVI, "hola @Tezzlar", false, false);
+
+        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola @Tezzlar", false, List.of())), sent);
+    }
+
+    @Test
+    void sendsNoMentionsToABotThatDoesNotOfferThem() {
+        reporter.chat("global", JAVI, "hola @Tezzlar", false, true);
+
+        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola @Tezzlar", false, List.of())), sent);
+    }
+
+    @Test
+    void doesNotSendAMentionTheSizeLimitCutOff() {
+        offered = Set.of(Protocol.FEATURE_MENTIONS);
+
+        reporter.chat("global", JAVI, "x".repeat(250) + " @Tezzlar", false, true);
+
+        assertEquals(List.of(), ((OutFrame.Chat) sent.get(0)).mentions());
+    }
+
+    @Test
+    void namesTheChannelInLowercase() {
+        reporter.chat("Global", JAVI, "hola", false, false);
+
+        assertEquals(List.of(new OutFrame.Chat("global", JAVI, "hola", false, List.of())), sent);
     }
 
     @Test
     void sendsNoLineThatIsEmptyOnceItIsCleaned() {
-        reporter.chat("global", JAVI, "  \u0007 ", false);
+        reporter.chat("global", JAVI, "  \u0007 ", false, false);
 
         assertTrue(sent.isEmpty());
     }
 
     @Test
     void cutsAChatLineToWhatTheProtocolAllows() {
-        reporter.chat("global", JAVI, "x".repeat(400), false);
+        reporter.chat("global", JAVI, "x".repeat(400), false, false);
 
         assertEquals(256, ((OutFrame.Chat) sent.get(0)).text().length());
     }

@@ -140,13 +140,13 @@ public final class ScreenshotShares {
                         if (failure != null) {
                             view.failed(player, failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure);
                         } else {
-                            finish(server, player, channel, completed, uploaded);
+                            finish(player, channel, completed, uploaded);
                         }
                     }));
         });
     }
 
-    private void finish(MinecraftServer server, ServerPlayer player, ChannelDefinition channel, ShareTransfers.Completed completed,
+    private void finish(ServerPlayer player, ChannelDefinition channel, ShareTransfers.Completed completed,
                         MediaUploader.Uploaded uploaded) {
         MediaEntry entry = new MediaEntry(uploaded.url(), DiscordMessages.Share.CHAT_NAME, uploaded.type(), uploaded.size(),
                 OptionalInt.of(uploaded.width()), OptionalInt.of(uploaded.height()), false);
@@ -154,7 +154,7 @@ public final class ScreenshotShares {
             view.failed(player, new IllegalStateException("the bot answered an address on a host that is not allowed"));
             return;
         }
-        List<ServerPlayer> readers = chat.deliverExternal(server, channel, player.getDisplayName(), completed.caption(), List.of(media.link(entry)));
+        List<ServerPlayer> readers = chat.deliverShared(player, channel, completed.caption(), List.of(media.link(entry)));
         previews.send(readers, MediaLinks.isTrusted(entry) ? List.of(entry) : List.of());
     }
 

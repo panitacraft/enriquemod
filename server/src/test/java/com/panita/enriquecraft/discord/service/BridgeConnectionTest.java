@@ -276,7 +276,7 @@ class BridgeConnectionTest {
     @Test
     void holdsChatLinesAndEventsWhileDownAndSendsThemInOrderOnceWelcomed() {
         connection.start();
-        connection.send(new OutFrame.Chat("global", JAVI, "uno", false));
+        connection.send(new OutFrame.Chat("global", JAVI, "uno", false, List.of()));
         connection.send(new OutFrame.Event(EventKind.JOIN, Optional.of(JAVI), Optional.empty(), Optional.empty()));
         assertTrue(transport.sent.isEmpty());
 
@@ -289,10 +289,10 @@ class BridgeConnectionTest {
     @Test
     void dropsWhatWaitedTooLongAndWhatDoesNotFit() {
         connection.start();
-        connection.send(new OutFrame.Chat("global", JAVI, "old", false));
+        connection.send(new OutFrame.Chat("global", JAVI, "old", false, List.of()));
         now = now.plusSeconds(61);
         for (int i = 0; i < 101; i++) {
-            connection.send(new OutFrame.Chat("global", JAVI, "n" + i, false));
+            connection.send(new OutFrame.Chat("global", JAVI, "n" + i, false, List.of()));
         }
 
         transport.listener().onOpen();
@@ -316,7 +316,7 @@ class BridgeConnectionTest {
     void sendsRightAwayWhileConnected() {
         connected();
 
-        connection.send(new OutFrame.Chat("global", JAVI, "hola", false));
+        connection.send(new OutFrame.Chat("global", JAVI, "hola", false, List.of()));
 
         assertEquals(List.of("hello", "chat"), transport.types());
         assertEquals(2, connection.status().sent());
@@ -390,7 +390,7 @@ class BridgeConnectionTest {
     @Test
     void stopsForGood() {
         connected();
-        connection.send(new OutFrame.Chat("global", JAVI, "x", false));
+        connection.send(new OutFrame.Chat("global", JAVI, "x", false, List.of()));
 
         connection.stop();
 

@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -24,7 +25,7 @@ import java.util.function.Consumer;
 
 /**
  * Owns the single config file. Each module binds one section; values are validated on load and
- * on reload, and the file is rewritten only to add missing keys.
+ * on reload, and the file is rewritten only to add missing keys, after a copy of it is kept (see {@link ConfigBackups}).
  * <p>
  * Safety rules: a file that cannot be parsed is never overwritten, startup then uses defaults and
  * a reload keeps the previous values; values written by the administrator are kept as written even
@@ -39,13 +40,16 @@ public final class ConfigManager {
             """;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigManager.class);
+    private static final int MAX_LISTED_ADDED = 8;
 
     private final Path file;
     private final ConfigRenderer renderer;
     private final String issuePrefix;
     private final Map<String, List<ConfigValue<?>>> sections = new LinkedHashMap<>();
+    private final ConfigBackups backups;
     private JsonObject root = new JsonObject();
     private boolean fileReadable = true;
+    private String lastWritten;
 
     public ConfigManager(Path configDirectory) {
         this(configDirectory, FILE_NAME, MAIN_HEADER, "");
@@ -59,6 +63,7 @@ public final class ConfigManager {
      */
     public ConfigManager(Path configDirectory, String fileName, String header, String issuePrefix) {
         this.file = configDirectory.resolve(fileName);
+        this.backups = new ConfigBackups(file);
         this.renderer = new ConfigRenderer(header);
         this.issuePrefix = issuePrefix;
         ReadResult result = read();
@@ -103,9 +108,11 @@ public final class ConfigManager {
         sections.put(section, values);
 
         List<ConfigIssue> issues = new ArrayList<>();
-        boolean missing = apply(section, values, issues);
-        if (missing) {
+        List<String> added = new ArrayList<>();
+        apply(section, values, issues, added);
+        if (!added.isEmpty()) {
             save();
+            logAdded(added);
         }
         log(issues);
     }
@@ -125,12 +132,13 @@ public final class ConfigManager {
         }
         fileReadable = true;
         root = result.root();
-        boolean missing = false;
+        List<String> added = new ArrayList<>();
         for (Map.Entry<String, List<ConfigValue<?>>> section : sections.entrySet()) {
-            missing |= apply(section.getKey(), section.getValue(), issues);
+            apply(section.getKey(), section.getValue(), issues, added);
         }
-        if (missing) {
+        if (!added.isEmpty()) {
             save();
+            logAdded(added);
         }
         log(issues);
         return new ConfigReport(issues);
@@ -139,9 +147,9 @@ public final class ConfigManager {
     /**
      * Applies the file's values to a section.
      *
-     * @return whether any declared key is missing from the file
+     * @param added receives the full path of every declared key that is missing from the file
      */
-    private boolean apply(String sectionName, List<ConfigValue<?>> values, List<ConfigIssue> issues) {
+    private void apply(String sectionName, List<ConfigValue<?>> values, List<ConfigIssue> issues, List<String> added) {
         JsonElement sectionElement = root.get(sectionName);
         JsonObject section = null;
         if (sectionElement != null) {
@@ -152,12 +160,11 @@ public final class ConfigManager {
             }
         }
 
-        boolean missing = false;
         for (ConfigValue<?> value : values) {
             JsonElement raw = section == null ? null : find(section, value.path());
             if (raw == null) {
                 value.reset();
-                missing = true;
+                added.add(sectionName + "." + value.path());
             } else {
                 value.apply(raw).ifPresent(reason ->
                         issues.add(new ConfigIssue(ConfigIssue.Kind.INVALID_VALUE, issuePrefix + sectionName + "." + value.path(), reason)));
@@ -166,7 +173,6 @@ public final class ConfigManager {
         if (section != null) {
             findUnknownKeys(sectionName, section, values, issues);
         }
-        return missing;
     }
 
     private void findUnknownKeys(String sectionName, JsonObject section, List<ConfigValue<?>> values,
@@ -230,15 +236,42 @@ public final class ConfigManager {
         }
     }
 
+    /**
+     * Rewrites the file. A file the administrator (or an older version) wrote is copied first, and if the copy cannot be made the file is
+     * left as it is. What this manager wrote itself a moment ago is not worth a copy, since sections bind one after another.
+     */
     private void save() {
         if (!fileReadable) {
             return;
         }
+        String text = renderer.render(sections, root);
         try {
-            AtomicFiles.write(file, renderer.render(sections, root));
+            if (Files.exists(file)) {
+                String current = Files.readString(file, StandardCharsets.UTF_8);
+                if (current.equals(text)) {
+                    lastWritten = text;
+                    return;
+                }
+                if (!current.isBlank() && !current.equals(lastWritten)) {
+                    Path copy = backups.save(current, LocalDateTime.now());
+                    LOGGER.info("Saved a copy of {} as {} before adding new settings to it", file.getFileName(), copy);
+                }
+            }
+            AtomicFiles.write(file, text);
+            lastWritten = text;
         } catch (IOException e) {
-            LOGGER.error("Could not write {}: {}", file, e.getMessage());
+            LOGGER.error("Could not back up or write {}: {}. The file was not changed.", file, e.getMessage());
         }
+    }
+
+    /** Tells the console which settings the file got, unless it is a file that was just created and has every one. */
+    private void logAdded(List<String> added) {
+        if (root.isEmpty()) {
+            return;
+        }
+        String shown = String.join(", ", added.stream().limit(MAX_LISTED_ADDED).toList());
+        LOGGER.info("Added {} new setting(s) to {}: {}{}", added.size(), file.getFileName(), shown,
+                added.size() > MAX_LISTED_ADDED ? ", and " + (added.size() - MAX_LISTED_ADDED) + " more" : "");
     }
 
     private ReadResult read() {

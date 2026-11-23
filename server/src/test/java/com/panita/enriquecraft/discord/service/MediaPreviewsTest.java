@@ -51,16 +51,10 @@ class MediaPreviewsTest {
     }
 
     @Test
-    void anImageFitsTheChatWithoutGrowingOrLosingItsShape() {
-        assertEquals(new ChatImageLayout.Size(100, 50, 6), ChatImageLayout.fit(100, 50));
-        ChatImageLayout.Size wide = ChatImageLayout.fit(1000, 500);
-        assertEquals(200, wide.width());
-        assertEquals(100, wide.height());
-        assertEquals(12, wide.lines());
-        ChatImageLayout.Size tall = ChatImageLayout.fit(100, 1000);
-        assertEquals(108, tall.height());
-        assertEquals(11, tall.width());
-        assertEquals(12, tall.lines());
-        assertThrows(IllegalArgumentException.class, () -> ChatImageLayout.fit(0, 5));
+    void aPreviewFitsItsRoomWithoutGrowingOrLosingItsShape() {
+        assertEquals(new PreviewLayout.Size(100, 50), PreviewLayout.fit(100, 50));
+        assertEquals(new PreviewLayout.Size(200, 100), PreviewLayout.fit(1000, 500));
+        assertEquals(new PreviewLayout.Size(15, 150), PreviewLayout.fit(100, 1000));
+        assertThrows(IllegalArgumentException.class, () -> PreviewLayout.fit(0, 5));
     }
 }
