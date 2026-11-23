@@ -4,6 +4,8 @@ import com.panita.enriquecraft.core.framework.config.ConfigSectionBuilder;
 import com.panita.enriquecraft.core.framework.config.ConfigValue;
 import com.panita.enriquecraft.core.framework.config.ModConfig;
 
+import java.util.List;
+
 /**
  * Settings of the auth module, stored in the {@code auth} section of the config file.
  */
@@ -20,8 +22,17 @@ public final class AuthConfig implements ModConfig {
     public final ConfigValue<Integer> blockSeconds;
     public final ConfigValue<Integer> lookupCacheMinutes;
     public final ConfigValue<Integer> lookupMaxRequestsPerTenMinutes;
+    public final ConfigValue<Boolean> staffOnlyEnabled;
+    public final ConfigValue<List<String>> staffOnlyPlayers;
 
     public AuthConfig(ConfigSectionBuilder builder) {
+        staffOnlyEnabled = builder.bool("staffOnly.enabled", false,
+                "Only the players in staffOnly.players may join, such as while the server is being worked on. Everyone else is refused at login,\n"
+                        + "whether or not they are on the whitelist. Players already online stay. Apply it with /enriquecraft reload.");
+        staffOnlyPlayers = builder.custom("staffOnly.players", List.of(),
+                "The Minecraft names that may join while staffOnly.enabled is on, ignoring capitalization. They still log in the way the\n"
+                        + "whitelist says (Microsoft account or PIN): this list only adds a restriction.",
+                new NamesType());
         pinLength = builder.intRange("pin.length", 4, 4, 6,
                 "How many digits the PIN of a new account has. Accounts keep the length they were created with. Digits go from 1 to 9: there is no zero.");
         maxAttempts = builder.intRange("pin.maxAttempts", 3, 1, 10,

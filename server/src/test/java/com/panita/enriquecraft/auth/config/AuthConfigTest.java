@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuthConfigTest {
@@ -34,6 +35,40 @@ class AuthConfigTest {
         assertTrue(config.spectatorWhileWaiting.get());
         assertEquals(3, config.introSeconds.get());
         assertTrue(manager.reload().isClean());
+    }
+
+    @Test
+    void staffOnlyIsOffAndHasNoNamesByDefault() {
+        AuthConfig config = new ConfigManager(directory).bind("auth", AuthConfig.class);
+
+        assertFalse(config.staffOnlyEnabled.get());
+        assertEquals(List.of(), config.staffOnlyPlayers.get());
+    }
+
+    @Test
+    void staffOnlyReadsTheListOfNames() throws IOException {
+        Files.writeString(directory.resolve("enriquecraft.json5"),
+                "{ \"auth\": { \"staffOnly\": { \"enabled\": true, \"players\": [\"Javithor360\", \"Tezzlar\"] } } }");
+        ConfigManager manager = new ConfigManager(directory);
+        AuthConfig config = manager.bind("auth", AuthConfig.class);
+
+        assertTrue(manager.reload().isClean());
+        assertTrue(config.staffOnlyEnabled.get());
+        assertEquals(List.of("Javithor360", "Tezzlar"), config.staffOnlyPlayers.get());
+    }
+
+    @Test
+    void aNameThatIsNotValidMakesTheWholeListFallBackToTheDefault() throws IOException {
+        for (String value : List.of("[\"Good\", \"not a name\"]", "[\"ThisNameIsFarTooLongToBeOne\"]", "[1]", "\"Good\"")) {
+            Files.writeString(directory.resolve("enriquecraft.json5"), "{ \"auth\": { \"staffOnly\": { \"players\": " + value + " } } }");
+            ConfigManager manager = new ConfigManager(directory);
+            AuthConfig config = manager.bind("auth", AuthConfig.class);
+
+            ConfigReport report = manager.reload();
+
+            assertEquals(List.of(), config.staffOnlyPlayers.get(), value);
+            assertEquals(ConfigIssue.Kind.INVALID_VALUE, report.issues().get(0).kind(), value);
+        }
     }
 
     @Test

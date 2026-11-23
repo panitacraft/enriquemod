@@ -39,6 +39,10 @@ public final class LoginGate {
         record NotWhitelisted() implements Verdict {
         }
 
+        /** Only staff may join at the moment, and this name is not one of them. */
+        record StaffOnly() implements Verdict {
+        }
+
         /** The name could not be classified; it is refused rather than guessed. */
         record Unavailable() implements Verdict {
         }
@@ -47,15 +51,18 @@ public final class LoginGate {
     private final AttemptLimiter limiter;
     private final PremiumLookup lookup;
     private final Predicate<ServerPlayer> isHeld;
+    private final Predicate<String> mayJoinNow;
 
     /**
-     * @param isHeld tells whether a connected player is still waiting at the PIN screen; such a player has proved
-     *               nothing, so a newcomer may replace them
+     * @param isHeld     tells whether a connected player is still waiting at the PIN screen; such a player has proved
+     *                   nothing, so a newcomer may replace them
+     * @param mayJoinNow tells whether a name is allowed in by the staff-only mode; always true while that mode is off
      */
-    public LoginGate(AttemptLimiter limiter, PremiumLookup lookup, Predicate<ServerPlayer> isHeld) {
+    public LoginGate(AttemptLimiter limiter, PremiumLookup lookup, Predicate<ServerPlayer> isHeld, Predicate<String> mayJoinNow) {
         this.limiter = limiter;
         this.lookup = lookup;
         this.isHeld = isHeld;
+        this.mayJoinNow = mayJoinNow;
     }
 
     /**
@@ -63,6 +70,10 @@ public final class LoginGate {
      * them there; the answer may complete on another thread.
      */
     public CompletableFuture<Verdict> admit(MinecraftServer server, String address, String name) {
+        // Before anything else, so no one else costs a lookup at Mojang or a count against an address
+        if (!mayJoinNow.test(name)) {
+            return CompletableFuture.completedFuture(new Verdict.StaffOnly());
+        }
         return CompletableFuture.supplyAsync(() -> {
             PlayerList players = server.getPlayerList();
             ServerPlayer connected = players.getPlayerByName(name);

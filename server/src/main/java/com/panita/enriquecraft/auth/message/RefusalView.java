@@ -29,6 +29,8 @@ public final class RefusalView {
                     Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.ALREADY_ONLINE)));
             case LoginGate.Verdict.NotWhitelisted notWhitelisted ->
                     Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.NOT_WHITELISTED)));
+            case LoginGate.Verdict.StaffOnly staffOnly ->
+                    Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.STAFF_ONLY)));
             case LoginGate.Verdict.Unavailable unavailable ->
                     Optional.of(formatter.format(Message.plain(AuthMessages.Refusal.UNAVAILABLE)));
         };
