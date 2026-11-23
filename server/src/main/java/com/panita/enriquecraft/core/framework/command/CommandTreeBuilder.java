@@ -26,11 +26,19 @@ public final class CommandTreeBuilder {
 
     /**
      * Registers the command and its aliases after removing whatever the root already has under those literals, so nothing another mod
-     * put there (its executor, its subcommands, its requirement) is left in the way.
+     * put there (its executor, its subcommands, its requirement) is left in the way. The command that stood under the name of the entry
+     * stays reachable as {@link CommandSpec#displacedAs()}, when the entry says so.
      */
     public void replaceOn(CommandDispatcher<CommandSourceStack> dispatcher, CommandEntry entry) {
         CommandNode<CommandSourceStack> root = dispatcher.getRoot();
         for (LiteralCommandNode<CommandSourceStack> node : build(entry)) {
+            CommandNode<CommandSourceStack> displaced = root.getChild(node.getName());
+            String keptAs = entry.spec().displacedAs();
+            if (displaced != null && !keptAs.isEmpty() && node.getName().equals(entry.spec().name())) {
+                // A redirect keeps the displaced node whole (its executor and subcommands) without it standing under the old name
+                root.addChild(Commands.literal(keptAs).requires(displaced.getRequirement()).executes(displaced.getCommand())
+                        .redirect(displaced).build());
+            }
             // Brigadier has no way to remove a node; parsing also looks in the table of literals, so both tables are cleared.
             childTable(root, "children").remove(node.getName());
             childTable(root, "literals").remove(node.getName());

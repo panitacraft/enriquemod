@@ -19,8 +19,9 @@ public final class CommandRegistry {
     }
 
     public void register() {
+        // A command that overrides another is added only at the end, by claimOverridden, so it is never merged with the one it displaces
         CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) ->
-                catalog.roots().forEach(entry -> treeBuilder.registerOn(dispatcher, entry)));
+                catalog.roots().stream().filter(entry -> !entry.spec().overrides()).forEach(entry -> treeBuilder.registerOn(dispatcher, entry)));
     }
 
     /**

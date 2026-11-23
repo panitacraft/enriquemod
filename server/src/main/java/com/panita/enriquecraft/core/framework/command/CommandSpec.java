@@ -47,4 +47,10 @@ public @interface CommandSpec {
      * stands under their name or alias.
      */
     boolean overrides() default false;
+
+    /**
+     * For a command that {@link #overrides()}: the literal the command it displaces stays reachable under (such as
+     * {@code carpet:profile}), so nothing the other mod offers is lost. Empty drops it.
+     */
+    String displacedAs() default "";
 }

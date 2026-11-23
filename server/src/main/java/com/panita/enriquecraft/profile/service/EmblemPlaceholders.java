@@ -3,17 +3,12 @@ package com.panita.enriquecraft.profile.service;
 import com.panita.enriquecraft.Enriquecraft;
 import com.panita.enriquecraft.core.art.InlineArts;
 import com.panita.enriquecraft.core.message.TabText;
-import com.panita.enriquecraft.core.service.BotPlayers;
 import com.panita.enriquecraft.profile.message.EmblemTooltip;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
-import eu.pb4.placeholders.api.ServerPlaceholderContext;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerPlayer;
-
-import java.util.function.Function;
 
 
 /**
@@ -39,24 +34,19 @@ public final class EmblemPlaceholders {
     }
 
     public void register() {
-        Placeholders.registerServer(id("emblems_system"), (context, argument) ->
-                resolve(context, player -> system(profiles.emblemsOf(player).prank())));
-        Placeholders.registerServer(id("emblems_lore"), (context, argument) ->
-                resolve(context, player -> lore(profiles.emblemsOf(player))));
+        Placeholders.registerServer(id("emblems_system"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(system(profiles.emblemsOf(context.serverPlayer()).prank()))
+                : PlaceholderResult.invalid("No player"));
+        Placeholders.registerServer(id("emblems_lore"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(lore(profiles.emblemsOf(context.serverPlayer())))
+                : PlaceholderResult.invalid("No player"));
         // The plain variants are for tab list mods, which read only literal text (see TabText)
-        Placeholders.registerServer(id("emblems_system_text"), (context, argument) ->
-                resolve(context, player -> TabText.plain(system(profiles.emblemsOf(player).prank()))));
-        Placeholders.registerServer(id("emblems_lore_text"), (context, argument) ->
-                resolve(context, player -> TabText.plain(lore(profiles.emblemsOf(player)))));
-    }
-
-    /** A bot is not a member of the community, so it shows no emblems. */
-    private static PlaceholderResult resolve(ServerPlaceholderContext context, Function<ServerPlayer, Component> emblems) {
-        if (!context.hasServerPlayer()) {
-            return PlaceholderResult.invalid("No player");
-        }
-        ServerPlayer player = context.serverPlayer();
-        return PlaceholderResult.value(BotPlayers.is(player) ? Component.empty() : emblems.apply(player));
+        Placeholders.registerServer(id("emblems_system_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(system(profiles.emblemsOf(context.serverPlayer()).prank())))
+                : PlaceholderResult.invalid("No player"));
+        Placeholders.registerServer(id("emblems_lore_text"), (context, argument) -> context.hasServerPlayer()
+                ? PlaceholderResult.value(TabText.plain(lore(profiles.emblemsOf(context.serverPlayer()))))
+                : PlaceholderResult.invalid("No player"));
     }
 
     /** The emblem followed by a space, so the text that comes next stands apart. */
