@@ -110,6 +110,8 @@ public final class ChatModule implements EnriquecraftModule {
         TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
         services.register(TabNames.class, tabNames);
         services.register(CoordinateSharing.class, new CoordinateSharing(config, held, mutes, new CoordinateShareView(messenger), new ShareSounds()));
-        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config), tabNames);
+        MotdService motd = new MotdService(formatter, config);
+        services.register(MotdService.class, motd);
+        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, motd, tabNames);
     }
 }
