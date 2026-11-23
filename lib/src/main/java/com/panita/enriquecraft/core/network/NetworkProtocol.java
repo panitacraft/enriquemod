@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.core.network;
 
+import com.panita.enriquecraft.discord.network.MediaOpenS2C;
 import com.panita.enriquecraft.discord.network.MediaPreviewS2C;
 import com.panita.enriquecraft.discord.network.ShareBeginC2S;
 import com.panita.enriquecraft.discord.network.ShareChunkC2S;
@@ -20,7 +21,7 @@ public final class NetworkProtocol {
      * Bumped on every change to a payload's layout. The server treats a client with a different
      * version as vanilla, so a mismatch degrades to the vanilla experience instead of breaking.
      */
-    public static final int VERSION = 17;
+    public static final int VERSION = 18;
 
     private NetworkProtocol() {
     }
@@ -40,6 +41,7 @@ public final class NetworkProtocol {
         PayloadTypeRegistry.clientboundPlay().register(CloseUiS2C.TYPE, CloseUiS2C.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(InlineArtS2C.TYPE, InlineArtS2C.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(MediaPreviewS2C.TYPE, MediaPreviewS2C.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MediaOpenS2C.TYPE, MediaOpenS2C.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(HelloC2S.TYPE, HelloC2S.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UiClickC2S.TYPE, UiClickC2S.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(UiSubmitC2S.TYPE, UiSubmitC2S.STREAM_CODEC);

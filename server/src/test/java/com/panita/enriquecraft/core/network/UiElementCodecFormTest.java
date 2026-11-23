@@ -25,8 +25,8 @@ final class UiElementCodecFormTest {
     }
 
     @Test
-    void theProtocolVersionIsSeventeen() {
-        assertEquals(17, NetworkProtocol.VERSION);
+    void theProtocolVersionIsEighteen() {
+        assertEquals(18, NetworkProtocol.VERSION);
     }
 
     @Test

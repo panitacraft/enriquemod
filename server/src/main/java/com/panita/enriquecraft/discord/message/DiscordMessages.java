@@ -52,7 +52,8 @@ public final class DiscordMessages {
         public static final String LABEL = "<aqua>[{name}]";
         public static final String LABEL_SPOILER = "<aqua>[spoiler]";
         public static final String HOVER = "<gray>Haz clic para verla en un mapa\n<dark_gray>{details}";
-        public static final String HOVER_SPOILER = "<gray>Marcada como spoiler\nHaz clic para verla en un mapa";
+        public static final String HOVER_VIEW = "<gray>Haz clic para verla\n<dark_gray>{details}";
+        public static final String HOVER_SPOILER ="<gray>Marcada como spoiler\nHaz clic para verla en un mapa";
         public static final String LINK = " <green>(Link)";
         public static final String LINK_HOVER = "<gray>Abrir la imagen original";
 

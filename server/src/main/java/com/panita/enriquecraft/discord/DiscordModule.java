@@ -40,6 +40,7 @@ import com.panita.enriquecraft.discord.service.ImageFetcher;
 import com.panita.enriquecraft.discord.service.ImageMaps;
 import com.panita.enriquecraft.discord.service.MediaPreviews;
 import com.panita.enriquecraft.discord.service.MediaTokens;
+import com.panita.enriquecraft.discord.service.MediaViewer;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
 import com.panita.enriquecraft.discord.service.PlayerRoster;
 import com.panita.enriquecraft.discord.service.QueryAnswers;
@@ -119,6 +120,7 @@ public final class DiscordModule implements EnriquecraftModule {
         router.onQuery(answers::answer);
 
         services.register(MediaTokens.class, tokens);
+        services.register(MediaViewer.class, new MediaViewer(services.get(ClientCapabilities.class), config));
         services.register(ShownMaps.class, shownMaps);
         services.register(ImageView.class, imageView);
         services.register(ImageMaps.class, imageMaps);

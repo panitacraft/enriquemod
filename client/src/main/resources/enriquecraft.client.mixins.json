@@ -4,11 +4,9 @@
   "package": "com.panita.enriquecraft.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "ChatComponentMixin",
     "FontManagerGlyphMixin",
     "ScreenshotMixin",
-    "DrawingBackgroundGraphicsAccessMixin",
-    "DrawingFocusedGraphicsAccessMixin"
+    "GuiGraphicsExtractorHoverMixin"
   ],
   "injectors": {
     "defaultRequire": 1

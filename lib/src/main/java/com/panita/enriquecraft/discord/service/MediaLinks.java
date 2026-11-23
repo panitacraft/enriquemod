@@ -15,6 +15,9 @@ import java.util.regex.Pattern;
  */
 public final class MediaLinks {
 
+    /** The translation key of the hover of an image label; its arguments are the text for vanilla clients, the text for the companion and the address. */
+    public static final String HOVER_KEY = "enriquecraft.media.v1";
+
     private static final Pattern HOST = Pattern.compile("(\\*\\.)?[a-z0-9]([a-z0-9.-]*[a-z0-9])?");
     private static final long KIB = 1024;
 

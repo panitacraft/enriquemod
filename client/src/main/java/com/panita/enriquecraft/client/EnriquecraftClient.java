@@ -1,9 +1,12 @@
 package com.panita.enriquecraft.client;
 
 import com.panita.enriquecraft.client.art.InlineArtTextures;
-import com.panita.enriquecraft.client.chat.ChatImages;
+import com.panita.enriquecraft.client.media.MediaImageSettings;
+import com.panita.enriquecraft.client.media.MediaImages;
+import com.panita.enriquecraft.client.media.MediaTooltip;
 import com.panita.enriquecraft.client.share.ScreenshotSharing;
 import com.panita.enriquecraft.client.ui.ServerUiNetworking;
+import com.panita.enriquecraft.discord.network.MediaOpenS2C;
 import com.panita.enriquecraft.discord.network.MediaPreviewS2C;
 import com.panita.enriquecraft.core.network.ClientFeature;
 import com.panita.enriquecraft.core.network.HelloC2S;
@@ -12,6 +15,7 @@ import com.panita.enriquecraft.core.network.NetworkProtocol;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -32,10 +36,12 @@ public final class EnriquecraftClient implements ClientModInitializer {
         ServerUiNetworking.register();
         CommandKeys.register();
         ScreenshotSharing.register();
-        ClientPlayNetworking.registerGlobalReceiver(MediaPreviewS2C.TYPE, (payload, context) -> ChatImages.expect(payload.url()));
+        ClientPlayNetworking.registerGlobalReceiver(MediaPreviewS2C.TYPE, (payload, context) -> MediaImages.allow(payload.url()));
+        ClientPlayNetworking.registerGlobalReceiver(MediaOpenS2C.TYPE, (payload, context) -> context.client().execute(() -> MediaImages.openViewer(payload.url())));
+        ClientTooltipComponentCallback.EVENT.register(MediaTooltip::componentFor);
         ClientPlayNetworking.registerGlobalReceiver(InlineArtS2C.TYPE, (payload, context) -> InlineArtTextures.expect(payload.id(), payload.url()));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> {
-            ChatImages.clear();
+            MediaImages.clear();
             InlineArtTextures.clear();
         }));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> announce());
@@ -44,7 +50,12 @@ public final class EnriquecraftClient implements ClientModInitializer {
     private static void announce() {
         // A server without the mod never registered the hello channel, and sending to it would throw.
         if (ClientPlayNetworking.canSend(HelloC2S.TYPE)) {
-            ClientPlayNetworking.send(HelloC2S.announcing(SUPPORTED));
+            Set<ClientFeature> features = EnumSet.copyOf(SUPPORTED);
+            // A player who turned images off is a vanilla client for them: the label opens the image on a map and nothing is fetched
+            if (!MediaImageSettings.enabled()) {
+                features.remove(ClientFeature.MEDIA_PREVIEW);
+            }
+            ClientPlayNetworking.send(HelloC2S.announcing(features));
         }
     }
 }
