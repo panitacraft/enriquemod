@@ -6,9 +6,11 @@ import eu.pb4.placeholders.api.ServerPlaceholderContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import eu.pb4.placeholders.api.parsers.ParserBuilder;
 import eu.pb4.placeholders.api.parsers.TagLikeParser;
+import com.panita.enriquecraft.core.service.BotPlayers;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * Turns a {@link Message} into a vanilla {@link Component}: takes the text the administrator configured for it,
@@ -33,6 +35,8 @@ public final class MessageFormatter {
             .placeholders(ARGUMENT_FORMAT, ARGUMENTS)
             .build();
 
+    private static final Pattern LUCKPERMS_PLACEHOLDER = Pattern.compile("%luckperms:[^%]*%");
+
     private final MessageCatalog catalog;
 
     public MessageFormatter(MessageCatalog catalog) {
@@ -51,7 +55,12 @@ public final class MessageFormatter {
      * given context.
      */
     public Component format(Message message, ServerPlaceholderContext context) {
-        return PlaceholderParser.INSTANCE.parseComponent(compose(message), withArguments(context.asParserContext(), message));
+        String text = compose(message);
+        if (context.hasServerPlayer() && BotPlayers.is(context.serverPlayer())) {
+            // LuckPerms loads a user when a player logs in and a bot never does, so its placeholders would print an error in the line
+            text = LUCKPERMS_PLACEHOLDER.matcher(text).replaceAll("");
+        }
+        return PlaceholderParser.INSTANCE.parseComponent(text, withArguments(context.asParserContext(), message));
     }
 
     private static ParserContext withArguments(ParserContext base, Message message) {

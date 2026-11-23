@@ -4,8 +4,12 @@ import com.panita.enriquecraft.Enriquecraft;
 import com.panita.enriquecraft.chat.channel.ChannelSelection;
 import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.message.RankTooltip;
+import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.message.Message;
+import com.panita.enriquecraft.core.message.MessageFormatter;
 import com.panita.enriquecraft.core.message.TabText;
+import com.panita.enriquecraft.core.service.BotPlayers;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.api.ServerPlaceholderContext;
@@ -28,10 +32,12 @@ public final class ChatPlaceholders {
     private final ChatConfig config;
     private final RankTooltip tooltips;
     private final AfkService afk;
+    private final MessageFormatter formatter;
 
     public ChatPlaceholders(NicknameService nicknames, ChannelSelection selection, InlineArts arts, ChatConfig config, RankTooltip tooltips,
-                            AfkService afk) {
+                            AfkService afk, MessageFormatter formatter) {
         this.afk = afk;
+        this.formatter = formatter;
         this.nicknames = nicknames;
         this.selection = selection;
         this.arts = arts;
@@ -74,6 +80,9 @@ public final class ChatPlaceholders {
      * player with no rank leaves no gap before their name.
      */
     private Component rank(ServerPlaceholderContext context) {
+        if (BotPlayers.is(context.serverPlayer())) {
+            return botRank();
+        }
         Component prefix = luckperms(context, "prefix", null).orElse(Component.empty());
         String icon = meta(context, config.rankIconMeta.get());
         if (icon.isEmpty() && prefix.getString().isBlank()) {
@@ -89,8 +98,19 @@ public final class ChatPlaceholders {
         return Component.empty().append(tooltip.<Component>map(style -> drawn.copy().withStyle(style)).orElse(drawn)).append(Component.literal(" "));
     }
 
+    /** The rank of a bot. LuckPerms never loads a user for one, so the mod gives it a rank of its own, with its tooltip, in the same shape. */
+    private Component botRank() {
+        Component rank = formatter.format(Message.plain(ChatMessages.Bot.RANK));
+        Component drawn = tooltips.styleOf(formatter.format(Message.plain(ChatMessages.Bot.TITLE)),
+                formatter.format(Message.plain(ChatMessages.Bot.DESCRIPTION))).<Component>map(style -> rank.copy().withStyle(style)).orElse(rank);
+        return Component.empty().append(drawn).append(Component.literal(" "));
+    }
+
     /** Whether the player has a rank to show: a prefix or an image. */
     public boolean hasRank(ServerPlayer player) {
+        if (BotPlayers.is(player)) {
+            return true;
+        }
         ServerPlaceholderContext context = ServerPlaceholderContext.of(player);
         return !luckperms(context, "prefix", null).orElse(Component.empty()).getString().isBlank()
                 || !meta(context, config.rankIconMeta.get()).isEmpty();

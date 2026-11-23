@@ -39,6 +39,16 @@ public final class ChatMessages {
         }
     }
 
+    /** The rank a bot shows (a player no client is behind, such as the ones Carpet spawns): LuckPerms has no user for it, so it has no group. */
+    public static final class Bot {
+        public static final String RANK = "<dark_gray>[<aqua>BOT</aqua>]</dark_gray>";
+        public static final String TITLE = "<aqua>Bot";
+        public static final String DESCRIPTION = "Es un jugador controlado por el servidor, no por una persona.";
+
+        private Bot() {
+        }
+    }
+
     /** The lines the game's messages about players turn into. {@code {player}} is the name the player shows. */
     public static final class Events {
         public static final String JOIN = "<dark_gray>[<green>+</green>]</dark_gray> <gray>{player} entró al servidor";
