@@ -1,11 +1,11 @@
-package com.panita.enriquecraft.qol.commands;
+package com.panita.enriquecraft.chat.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.panita.enriquecraft.chat.message.ChatMessages;
+import com.panita.enriquecraft.chat.service.CoordinateSharing;
 import com.panita.enriquecraft.core.framework.command.CommandSpec;
 import com.panita.enriquecraft.core.framework.command.ModCommand;
 import com.panita.enriquecraft.core.message.PlayerOnly;
-import com.panita.enriquecraft.qol.message.QolMessages;
-import com.panita.enriquecraft.qol.service.CoordinateSharing;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -14,7 +14,7 @@ import net.minecraft.commands.arguments.EntityArgument;
  * {@code /sharecoordinates [player]}: tells everyone where the player is, or only the player given. {@code /c}, {@code /coords}
  * and {@code /coordinateshare} run the same command.
  */
-@CommandSpec(name = "sharecoordinates", aliases = {"c", "coords", "coordinateshare"}, description = QolMessages.ShareCoordinates.DESCRIPTION)
+@CommandSpec(name = "sharecoordinates", aliases = {"c", "coords", "coordinateshare"}, description = ChatMessages.ShareCoordinates.DESCRIPTION)
 public final class ShareCoordinatesCommand implements ModCommand {
 
     private static final String PLAYER_ARGUMENT = "player";

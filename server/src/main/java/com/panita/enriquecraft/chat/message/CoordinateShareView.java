@@ -1,4 +1,4 @@
-package com.panita.enriquecraft.qol.message;
+package com.panita.enriquecraft.chat.message;
 
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
@@ -24,32 +24,32 @@ public final class CoordinateShareView {
     /** The line that tells every reader, and the console, where the sender is. */
     public void everyone(ServerPlayer sender, Collection<ServerPlayer> readers) {
         messenger.deliver(sender.level().getServer(), readers,
-                messenger.format(located(QolMessages.ShareCoordinates.PUBLIC, sender), sender));
+                messenger.format(located(ChatMessages.ShareCoordinates.PUBLIC, sender), sender));
     }
 
     /** The line that tells the receiver where the sender is. */
     public void toPlayer(ServerPlayer sender, ServerPlayer receiver) {
-        tell(receiver, sender, located(QolMessages.ShareCoordinates.PRIVATE, sender));
+        tell(receiver, sender, located(ChatMessages.ShareCoordinates.PRIVATE, sender));
     }
 
     /** The line for a player who picked themselves. */
     public void self(ServerPlayer player) {
-        tell(player, player, located(QolMessages.ShareCoordinates.SELF, player));
+        tell(player, player, located(ChatMessages.ShareCoordinates.SELF, player));
     }
 
     /** Tells the sender that the receiver now knows where they are. */
     public void sent(ServerPlayer sender, ServerPlayer receiver) {
-        tell(sender, receiver, Message.plain(QolMessages.ShareCoordinates.SENT_CONFIRMATION).prefixed()
+        tell(sender, receiver, Message.plain(ChatMessages.ShareCoordinates.SENT_CONFIRMATION).prefixed()
                 .with("player", receiver.getDisplayName()));
     }
 
     public void notOnline(ServerPlayer sender, ServerPlayer receiver) {
-        tell(sender, receiver, Message.plain(QolMessages.ShareCoordinates.NOT_ONLINE).prefixed()
+        tell(sender, receiver, Message.plain(ChatMessages.ShareCoordinates.NOT_ONLINE).prefixed()
                 .with("player", receiver.getGameProfile().name()));
     }
 
     public void disabled(ServerPlayer player) {
-        messenger.send(player, Message.error(QolMessages.ShareCoordinates.DISABLED).prefixed());
+        messenger.send(player, Message.error(ChatMessages.ShareCoordinates.DISABLED).prefixed());
     }
 
     /** Sends the line to one player, with the placeholders of the template resolved for the player it is about. */

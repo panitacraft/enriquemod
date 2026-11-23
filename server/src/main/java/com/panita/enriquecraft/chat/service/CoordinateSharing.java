@@ -1,9 +1,10 @@
-package com.panita.enriquecraft.qol.service;
+package com.panita.enriquecraft.chat.service;
 
 import com.panita.enriquecraft.auth.service.HeldPlayers;
+import com.panita.enriquecraft.chat.config.ChatConfig;
+import com.panita.enriquecraft.chat.event.ChatEvents;
+import com.panita.enriquecraft.chat.message.CoordinateShareView;
 import com.panita.enriquecraft.moderation.service.MuteService;
-import com.panita.enriquecraft.qol.config.QolConfig;
-import com.panita.enriquecraft.qol.message.CoordinateShareView;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
@@ -14,13 +15,13 @@ import java.util.List;
  */
 public final class CoordinateSharing {
 
-    private final QolConfig config;
+    private final ChatConfig config;
     private final HeldPlayers held;
     private final MuteService mutes;
     private final CoordinateShareView view;
     private final ShareSounds sounds;
 
-    public CoordinateSharing(QolConfig config, HeldPlayers held, MuteService mutes, CoordinateShareView view, ShareSounds sounds) {
+    public CoordinateSharing(ChatConfig config, HeldPlayers held, MuteService mutes, CoordinateShareView view, ShareSounds sounds) {
         this.config = config;
         this.held = held;
         this.mutes = mutes;
@@ -41,6 +42,7 @@ public final class CoordinateSharing {
                 .filter(player -> !held.isHeld(player))
                 .toList();
         view.everyone(sender, readers);
+        ChatEvents.COORDINATES.invoker().onCoordinatesShared(sender, sender.blockPosition(), sender.level().dimension());
         readers.forEach(this::playPublicSound);
         return readers.size();
     }

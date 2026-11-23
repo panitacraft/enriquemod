@@ -1,8 +1,8 @@
-package com.panita.enriquecraft.qol.service;
+package com.panita.enriquecraft.chat.service;
 
 import com.panita.enriquecraft.MinecraftTestSupport;
 import com.panita.enriquecraft.core.framework.config.ConfigManager;
-import com.panita.enriquecraft.qol.config.QolConfig;
+import com.panita.enriquecraft.chat.config.ChatConfig;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -38,9 +38,9 @@ class ShareSoundsTest {
     @Test
     void theDefaultsOfTheSettingsAreValidAndAnInvalidSoundFallsBackToTheDefault() throws Exception {
         java.nio.file.Files.writeString(directory.resolve("enriquecraft.json5"),
-                "{ \"qol\": { \"shareCoordinates\": { \"soundPublic\": \"nope\" } } }");
+                "{ \"chat\": { \"shareCoordinates\": { \"soundPublic\": \"nope\" } } }");
         ConfigManager manager = new ConfigManager(directory);
-        QolConfig config = manager.bind("qol", QolConfig.class);
+        ChatConfig config = manager.bind("chat", ChatConfig.class);
 
         assertFalse(manager.reload().isClean());
         assertEquals("minecraft:entity.player.levelup", config.shareCoordinatesSoundPublic.get());

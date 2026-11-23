@@ -1,4 +1,4 @@
-package com.panita.enriquecraft.qol.service;
+package com.panita.enriquecraft.chat.service;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;

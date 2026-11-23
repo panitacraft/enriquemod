@@ -1,6 +1,7 @@
 package com.panita.enriquecraft.chat.config;
 
 import com.panita.enriquecraft.chat.channel.ChannelDefinition;
+import com.panita.enriquecraft.chat.service.ShareSounds;
 import com.panita.enriquecraft.chat.text.AfkColor;
 import com.panita.enriquecraft.core.framework.config.ConfigSectionBuilder;
 import com.panita.enriquecraft.core.framework.config.ConfigValue;
@@ -12,6 +13,9 @@ import java.util.Map;
  * Settings of the chat module, stored in the {@code chat} section of the config file.
  */
 public final class ChatConfig implements ModConfig {
+
+    private static final String SHARE_SOUND_RULE = "must be the id of a sound of the game, such as minecraft:entity.player.levelup";
+    private static final String DEFAULT_SHARE_SOUND = "minecraft:entity.player.levelup";
 
     public final ConfigValue<Map<String, ChannelDefinition>> channels;
     public final ConfigValue<Map<String, String>> emojis;
@@ -34,6 +38,10 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Boolean> advancementMessage;
     public final ConfigValue<Boolean> welcomeMessage;
     public final ConfigValue<Boolean> motdEnabled;
+    public final ConfigValue<Boolean> shareCoordinatesEnabled;
+    public final ConfigValue<Boolean> shareCoordinatesPlaySound;
+    public final ConfigValue<String> shareCoordinatesSoundPublic;
+    public final ConfigValue<String> shareCoordinatesSoundPrivate;
 
     public ChatConfig(ConfigSectionBuilder builder) {
         channels = builder.custom("channels", DefaultChannels.table(),
@@ -96,5 +104,15 @@ public final class ChatConfig implements ModConfig {
         motdEnabled = builder.bool("motd.enabled", true,
                 "Shows the motd of the messages file in the server list, instead of the motd of server.properties. It is built again\n"
                         + "every few seconds, so placeholders such as %server:online% stay current.");
+        shareCoordinatesEnabled = builder.bool("shareCoordinates.enabled", true,
+                "Lets players use /sharecoordinates (also /c, /coords and /coordinateshare) to tell everyone, or one player, where they are.");
+        shareCoordinatesPlaySound = builder.bool("shareCoordinates.playSound", true,
+                "Plays a sound to the players who receive the coordinates.");
+        shareCoordinatesSoundPublic = builder.string("shareCoordinates.soundPublic", DEFAULT_SHARE_SOUND,
+                "The sound every player hears when someone shares their coordinates with everyone.",
+                ShareSounds::isValid, SHARE_SOUND_RULE);
+        shareCoordinatesSoundPrivate = builder.string("shareCoordinates.soundPrivate", DEFAULT_SHARE_SOUND,
+                "The sound the sender and the receiver hear when coordinates are shared with one player (or with oneself).",
+                ShareSounds::isValid, SHARE_SOUND_RULE);
     }
 }

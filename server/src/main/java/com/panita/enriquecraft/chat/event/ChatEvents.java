@@ -3,7 +3,10 @@ package com.panita.enriquecraft.chat.event;
 import com.panita.enriquecraft.chat.channel.ChannelDefinition;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 /**
  * What happens in chat, for the modules that follow it, such as the one that mirrors chat to Discord. Listeners are
@@ -39,6 +42,20 @@ public final class ChatEvents {
                     listener.onAfkChanged(player, afk);
                 }
             });
+
+    /** A player told everyone where they are; called after the line was delivered. Not called when the position went to one player. */
+    public static final Event<CoordinatesShared> COORDINATES = EventFactory.createArrayBacked(CoordinatesShared.class,
+            listeners -> (player, position, dimension) -> {
+                for (CoordinatesShared listener : listeners) {
+                    listener.onCoordinatesShared(player, position, dimension);
+                }
+            });
+
+    @FunctionalInterface
+    public interface CoordinatesShared {
+
+        void onCoordinatesShared(ServerPlayer player, BlockPos position, ResourceKey<Level> dimension);
+    }
 
     @FunctionalInterface
     public interface AfkChanged {
