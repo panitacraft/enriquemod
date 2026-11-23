@@ -15,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -70,9 +71,37 @@ public final class ChatService {
      */
     public List<ServerPlayer> deliverExternal(MinecraftServer server, ChannelDefinition channel, Component sender, String plain,
                                               List<Component> attached) {
+        Optional<Component> text = plainWithAttached(plain, attached);
+        if (text.isEmpty()) {
+            return List.of();
+        }
+        List<ServerPlayer> readers = readersOf(server, channel);
+        view.deliver(server, readers, view.externalLine(channel, sender, text.get()));
+        return readers;
+    }
+
+    /**
+     * A line of a player made of something they shared (a screenshot) and a caption. It is shown as the player's own line, with their
+     * head, rank and emblems, but it is plain text, and it does not fire {@link ChatEvents#MESSAGE}: the bot has already posted it to
+     * Discord, so announcing it again would repeat it there.
+     *
+     * @return the players who read the line; empty when nothing was said
+     */
+    public List<ServerPlayer> deliverShared(ServerPlayer sender, ChannelDefinition channel, String plainCaption, List<Component> attached) {
+        Optional<Component> text = plainWithAttached(plainCaption, attached);
+        if (text.isEmpty()) {
+            return List.of();
+        }
+        MinecraftServer server = sender.level().getServer();
+        List<ServerPlayer> readers = readersOf(server, channel);
+        view.deliver(server, readers, view.line(sender, channel, text.get()));
+        return readers;
+    }
+
+    private Optional<Component> plainWithAttached(String plain, List<Component> attached) {
         Component typed = parser.parse(plain, Set.of());
         if (typed.getString().isBlank() && attached.isEmpty()) {
-            return List.of();
+            return Optional.empty();
         }
         MutableComponent text = Component.empty();
         if (!typed.getString().isBlank()) {
@@ -81,9 +110,7 @@ public final class ChatService {
         for (Component part : attached) {
             text.append(text.getSiblings().isEmpty() ? part : Component.literal(" ").append(part));
         }
-        List<ServerPlayer> readers = readersOf(server, channel);
-        view.deliver(server, readers, view.externalLine(channel, sender, text));
-        return readers;
+        return Optional.of(text);
     }
 
     private List<ServerPlayer> readersOf(MinecraftServer server, ChannelDefinition channel) {
