@@ -9,8 +9,12 @@ import com.panita.enriquecraft.discord.DiscordPermissions;
 import com.panita.enriquecraft.discord.config.DiscordConfig;
 import com.panita.enriquecraft.discord.service.GameReporter;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
+import com.panita.enriquecraft.staff.data.Dimensions;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 import java.util.Optional;
 
@@ -40,8 +44,14 @@ public final class GameEventsListener implements ModListener {
                 reporter.afk(infos.of(player), afk);
             }
         });
+        ChatEvents.COORDINATES.register((player, position, dimension) -> reporter.coordinates(infos.of(player), positionText(position, dimension)));
         AuthEvents.PLAYER_READY.register(player -> reporter.ready(infos.of(player)));
         CoreEvents.BROADCAST.register(reporter::broadcast);
+    }
+
+    /** The position as it reads in the game's line about shared coordinates, with the dimension named as staff menus name it. */
+    static String positionText(BlockPos position, ResourceKey<Level> dimension) {
+        return "X: " + position.getX() + " Y: " + position.getY() + " Z: " + position.getZ() + " (" + Dimensions.displayName(dimension) + ")";
     }
 
     private void system(SystemEvent event) {

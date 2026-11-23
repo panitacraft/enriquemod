@@ -1,7 +1,9 @@
 package com.panita.enriquecraft.discord.listeners;
 
 import com.panita.enriquecraft.MinecraftTestSupport;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,12 @@ class GameEventsListenerTest {
     @BeforeAll
     static void bootstrap() {
         MinecraftTestSupport.bootstrap();
+    }
+
+    @Test
+    void aSharedPositionIsTheBlockPositionWithTheDimensionNamedLikeStaffMenusNameIt() {
+        assertEquals("X: 10 Y: 64 Z: -20 (Overworld)", GameEventsListener.positionText(new BlockPos(10, 64, -20), Level.OVERWORLD));
+        assertEquals("X: 0 Y: 5 Z: 7 (Nether)", GameEventsListener.positionText(new BlockPos(0, 5, 7), Level.NETHER));
     }
 
     @Test

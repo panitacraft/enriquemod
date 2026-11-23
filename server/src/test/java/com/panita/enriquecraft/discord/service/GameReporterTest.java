@@ -227,6 +227,36 @@ class GameReporterTest {
     }
 
     @Test
+    void reportsSharedCoordinatesToABotThatOffersThem() {
+        offered = Set.of("coordinates");
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.coordinates(JAVI, "X: 10 Y: 64 Z: -20 (Overworld)");
+
+        assertEquals(List.of(event(EventKind.COORDINATES, Optional.of(JAVI), Optional.of("X: 10 Y: 64 Z: -20 (Overworld)"), Optional.empty())), sent);
+    }
+
+    @Test
+    void tellsNothingAboutSharedCoordinatesToABotThatDoesNotOfferThem() {
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.coordinates(JAVI, "X: 10 Y: 64 Z: -20 (Overworld)");
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
+    void tellsNothingAboutSharedCoordinatesOfAPlayerWhoWasNeverReady() {
+        offered = Set.of("coordinates");
+
+        reporter.coordinates(JAVI, "X: 10 Y: 64 Z: -20 (Overworld)");
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
     void reportsTheStartAndTheStopOfTheServer() {
         reporter.started();
         reporter.stopping();

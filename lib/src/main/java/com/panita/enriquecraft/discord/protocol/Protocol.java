@@ -23,6 +23,8 @@ public final class Protocol {
     public static final String FEATURE_REPLY = "reply";
     /** Only in the bot's welcome: it understands the {@code afk} and {@code back} events, so the mod may send them. */
     public static final String FEATURE_AFK = "afk";
+    /** Only in the bot's welcome: it understands the {@code coordinates} event, so the mod may send it. */
+    public static final String FEATURE_COORDINATES = "coordinates";
     /** Only in the bot's welcome: it turns the {@code mentions} of a chat frame into pings, so the mod may send them. */
     public static final String FEATURE_MENTIONS = "mentions";
     /** The most Discord members one line of chat can mention. */

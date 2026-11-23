@@ -130,9 +130,9 @@ class FrameCodecTest {
 
     @Test
     void everyKindOfEventHasTheNameTheProtocolUses() {
-        assertEquals(List.of("join", "first_join", "leave", "death", "advancement", "afk", "back", "broadcast", "started", "stopping"),
+        assertEquals(List.of("join", "first_join", "leave", "death", "advancement", "afk", "back", "coordinates", "broadcast", "started", "stopping"),
                 java.util.Arrays.stream(EventKind.values()).map(EventKind::id).toList());
-        assertEquals(List.of(true, true, true, true, true, true, true, false, false, false),
+        assertEquals(List.of(true, true, true, true, true, true, true, true, false, false, false),
                 java.util.Arrays.stream(EventKind.values()).map(EventKind::aboutPlayer).toList());
     }
 

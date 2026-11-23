@@ -89,6 +89,17 @@ public final class GameReporter {
         }
     }
 
+    /**
+     * A player told everyone where they are. Only told to a bot that offers the feature, and only for players who were reported as in.
+     *
+     * @param position the position as the game's players read it, such as {@code X: 10 Y: 64 Z: -20 (Overworld)}
+     */
+    public void coordinates(PlayerInfo player, String position) {
+        if (ready.contains(player.uuid()) && sink.offers(Protocol.FEATURE_COORDINATES)) {
+            event(EventKind.COORDINATES, Optional.of(player), Optional.of(PlainText.event(position)), Optional.empty());
+        }
+    }
+
     /** @param raw what staff wrote, which may carry text tags and color codes */
     public void broadcast(String raw) {
         String plain = PlainText.event(PlainText.withoutMarkup(raw));
