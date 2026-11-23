@@ -101,7 +101,7 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(KnownPlayers.class, new KnownPlayers());
         services.register(AfkService.class, afk);
         placeholders.register();
-        SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger, heads), config, held);
+        SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger, heads, names, channels), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
         TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
