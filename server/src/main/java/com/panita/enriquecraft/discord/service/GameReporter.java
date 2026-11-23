@@ -60,6 +60,13 @@ public final class GameReporter {
         event(first ? EventKind.FIRST_JOIN : EventKind.JOIN, Optional.of(player), Optional.empty(), Optional.empty());
     }
 
+    /** A player who was hidden appeared: reported as a join, unless they were already reported as in. */
+    public void revealed(PlayerInfo player) {
+        if (ready.add(player.uuid())) {
+            event(EventKind.JOIN, Optional.of(player), Optional.empty(), Optional.empty());
+        }
+    }
+
     public void left(PlayerInfo player) {
         arrivedForTheFirstTime.remove(player.uuid());
         if (ready.remove(player.uuid())) {
@@ -86,6 +93,17 @@ public final class GameReporter {
     public void afk(PlayerInfo player, boolean afk) {
         if (ready.contains(player.uuid()) && sink.offers(Protocol.FEATURE_AFK)) {
             event(afk ? EventKind.AFK : EventKind.BACK, Optional.of(player), Optional.empty(), Optional.empty());
+        }
+    }
+
+    /**
+     * A player told everyone where they are. Only told to a bot that offers the feature, and only for players who were reported as in.
+     *
+     * @param position the position as the game's players read it, such as {@code X: 10 Y: 64 Z: -20 (Overworld)}
+     */
+    public void coordinates(PlayerInfo player, String position) {
+        if (ready.contains(player.uuid()) && sink.offers(Protocol.FEATURE_COORDINATES)) {
+            event(EventKind.COORDINATES, Optional.of(player), Optional.of(PlainText.event(position)), Optional.empty());
         }
     }
 

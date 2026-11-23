@@ -43,9 +43,11 @@ import com.panita.enriquecraft.discord.service.MediaTokens;
 import com.panita.enriquecraft.discord.service.MediaViewer;
 import com.panita.enriquecraft.discord.service.PlayerInfos;
 import com.panita.enriquecraft.discord.service.PlayerRoster;
+import com.panita.enriquecraft.discord.service.PlayerVisibility;
 import com.panita.enriquecraft.discord.service.QueryAnswers;
 import com.panita.enriquecraft.discord.service.ServerInfo;
 import com.panita.enriquecraft.discord.service.ShownMaps;
+import com.panita.enriquecraft.discord.service.VanishVisibility;
 import com.panita.enriquecraft.discord.transport.WebSocketTransport;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -113,8 +115,10 @@ public final class DiscordModule implements EnriquecraftModule {
                 new HttpMediaUploader(worker, config.url::get, key), worker, services.get(ChatService.class),
                 services.get(ChannelSelection.class), services.get(HeldPlayers.class), playerInfos, mediaView, previews,
                 new ShareView(services.get(Messenger.class)), config, services.get(ClientCapabilities.class), Instant::now);
+        PlayerVisibility visibility = FabricLoader.getInstance().isModLoaded(VanishVisibility.MOD_ID) ? new VanishVisibility() : PlayerVisibility.NOBODY_HIDDEN;
+        services.register(PlayerVisibility.class, visibility);
         QueryAnswers answers = new QueryAnswers(connection, info,
-                new PlayerRoster(playerInfos, services.get(HeldPlayers.class), services.get(Messenger.class)),
+                new PlayerRoster(playerInfos, services.get(HeldPlayers.class), visibility, services.get(Messenger.class)),
                 services.get(KnownPlayers.class), Instant::now);
         router.onChat(delivery::deliver);
         router.onQuery(answers::answer);

@@ -58,10 +58,10 @@ class EmblemResolverTest {
     }
 
     @Test
-    void theLevelsAreListedInTheConfigsOrderWithoutAZeroPlus() {
+    void theLevelsAreListedInTheConfigsOrderWithTheZeroPlusSecond() {
         PlayerEmblems emblems = resolve(profile(), Optional.empty());
 
-        assertEquals(List.of("enrique6_prank_0", "enrique6_prank_1", "enrique6_prank_1_plus", "enrique6_prank_2",
+        assertEquals(List.of("enrique6_prank_0", "enrique6_prank_0_plus", "enrique6_prank_1", "enrique6_prank_1_plus", "enrique6_prank_2",
                 "enrique6_prank_2_plus", "enrique6_prank_3", "enrique6_prank_3_plus"), ids(emblems.pranks()));
     }
 

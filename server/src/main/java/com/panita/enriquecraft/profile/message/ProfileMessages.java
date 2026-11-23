@@ -126,6 +126,7 @@ public final class ProfileMessages {
 
     public static final class Prank {
         public static final String ZERO = "Pranks: Nivel Cero";
+        public static final String ZERO_PLUS = "Pranks+: Nivel Cero";
         public static final String ONE = "Pranks: Nivel Uno";
         public static final String ONE_PLUS = "Pranks+: Nivel Uno";
         public static final String TWO = "Pranks: Nivel Dos";
@@ -137,6 +138,7 @@ public final class ProfileMessages {
         public static final String NOT_LINKED = "Tu cuenta no está vinculada a Panitacraft, así que no se puede guardar tu nivel de Pranks.";
         public static final String SAME = "Ya estás en el nivel <white>{level}</white>.";
         public static final String LOCKED = "El nivel inicial no se puede elegir: solo es el punto de partida.";
+        public static final String RESTRICTED = "Ese nivel solo lo pueden elegir los jugadores que lo tienen autorizado.";
         public static final String UNKNOWN = "<white>{level}</white> no es un nivel de Pranks. Usa <white>/prank</white> para ver los que hay.";
         public static final String LIST_CURRENT = "Tu nivel de Pranks es <white>{level}</white>.";
         public static final String LIST_HEADER = "<gray>Niveles que puedes elegir (haz clic para escribir el comando):";

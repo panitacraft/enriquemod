@@ -19,6 +19,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * {@code /prank set <level>}: changes the prank level of the player, under the same rules as the menu: the starting level cannot be
@@ -54,8 +55,9 @@ public final class SetSubcommand implements ModCommand {
         return change.status() == ProfileService.PrankChange.Status.CHANGED ? Command.SINGLE_SUCCESS : 0;
     }
 
-    /** The levels that can be chosen: all but the first, which is only where players start. */
+    /** The levels the player can choose: not the first, which is only where players start, and not those kept for other players. */
     private Collection<String> choosable(CommandSourceStack source) {
-        return profiles.prankLevels().stream().skip(1).map(EmblemView::id).toList();
+        ServerPlayer player = source.getPlayer();
+        return player == null ? List.of() : profiles.choosablePranks(player).stream().map(EmblemView::id).toList();
     }
 }

@@ -30,4 +30,13 @@ class BackoffTest {
         assertTrue(Backoff.delay(0, 0.999).toMillis() <= 1200);
         assertTrue(Backoff.delay(3, 0.0).toMillis() >= 6400);
     }
+
+    @Test
+    void aLineAnotherServerTookWaitsThirtySecondsThenDoublesUpToTenMinutes() {
+        assertEquals(Duration.ofSeconds(30), Backoff.afterReplaced(0, 0.5));
+        assertEquals(Duration.ofSeconds(60), Backoff.afterReplaced(1, 0.5));
+        assertEquals(Duration.ofSeconds(240), Backoff.afterReplaced(3, 0.5));
+        assertEquals(Duration.ofMinutes(10), Backoff.afterReplaced(5, 0.5));
+        assertEquals(Duration.ofMinutes(10), Backoff.afterReplaced(Integer.MAX_VALUE, 0.99));
+    }
 }

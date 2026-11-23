@@ -25,6 +25,8 @@ public final class ProfileConfig implements ModConfig {
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
     private static final List<String> CATEGORIES = List.of("emblem", "local_emblem");
     private static final String PRANK_IMAGES = "https://res.cloudinary.com/panita/image/upload/v1794522697/panita-extra/pranks/";
+    private static final String ZERO_PLUS_IMAGE = "https://res.cloudinary.com/panita/image/upload/v1794522690/panita-extra/pranks/prank_level_zero_plus.png";
+    private static final List<String> ZERO_PLUS_PLAYERS = List.of("Fiendrox", "Javithor360");
     private static final List<String> PRANK_WORDS = List.of("zero", "one", "two", "three");
     private static final List<String> PRANK_COLORS = List.of("white", "yellow", "gold", "red");
     /** The ending asks the client companion to draw it 3 GUI pixels tall, a third of the 10 of the other art, as a small dot. */
@@ -52,7 +54,8 @@ public final class ProfileConfig implements ModConfig {
                         + "prankCooldownSeconds between changes. The levels belong to the server, not to the Panita API: an emblem of the API with\n"
                         + "the id of a level is never offered as an ordinary emblem. A level has an id, a title,\n"
                         + "a description (may be empty), an icon and a color for players without the client mod, and an image (an https address on a\n"
-                        + "trusted image host, or empty).",
+                        + "trusted image host, or empty). A level may also have players: the Minecraft names of the only players who may choose\n"
+                        + "it, ignoring capitalization (everyone may when it is left out). The default plus of level zero is only for two players.",
                 new PranksType());
         prankCooldownSeconds = builder.intRange("prankCooldownSeconds", 604_800, 0, 31_536_000,
                 "Seconds a player must wait before changing their prank level again. The first choice has no wait. 0 turns the wait off.");
@@ -83,7 +86,10 @@ public final class ProfileConfig implements ModConfig {
                 new LooksType(CATEGORIES::contains, "category (emblem or local_emblem)"));
     }
 
-    /** Four levels, each plain and plus, with the images and the colors (white, yellow, gold, red) the server was designed with. */
+    /**
+     * Four levels, each plain and plus, with the images and the colors (white, yellow, gold, red) the server was designed with. The
+     * plus of level zero is only for the two players named in {@link #ZERO_PLUS_PLAYERS}.
+     */
     private static List<PrankLevel> defaultPranks() {
         Iterator<String> titles = List.of(ProfileMessages.Prank.ZERO, ProfileMessages.Prank.ONE, ProfileMessages.Prank.ONE_PLUS,
                 ProfileMessages.Prank.TWO, ProfileMessages.Prank.TWO_PLUS, ProfileMessages.Prank.THREE, ProfileMessages.Prank.THREE_PLUS)
@@ -92,11 +98,13 @@ public final class ProfileConfig implements ModConfig {
         for (int level = 0; level < PRANK_WORDS.size(); level++) {
             String color = PRANK_COLORS.get(level);
             String image = PRANK_IMAGES + "prank_level_" + PRANK_WORDS.get(level);
-            levels.add(new PrankLevel("enrique6_prank_" + level, titles.next(), "", new EmblemLook("☠", color), image + ".png"));
-            // Level zero is only where players start, so it has no plus variant
-            if (level > 0) {
+            levels.add(new PrankLevel("enrique6_prank_" + level, titles.next(), "", new EmblemLook("☠", color), image + ".png", List.of()));
+            if (level == 0) {
+                levels.add(new PrankLevel("enrique6_prank_0_plus", ProfileMessages.Prank.ZERO_PLUS, "", new EmblemLook("☠⁺", color),
+                        ZERO_PLUS_IMAGE, ZERO_PLUS_PLAYERS));
+            } else {
                 levels.add(new PrankLevel("enrique6_prank_" + level + "_plus", titles.next(), "", new EmblemLook("☠⁺", color),
-                        image + "_plus.png"));
+                        image + "_plus.png", List.of()));
             }
         }
         return List.copyOf(levels);

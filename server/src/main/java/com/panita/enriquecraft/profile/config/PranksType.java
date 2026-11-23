@@ -20,7 +20,8 @@ import java.util.regex.Pattern;
 /**
  * How the prank levels are written in the config file: a list, lowest level first, of objects with an {@code id}, a {@code title},
  * an optional {@code description}, an {@code icon} and a {@code color} for players without the client mod, and an optional
- * {@code image}. A problem in any entry makes the whole list fall back to its default, so every rule names the entry.
+ * {@code image}, and an optional {@code players}: the Minecraft names of the only players who may choose the level (everyone may when it
+ * is left out or empty). A problem in any entry makes the whole list fall back to its default, so every rule names the entry.
  */
 final class PranksType implements ValueType<List<PrankLevel>> {
 
@@ -31,7 +32,9 @@ final class PranksType implements ValueType<List<PrankLevel>> {
     private static final String ICON = "icon";
     private static final String COLOR = "color";
     private static final String IMAGE = "image";
-    private static final Set<String> SETTINGS = Set.of(ID_KEY, TITLE, DESCRIPTION, ICON, COLOR, IMAGE);
+    private static final String PLAYERS = "players";
+    private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_]{1,16}");
+    private static final Set<String> SETTINGS = Set.of(ID_KEY, TITLE, DESCRIPTION, ICON, COLOR, IMAGE, PLAYERS);
 
     @Override
     public List<PrankLevel> parse(JsonElement element) {
@@ -62,6 +65,9 @@ final class PranksType implements ValueType<List<PrankLevel>> {
             json.addProperty(ICON, level.look().icon());
             json.addProperty(COLOR, level.look().color());
             json.addProperty(IMAGE, level.image());
+            JsonArray players = new JsonArray();
+            level.players().forEach(players::add);
+            json.add(PLAYERS, players);
             levels.add(json);
         }
         return levels;
@@ -70,7 +76,7 @@ final class PranksType implements ValueType<List<PrankLevel>> {
     @Override
     public Optional<String> constraint() {
         return Optional.of("a list of levels, lowest first, each with an id, a title, a description (may be empty), an icon of one or "
-                + "two characters, a color and an image (an https address on a trusted host, or empty)");
+                + "two characters, a color, an image (an https address on a trusted host, or empty) and optionally the names of the only players who may choose it");
     }
 
     private PrankLevel level(int position, JsonElement element) {
@@ -106,7 +112,26 @@ final class PranksType implements ValueType<List<PrankLevel>> {
         if (!image.isEmpty() && !ArtLinks.isTrusted(image)) {
             throw new InvalidValueException("the image of " + where + " must be an https address on a trusted image host");
         }
-        return new PrankLevel(id, title, description, new EmblemLook(icon, color), image);
+        return new PrankLevel(id, title, description, new EmblemLook(icon, color), image, players(where, json));
+    }
+
+    /** The names of the players who may choose a level; a missing setting means everyone. */
+    private static List<String> players(String where, JsonObject json) {
+        JsonElement element = json.get(PLAYERS);
+        if (element == null) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            throw new InvalidValueException("the players of " + where + " must be a list of Minecraft names");
+        }
+        List<String> names = new ArrayList<>();
+        for (JsonElement name : element.getAsJsonArray()) {
+            if (!name.isJsonPrimitive() || !((JsonPrimitive) name).isString() || !PLAYER_NAME.matcher(name.getAsString()).matches()) {
+                throw new InvalidValueException("the players of " + where + " must be Minecraft names of 1 to 16 letters, digits or _");
+            }
+            names.add(name.getAsString());
+        }
+        return names;
     }
 
     /** A text setting; a missing one is empty when it may be and an error when it may not. */

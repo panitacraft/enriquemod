@@ -38,6 +38,7 @@ class BridgeConnectionTest {
         final List<Attempt> attempts = new ArrayList<>();
         final List<String> sent = new ArrayList<>();
         int closed;
+        int heartbeats;
         boolean closedWhileSending;
         CompletableFuture<Void> connectResult = CompletableFuture.completedFuture(null);
         CompletableFuture<Void> sendResult = CompletableFuture.completedFuture(null);
@@ -52,6 +53,12 @@ class BridgeConnectionTest {
         public CompletableFuture<Void> send(String text) {
             sent.add(text);
             return sendResult;
+        }
+
+        @Override
+        public CompletableFuture<Void> heartbeat() {
+            heartbeats++;
+            return CompletableFuture.completedFuture(null);
         }
 
         @Override
@@ -206,8 +213,10 @@ class BridgeConnectionTest {
 
     @Test
     void sayingWhatWentWrongSeesThroughTheWrappersOfAsyncFailures() {
-        assertEquals("IOException", BridgeConnection.describe(new java.util.concurrent.CompletionException(new IOException("down"))));
-        assertEquals("IllegalStateException", BridgeConnection.describe(new IllegalStateException("x")));
+        assertEquals("IOException: down", BridgeConnection.describe(new java.util.concurrent.CompletionException(new IOException("down"))));
+        assertEquals("SocketException: Connection reset", BridgeConnection.describe(new java.net.SocketException("Connection reset")));
+        assertEquals("SocketException", BridgeConnection.describe(new java.net.SocketException()));
+        assertEquals("IllegalStateException: x", BridgeConnection.describe(new IllegalStateException("x")));
     }
 
     @Test
@@ -466,5 +475,66 @@ class BridgeConnectionTest {
         transport.listener().onOpen();
         transport.listener().onText(WELCOME);
         assertTrue(connection.connected());
+    }
+
+    @Test
+    void whenAnotherServerTakesTheLineItWaitsLongInsteadOfTakingItBackAtOnce() {
+        connected();
+
+        transport.listener().onClose(4000, "replaced");
+
+        BridgeConnection.Status status = connection.status();
+        assertEquals(BridgeConnection.State.WAITING, status.state());
+        assertTrue(status.lastError().orElseThrow().contains("another server"));
+        assertEquals(Backoff.afterReplaced(0, 0.5), scheduler.runNext());
+    }
+
+    @Test
+    void beingTakenOverAgainRightAwayWaitsLongerEachTime() {
+        connected();
+        transport.listener().onClose(4000, "replaced");
+        scheduler.runNext();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+        transport.listener().onClose(4000, "replaced");
+
+        assertEquals(Backoff.afterReplaced(1, 0.5), scheduler.runNext());
+    }
+
+    @Test
+    void aLineThatStayedUpForAWhileStartsTheWaitOverWhenItIsTaken() {
+        connected();
+        transport.listener().onClose(4000, "replaced");
+        scheduler.runNext();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+        now = now.plus(Duration.ofMinutes(6));
+
+        transport.listener().onClose(4000, "replaced");
+
+        assertEquals(Backoff.afterReplaced(0, 0.5), scheduler.tasks.get(scheduler.tasks.size() - 1).delay());
+    }
+
+    @Test
+    void askingToReconnectForgetsHowOftenTheLineWasTaken() {
+        connected();
+        transport.listener().onClose(4000, "replaced");
+        connection.reconnect();
+        transport.listener().onOpen();
+        transport.listener().onText(WELCOME);
+
+        transport.listener().onClose(4000, "replaced");
+
+        assertEquals(Backoff.afterReplaced(0, 0.5), scheduler.tasks.get(scheduler.tasks.size() - 1).delay());
+    }
+
+    @Test
+    void tellsTheBotTheLineIsAliveEachTimeItChecksTheLine() {
+        connected();
+
+        scheduler.runNext();
+        scheduler.runNext();
+
+        assertEquals(2, transport.heartbeats);
     }
 }

@@ -23,6 +23,8 @@ public final class Protocol {
     public static final String FEATURE_REPLY = "reply";
     /** Only in the bot's welcome: it understands the {@code afk} and {@code back} events, so the mod may send them. */
     public static final String FEATURE_AFK = "afk";
+    /** Only in the bot's welcome: it understands the {@code coordinates} event, so the mod may send it. */
+    public static final String FEATURE_COORDINATES = "coordinates";
     /** Only in the bot's welcome: it turns the {@code mentions} of a chat frame into pings, so the mod may send them. */
     public static final String FEATURE_MENTIONS = "mentions";
     /** The most Discord members one line of chat can mention. */
@@ -42,6 +44,9 @@ public final class Protocol {
         boolean local = "localhost".equals(host) || "127.0.0.1".equals(host);
         return "https".equals(address.getScheme()) || ("http".equals(address.getScheme()) && local);
     }
+
+    /** Close code of the bot for a line that another mod took over: the bot keeps one mod at a time, and the newest connection wins. */
+    public static final int CLOSE_REPLACED = 4000;
 
     /** Close code of the bot for a mod it does not speak the same protocol with. */
     public static final int CLOSE_PROTOCOL = 4002;

@@ -22,6 +22,18 @@ subprojects {
             name = 'Nucleoid'
             url = 'https://maven.nucleoid.xyz'
         }
+        // Vanish, compile-only: the integration is optional and the mod is never bundled
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'Modrinth'
+                    url = 'https://api.modrinth.com/maven'
+                }
+            }
+            filter {
+                includeGroup 'maven.modrinth'
+            }
+        }
     }
 
     dependencies {

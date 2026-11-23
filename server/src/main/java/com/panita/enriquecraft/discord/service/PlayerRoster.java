@@ -31,17 +31,20 @@ public final class PlayerRoster {
 
     private final PlayerInfos infos;
     private final HeldPlayers held;
+    private final PlayerVisibility visibility;
     private final Messenger messenger;
 
-    public PlayerRoster(PlayerInfos infos, HeldPlayers held, Messenger messenger) {
+    public PlayerRoster(PlayerInfos infos, HeldPlayers held, PlayerVisibility visibility, Messenger messenger) {
         this.infos = infos;
         this.held = held;
+        this.visibility = visibility;
         this.messenger = messenger;
     }
 
+    /** The players who are in the game as far as anyone can tell: not on the PIN screen and not hidden by a vanish mod. */
     public List<Answers.Online> online(MinecraftServer server) {
         return server.getPlayerList().getPlayers().stream()
-                .filter(player -> !held.isHeld(player))
+                .filter(player -> !held.isHeld(player) && !visibility.isHidden(player))
                 .map(player -> new Answers.Online(infos.of(player), player.connection.latency(), line(player)))
                 .toList();
     }
@@ -49,7 +52,7 @@ public final class PlayerRoster {
     /** What the server knows about the player of that name: those online, then everyone on the whitelist. */
     public Optional<Answers.Info> info(MinecraftServer server, String name) {
         Optional<ServerPlayer> online = server.getPlayerList().getPlayers().stream()
-                .filter(player -> !held.isHeld(player) && player.getGameProfile().name().equalsIgnoreCase(name)).findFirst();
+                .filter(player -> !held.isHeld(player) && !visibility.isHidden(player) && player.getGameProfile().name().equalsIgnoreCase(name)).findFirst();
         if (online.isPresent()) {
             ServerPlayer player = online.get();
             long seconds = PlayTimes.secondsOfTicks(player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME)));

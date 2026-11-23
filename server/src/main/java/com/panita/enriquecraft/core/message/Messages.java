@@ -108,6 +108,14 @@ public final class Messages {
         }
     }
 
+    public static final class Tps {
+        public static final String DESCRIPTION = "Muestra los ticks por segundo del servidor";
+        public static final String RESULT = "<gold>TPS de los últimos 1m, 5m, 15m: </gold>{one}<gold>, </gold>{five}<gold>, </gold>{fifteen}";
+
+        private Tps() {
+        }
+    }
+
     public static final class Broadcast {
         public static final String DESCRIPTION = "Envía un mensaje a todos los jugadores, con o sin prefijo";
 

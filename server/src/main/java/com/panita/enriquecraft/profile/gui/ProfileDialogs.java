@@ -250,14 +250,13 @@ final class ProfileDialogs {
         Optional<Duration> wait = edits.prankWait(player);
         DialogSpec.Builder spec = DialogSpec.builder(factory.text(ProfileMessages.Dialogs.HUB_PRANK)).width(WIDTH).columns(2)
                 .body(factory.text(Message.plain(ProfileMessages.Dialogs.PRANK_CURRENT).with("level", tooltip.title(emblems.prank()))));
-        List<EmblemView> levels = edits.levels();
+        List<EmblemView> levels = edits.choosableLevels(player);
         if (wait.isPresent()) {
             spec.body(factory.text(Message.plain(ProfileMessages.Edit.PRANK_WAIT).with("time", Durations.format(wait.get()))));
             spec.button(new DialogButton(BACK, factory.text(ProfileMessages.Dialogs.BACK)));
         } else {
             spec.body(factory.text(ProfileMessages.Dialogs.PRANK_PICK));
-            // The first level is only where players start, so it is not one to choose
-            for (int index = 1; index < levels.size(); index++) {
+            for (int index = 0; index < levels.size(); index++) {
                 EmblemView level = levels.get(index);
                 boolean current = level.id().equals(emblems.prank().id());
                 Component mark = current ? Component.literal("✔ ").withStyle(ChatFormatting.GREEN) : Component.empty();

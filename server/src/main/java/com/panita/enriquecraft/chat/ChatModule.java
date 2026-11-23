@@ -7,6 +7,7 @@ import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.data.KnownSkins;
 import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.chat.message.ChatView;
+import com.panita.enriquecraft.chat.message.CoordinateShareView;
 import com.panita.enriquecraft.chat.message.HeadTooltip;
 import com.panita.enriquecraft.chat.message.NicknameView;
 import com.panita.enriquecraft.chat.message.PrivateMessageView;
@@ -18,6 +19,7 @@ import com.panita.enriquecraft.chat.message.WelcomeView;
 import com.panita.enriquecraft.chat.service.AfkService;
 import com.panita.enriquecraft.chat.service.ChatHeads;
 import com.panita.enriquecraft.chat.service.ClientNames;
+import com.panita.enriquecraft.chat.service.CoordinateSharing;
 import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.NameChanges;
@@ -26,6 +28,7 @@ import com.panita.enriquecraft.chat.service.TabNames;
 import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
 import com.panita.enriquecraft.chat.service.ReplyTracker;
+import com.panita.enriquecraft.chat.service.ShareSounds;
 import com.panita.enriquecraft.chat.service.SkinMemory;
 import com.panita.enriquecraft.chat.service.SudoService;
 import com.panita.enriquecraft.chat.service.SystemMessageClassifier;
@@ -47,7 +50,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Everything the server says in chat: how lines look, channels, nicknames, private messages and the messages about
+ * Everything the server says in chat: how lines look, channels, nicknames, private messages, shared coordinates and the messages about
  * players coming and going. It decides how things are shown and never what players may do in the world.
  */
 public final class ChatModule implements EnriquecraftModule {
@@ -106,6 +109,9 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
         TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
         services.register(TabNames.class, tabNames);
-        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, new MotdService(formatter, config), tabNames);
+        services.register(CoordinateSharing.class, new CoordinateSharing(config, held, mutes, new CoordinateShareView(messenger), new ShareSounds()));
+        MotdService motd = new MotdService(formatter, config);
+        services.register(MotdService.class, motd);
+        ChatHooks.install(nicknames, systemMessages, privateMessages, chat, motd, tabNames);
     }
 }

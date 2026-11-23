@@ -227,6 +227,76 @@ class GameReporterTest {
     }
 
     @Test
+    void aPlayerWhoAppearsAfterBeingHiddenIsReportedAsJoining() {
+        reporter.revealed(JAVI);
+
+        assertEquals(List.of(event(EventKind.JOIN, Optional.of(JAVI), Optional.empty(), Optional.empty())), sent);
+    }
+
+    @Test
+    void aPlayerWhoVanishesIsReportedAsLeavingAndAppearsAgainAsJoining() {
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.left(JAVI);
+        reporter.revealed(JAVI);
+
+        assertEquals(List.of(event(EventKind.LEAVE, Optional.of(JAVI), Optional.empty(), Optional.empty()),
+                event(EventKind.JOIN, Optional.of(JAVI), Optional.empty(), Optional.empty())), sent);
+    }
+
+    @Test
+    void aVanishThatTheGameAlreadyAnnouncedAsALeaveIsNotReportedTwice() {
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.left(JAVI);
+        reporter.left(JAVI);
+
+        assertEquals(1, sent.size());
+    }
+
+    @Test
+    void aPlayerWhoIsAlreadyReportedAsInIsNotReportedAsJoiningAgain() {
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.revealed(JAVI);
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
+    void reportsSharedCoordinatesToABotThatOffersThem() {
+        offered = Set.of("coordinates");
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.coordinates(JAVI, "X: 10 Y: 64 Z: -20 (Overworld)");
+
+        assertEquals(List.of(event(EventKind.COORDINATES, Optional.of(JAVI), Optional.of("X: 10 Y: 64 Z: -20 (Overworld)"), Optional.empty())), sent);
+    }
+
+    @Test
+    void tellsNothingAboutSharedCoordinatesToABotThatDoesNotOfferThem() {
+        reporter.ready(JAVI);
+        sent.clear();
+
+        reporter.coordinates(JAVI, "X: 10 Y: 64 Z: -20 (Overworld)");
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
+    void tellsNothingAboutSharedCoordinatesOfAPlayerWhoWasNeverReady() {
+        offered = Set.of("coordinates");
+
+        reporter.coordinates(JAVI, "X: 10 Y: 64 Z: -20 (Overworld)");
+
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
     void reportsTheStartAndTheStopOfTheServer() {
         reporter.started();
         reporter.stopping();
