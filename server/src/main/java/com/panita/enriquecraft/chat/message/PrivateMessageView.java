@@ -36,7 +36,8 @@ public final class PrivateMessageView {
      */
     public void outgoing(CommandSourceStack source, ServerPlayer target, Component text, boolean byRealName) {
         Component name = byRealName ? names.ofRealName(target) : names.of(target);
-        messenger.send(source, Message.plain(ChatMessages.Format.PRIVATE_OUTGOING).with("target", name).with("message", text));
+        // Placeholders are resolved for the target, since the line is about them (the sender is not necessarily a player).
+        messenger.send(source, Message.plain(ChatMessages.Format.PRIVATE_OUTGOING).with("target", name).with("message", text), target);
     }
 
     public void notAvailable(CommandSourceStack source) {
