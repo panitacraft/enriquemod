@@ -10,13 +10,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
 
 /**
- * The name of a player as chat lines show it, with a tooltip that tells who is behind it and a click that starts a private
- * message to them.
+ * The name of a player as chat lines show it, with a tooltip that tells who is behind it and a click that opens their profile on
+ * the website.
  */
 public final class SenderNameView {
+
+    private static final String PROFILE_URL = "https://www.panitacraft.com/profile/";
 
     private final Messenger messenger;
     private final NicknameService nicknames;
@@ -64,10 +69,17 @@ public final class SenderNameView {
         String name = realName(player);
         Component tooltip = messenger.format(Message.plain(ChatMessages.Format.NAME_HOVER)
                 .with("nickname", nicknames.nicknameOf(player.getUUID()).orElse(shown))
-                .with("name", name), player);
+                .with("name", name)
+                .with("level", player.experienceLevel), player);
         return afk.shadeName(player, shown, hasRank).copy().withStyle(style -> style
                 .withHoverEvent(new HoverEvent.ShowText(tooltip))
-                .withClickEvent(new ClickEvent.SuggestCommand("/msg " + name + " ")));
+                .withClickEvent(new ClickEvent.OpenUrl(profileUri(name))));
+    }
+
+    /** The web profile of the real player, never of a nickname; the name is encoded since offline names are not always plain. */
+    static URI profileUri(String name) {
+        // URLEncoder writes a space as "+", which in a path is a literal plus.
+        return URI.create(PROFILE_URL + URLEncoder.encode(name, StandardCharsets.UTF_8).replace("+", "%20"));
     }
 
     private static String realName(ServerPlayer player) {

@@ -18,7 +18,7 @@ public final class ChatMessages {
         public static final String STAFF = "<dark_red>[Staff]</dark_red> %enriquecraft:rank%{sender}<dark_gray> » <aqua>{message}";
         public static final String EXTERNAL = "{sender}<dark_gray> » <white>{message}";
         public static final String EXTERNAL_STAFF = "<dark_red>[Staff]</dark_red> {sender}<dark_gray> » <aqua>{message}";
-        public static final String NAME_HOVER = "<yellow>{nickname}</yellow>\n<gray>Nombre real: <white>{name}</white>\n\n<gray>Clic para escribirle un mensaje privado";
+        public static final String NAME_HOVER = "<yellow>Jugador {nickname}</yellow>\n\n<#6BF3FA>· <#B574FC>Vida: <red>%player:health%\n<#6BF3FA>· <#B574FC>Experiencia: <green>{level} niveles\n<#6BF3FA>· <#B574FC>Latencia: <yellow>%player:ping%\n\n<i><gray>Visitar perfil en la web";
         public static final String EMOTE = "<light_purple>* {sender} {message}";
         public static final String PRIVATE_INCOMING = "<dark_gray>[<gold>{sender}</gold> <gray>→</gray> <gold>tú</gold>]</dark_gray> <white>{message}";
         public static final String PRIVATE_OUTGOING = "<dark_gray>[<gold>tú</gold> <gray>→</gray> <gold>{target}</gold>]</dark_gray> <white>{message}";
