@@ -23,7 +23,7 @@ public final class PrivateMessageView {
 
     /** What the one who receives the message sees; the sender can be the console. */
     public void incoming(CommandSourceStack source, ServerPlayer target, Component text) {
-        Component sender = source.getPlayer() == null ? Component.literal(source.getTextName()) : names.of(source.getPlayer());
+        Component sender = source.getPlayer() == null ? Component.literal(source.getTextName()) : names.tagged(source.getPlayer());
         messenger.deliver(List.of(target), messenger.format(
                 Message.plain(ChatMessages.Format.PRIVATE_INCOMING).with("sender", sender).with("message", text), target));
     }
@@ -35,7 +35,7 @@ public final class PrivateMessageView {
      * @param byRealName whether the sender addressed the player by their real name
      */
     public void outgoing(CommandSourceStack source, ServerPlayer target, Component text, boolean byRealName) {
-        Component name = byRealName ? names.ofRealName(target) : names.of(target);
+        Component name = names.tagged(target, byRealName ? names.ofRealName(target) : names.of(target));
         // Placeholders are resolved for the target, since the line is about them (the sender is not necessarily a player).
         messenger.send(source, Message.plain(ChatMessages.Format.PRIVATE_OUTGOING).with("target", name).with("message", text), target);
     }
