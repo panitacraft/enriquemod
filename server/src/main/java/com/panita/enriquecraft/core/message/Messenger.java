@@ -49,6 +49,11 @@ public final class Messenger {
         source.sendSystemMessage(formatter.format(message));
     }
 
+    /** Sends a message to a command sender, resolving placeholders for another player (the one the line is about). */
+    public void send(CommandSourceStack source, Message message, ServerPlayer context) {
+        source.sendSystemMessage(formatForPlayer(context, message));
+    }
+
     /**
      * Sends a message only when the sender is not a player, that is, to the console.
      */

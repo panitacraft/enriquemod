@@ -78,7 +78,7 @@ public final class ChatModule implements EnriquecraftModule {
         AfkService afk = new AfkService(System::currentTimeMillis, config.afkEnabled::get, config.afkTimeoutSeconds::get, config.afkColor::get);
         ChatPlaceholders placeholders = new ChatPlaceholders(nicknames, selection, services.get(InlineArts.class), config,
                 new RankTooltip(config.tooltipWidth::get), afk, formatter);
-        SenderNameView names = new SenderNameView(messenger, nicknames, afk, placeholders::hasRank);
+        SenderNameView names = new SenderNameView(messenger, nicknames, afk, placeholders::hasRank, channels);
         var knownSkins = services.get(WorldData.class).register(SKINS_FILE, KnownSkins.CODEC, KnownSkins.EMPTY);
         SkinMemory skins = new SkinMemory(knownSkins::get, knownSkins::set);
         ChatHeads heads = new ChatHeads(config.heads::get, skins, new HeadTooltip(formatter));
@@ -104,7 +104,7 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(KnownPlayers.class, new KnownPlayers());
         services.register(AfkService.class, afk);
         placeholders.register();
-        SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger, heads, names, channels), config, held);
+        SystemMessages systemMessages = new SystemMessages(new SystemMessageClassifier(), new SystemMessageView(messenger, heads, names), config, held);
         services.register(WelcomeView.class, new WelcomeView(messenger));
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
         TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
