@@ -79,6 +79,12 @@ public final class ChatHooks {
                 .orElse(real);
     }
 
+    /** The name clients know a score holder by: the nickname when the holder is the name of an online player who has one. */
+    public String scoreOwnerShownToClients(PlayerList players, String owner) {
+        ServerPlayer player = players.getPlayerByName(owner);
+        return player == null ? owner : profileShownToClients(player, player.getGameProfile()).name();
+    }
+
     /** The online player with this nickname, or null. */
     public @Nullable ServerPlayer playerWithNickname(PlayerList players, String nickname) {
         return nicknames.findByNickname(nickname).map(profile -> players.getPlayer(profile.id())).orElse(null);

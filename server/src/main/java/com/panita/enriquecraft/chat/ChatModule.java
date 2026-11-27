@@ -100,7 +100,7 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(PrivateMessages.class, privateMessages);
         services.register(NicknameService.class, nicknames);
         services.register(NicknameView.class, new NicknameView(messenger, config));
-        services.register(ClientNames.class, new ClientNames());
+        services.register(ClientNames.class, new ClientNames(nicknames));
         services.register(KnownPlayers.class, new KnownPlayers());
         services.register(AfkService.class, afk);
         placeholders.register();

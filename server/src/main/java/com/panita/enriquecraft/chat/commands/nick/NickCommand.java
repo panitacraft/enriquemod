@@ -77,7 +77,7 @@ public final class NickCommand implements ModCommand {
             view.rejected(source, outcome);
             return 0;
         }
-        clientNames.refresh(target);
+        clientNames.refresh(target, previousName);
         if (other) {
             view.changedOther(source, target.getGameProfile().name(), nicknames.nicknameOf(target.getUUID()).orElseThrow());
         } else {
@@ -87,6 +87,7 @@ public final class NickCommand implements ModCommand {
     }
 
     private int clear(CommandSourceStack source, ServerPlayer target, boolean other) {
+        String previousName = clientNames.shownName(target);
         if (nicknames.clear(target.getUUID()).status() == NicknameService.Status.NOT_SET) {
             if (other) {
                 view.notSetOther(source, target.getGameProfile().name());
@@ -95,7 +96,7 @@ public final class NickCommand implements ModCommand {
             }
             return 0;
         }
-        clientNames.refresh(target);
+        clientNames.refresh(target, previousName);
         if (other) {
             view.clearedOther(source, target.getGameProfile().name());
         } else {
