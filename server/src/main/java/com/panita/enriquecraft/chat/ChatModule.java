@@ -24,6 +24,7 @@ import com.panita.enriquecraft.chat.service.ChatPlaceholders;
 import com.panita.enriquecraft.chat.service.ChatService;
 import com.panita.enriquecraft.chat.service.NameChanges;
 import com.panita.enriquecraft.chat.service.NicknameService;
+import com.panita.enriquecraft.chat.service.NameTags;
 import com.panita.enriquecraft.chat.service.TabNames;
 import com.panita.enriquecraft.chat.service.MotdService;
 import com.panita.enriquecraft.chat.service.PrivateMessages;
@@ -100,7 +101,7 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(PrivateMessages.class, privateMessages);
         services.register(NicknameService.class, nicknames);
         services.register(NicknameView.class, new NicknameView(messenger, config));
-        services.register(ClientNames.class, new ClientNames());
+        services.register(ClientNames.class, new ClientNames(nicknames));
         services.register(KnownPlayers.class, new KnownPlayers());
         services.register(AfkService.class, afk);
         placeholders.register();
@@ -109,6 +110,7 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
         TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
         services.register(TabNames.class, tabNames);
+        services.register(NameTags.class, new NameTags(messenger, services.get(InlineArts.class), config, held, services.get(ClientNames.class)));
         services.register(CoordinateSharing.class, new CoordinateSharing(config, held, mutes, new CoordinateShareView(messenger), new ShareSounds()));
         MotdService motd = new MotdService(formatter, config);
         services.register(MotdService.class, motd);

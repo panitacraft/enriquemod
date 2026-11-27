@@ -18,12 +18,14 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.PermissionLevel;
 
 /**
  * {@code /nick <nickname>} and {@code /nick off}: a player's own nickname. {@code /nick other <player> <nickname|off>}
- * is for those who may change the nickname of someone else.
+ * is for those who may change the nickname of someone else. Nicknames are a privilege: without the node
+ * {@code enriquecraft.command.nick} only administrators may use the command.
  */
-@CommandSpec(name = "nick", description = ChatMessages.Nickname.NICK_DESCRIPTION)
+@CommandSpec(name = "nick", description = ChatMessages.Nickname.NICK_DESCRIPTION, access = PermissionLevel.ADMINS)
 public final class NickCommand implements ModCommand {
 
     private static final String OFF = "off";
@@ -70,6 +72,7 @@ public final class NickCommand implements ModCommand {
 
     private int set(CommandContext<CommandSourceStack> context, ServerPlayer target, boolean other) {
         CommandSourceStack source = context.getSource();
+        String previousName = clientNames.shownName(target);
         NicknameService.Outcome outcome = nicknames.set(target.getUUID(), target.getGameProfile().name(),
                 StringArgumentType.getString(context, NICKNAME_ARGUMENT), ChatPermissions.canColorNickname(source),
                 ChatPermissions.canBypassNicknameRules(source), knownPlayers.namesOn(source.getServer()));
@@ -77,7 +80,7 @@ public final class NickCommand implements ModCommand {
             view.rejected(source, outcome);
             return 0;
         }
-        clientNames.refresh(target);
+        clientNames.refresh(target, previousName);
         if (other) {
             view.changedOther(source, target.getGameProfile().name(), nicknames.nicknameOf(target.getUUID()).orElseThrow());
         } else {
@@ -87,6 +90,7 @@ public final class NickCommand implements ModCommand {
     }
 
     private int clear(CommandSourceStack source, ServerPlayer target, boolean other) {
+        String previousName = clientNames.shownName(target);
         if (nicknames.clear(target.getUUID()).status() == NicknameService.Status.NOT_SET) {
             if (other) {
                 view.notSetOther(source, target.getGameProfile().name());
@@ -95,7 +99,7 @@ public final class NickCommand implements ModCommand {
             }
             return 0;
         }
-        clientNames.refresh(target);
+        clientNames.refresh(target, previousName);
         if (other) {
             view.clearedOther(source, target.getGameProfile().name());
         } else {

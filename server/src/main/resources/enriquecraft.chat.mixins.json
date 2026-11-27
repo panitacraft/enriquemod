@@ -14,6 +14,7 @@
     "PlayerInfoEntryMixin",
     "PlayerListSystemMessageMixin",
     "ServerPlayerTabNameMixin",
+    "ServerScoreboardMixin",
     "TrackedEntityInvoker"
   ],
   "injectors": {

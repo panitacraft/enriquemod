@@ -15,7 +15,17 @@ public final class ModerationConfig implements ModConfig {
     public final ConfigValue<Boolean> clientModsEnabled;
     public final ConfigValue<Map<String, String>> blockedChannels;
 
+    public final ConfigValue<String> voiceChatGroup;
+    public final ConfigValue<String> voiceChatSpeakPermission;
+
     public ModerationConfig(ConfigSectionBuilder builder) {
+        voiceChatGroup = builder.string("voiceChat.group", "default",
+                "The LuckPerms group everybody is in. /enriquecraft voicechat mute all denies the speaking permission to this group.",
+                value -> value.matches("[A-Za-z0-9_.-]{1,64}"), "must be 1 to 64 letters, digits, ., - or _");
+        voiceChatSpeakPermission = builder.string("voiceChat.speakPermission", "voicechat.speak",
+                "The permission the voice chat mod checks before it lets a player speak. /enriquecraft voicechat mute and unmute set it with\n"
+                        + "LuckPerms: false to silence, removed to free. Muting everyone grants it to the players of auth.staffOnly.players.",
+                value -> value.matches("[A-Za-z0-9_.-]{1,128}"), "must be 1 to 128 letters, digits, ., - or _");
         clientModsEnabled = builder.bool("clientMods.enabled", true,
                 "Kicks players whose client announces one of the channels below. The server cannot read a client's mods; it can only see\n"
                         + "the channels the client says it listens on, so a client that does not announce them is not caught.");
