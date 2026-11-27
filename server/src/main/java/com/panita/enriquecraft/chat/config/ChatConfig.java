@@ -28,6 +28,7 @@ public final class ChatConfig implements ModConfig {
     public final ConfigValue<Integer> nicknameMaxLength;
     public final ConfigValue<Integer> nicknameCooldownSeconds;
     public final ConfigValue<Boolean> tabListEnabled;
+    public final ConfigValue<Boolean> nameTagEnabled;
     public final ConfigValue<Boolean> afkEnabled;
     public final ConfigValue<Integer> afkTimeoutSeconds;
     public final ConfigValue<String> afkColor;
@@ -86,6 +87,10 @@ public final class ChatConfig implements ModConfig {
                 "Builds the name of each player in the tab list itself (prank level, rank, name, suffix, emblems), as in chat: players with the\n"
                         + "client mod see the images, everyone else the text. Its line is tabName in the messages file. Turn it off, or remove the\n"
                         + "tab name settings of a tab list mod, when that mod should decide the names instead.");
+        nameTagEnabled = builder.bool("nameTag.enabled", false,
+                "Dresses the name above the head of each player like their line in chat: the prank level and rank before the name, the suffix\n"
+                        + "and emblems after it (nameTagPrefix and nameTagSuffix in the messages file). A player the server already put in a team keeps\n"
+                        + "that team and its name. Turn it off, or remove the nametag settings of a tab list mod, when that mod should decide.");
         afkEnabled = builder.bool("afk.enabled", true,
                 "Shows a player who has been inactive in the AFK color, in place of the color of their rank (or of their name, when they have\n"
                         + "no rank). Nothing is announced. Activity is turning the view, speaking, and using or attacking something.");
