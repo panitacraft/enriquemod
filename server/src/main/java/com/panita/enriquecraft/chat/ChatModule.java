@@ -39,6 +39,7 @@ import com.panita.enriquecraft.chat.text.ChatTextParser;
 import com.panita.enriquecraft.chat.text.EmojiCatalog;
 import com.panita.enriquecraft.chat.text.LinkDetector;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -110,7 +111,8 @@ public final class ChatModule implements EnriquecraftModule {
         services.register(SudoService.class, new SudoService(chat, selection, held, new SudoView(messenger)));
         TabNames tabNames = new TabNames(messenger, services.get(InlineArts.class), config, held, new NameChanges());
         services.register(TabNames.class, tabNames);
-        services.register(NameTags.class, new NameTags(messenger, services.get(InlineArts.class), config, held, services.get(ClientNames.class)));
+        services.register(NameTags.class, new NameTags(messenger, services.get(InlineArts.class), config, held, services.get(ClientNames.class),
+                services.get(MessageCatalog.class)));
         services.register(CoordinateSharing.class, new CoordinateSharing(config, held, mutes, new CoordinateShareView(messenger), new ShareSounds()));
         MotdService motd = new MotdService(formatter, config);
         services.register(MotdService.class, motd);

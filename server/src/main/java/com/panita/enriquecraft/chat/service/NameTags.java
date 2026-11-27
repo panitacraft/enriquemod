@@ -4,6 +4,7 @@ import com.panita.enriquecraft.auth.service.HeldPlayers;
 import com.panita.enriquecraft.chat.config.ChatConfig;
 import com.panita.enriquecraft.chat.message.ChatMessages;
 import com.panita.enriquecraft.core.art.InlineArts;
+import com.panita.enriquecraft.core.framework.message.MessageCatalog;
 import com.panita.enriquecraft.core.message.Message;
 import com.panita.enriquecraft.core.message.Messenger;
 import net.minecraft.network.chat.Component;
@@ -42,17 +43,20 @@ public final class NameTags {
     private final ChatConfig config;
     private final HeldPlayers held;
     private final ClientNames names;
+    private final MessageCatalog catalog;
     /** Only holds the teams so they can be turned into packets; no server uses it. */
     private final Scoreboard packetsOnly = new Scoreboard();
     private final Map<UUID, Active> active = new HashMap<>();
     private int ticks;
 
-    public NameTags(Messenger messenger, InlineArts arts, ChatConfig config, HeldPlayers held, ClientNames names) {
+    public NameTags(Messenger messenger, InlineArts arts, ChatConfig config, HeldPlayers held, ClientNames names,
+                    MessageCatalog catalog) {
         this.messenger = messenger;
         this.arts = arts;
         this.config = config;
         this.held = held;
         this.names = names;
+        this.catalog = catalog;
     }
 
     /** Called every tick; once a second it sends the teams that changed to everyone, or takes them all back when the setting is off. */
@@ -110,10 +114,15 @@ public final class NameTags {
             return null;
         }
         PlayerTeam team = new PlayerTeam(packetsOnly, TEAM_PREFIX + player.getUUID());
-        team.setPlayerPrefix(arts.withHeight(messenger.format(Message.plain(ChatMessages.Format.NAME_TAG_PREFIX), player), TEXT_HEIGHT));
-        team.setPlayerSuffix(arts.withHeight(messenger.format(Message.plain(ChatMessages.Format.NAME_TAG_SUFFIX), player), TEXT_HEIGHT));
+        NameTagTemplate template = NameTagTemplate.of(catalog.resolve(ChatMessages.Format.NAME_TAG));
+        team.setPlayerPrefix(dressed(template.before(), player));
+        team.setPlayerSuffix(dressed(template.after(), player));
         team.getPlayers().add(names.shownName(player));
         return team;
+    }
+
+    private Component dressed(String text, ServerPlayer player) {
+        return arts.withHeight(messenger.format(Message.plain(text), player), TEXT_HEIGHT);
     }
 
     private static String signatureOf(PlayerTeam team) {

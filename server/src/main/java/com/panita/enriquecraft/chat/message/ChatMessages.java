@@ -23,8 +23,7 @@ public final class ChatMessages {
         public static final String PRIVATE_INCOMING = "<dark_gray>[<gold>{sender}</gold> <gray>→</gray> <gold>tú</gold>]</dark_gray> <white>{message}";
         public static final String PRIVATE_OUTGOING = "<dark_gray>[<gold>tú</gold> <gray>→</gray> <gold>{target}</gold>]</dark_gray> <white>{message}";
         public static final String TAB_NAME = "%enriquecraft:emblems_system%%enriquecraft:rank%%enriquecraft:name_text%%luckperms:suffix%%enriquecraft:emblems_lore%";
-        public static final String NAME_TAG_PREFIX = "%enriquecraft:emblems_system%%enriquecraft:rank%";
-        public static final String NAME_TAG_SUFFIX = "%luckperms:suffix%%enriquecraft:emblems_lore%";
+        public static final String NAME_TAG = "%enriquecraft:emblems_system%%enriquecraft:rank%{name}%luckperms:suffix%%enriquecraft:emblems_lore%";
         public static final String LINK_TOOLTIP = "<gray>Clic para abrir el enlace";
 
         private Format() {

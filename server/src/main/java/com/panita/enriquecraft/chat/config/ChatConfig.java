@@ -89,8 +89,8 @@ public final class ChatConfig implements ModConfig {
                         + "tab name settings of a tab list mod, when that mod should decide the names instead.");
         nameTagEnabled = builder.bool("nameTag.enabled", false,
                 "Dresses the name above the head of each player like their line in chat: the prank level and rank before the name, the suffix\n"
-                        + "and emblems after it (nameTagPrefix and nameTagSuffix in the messages file). A player the server already put in a team keeps\n"
-                        + "that team and its name. Turn it off, or remove the nametag settings of a tab list mod, when that mod should decide.");
+                        + "and emblems after it, as the nameTag format of the messages file says, with {name} where the name goes. A player the\n"
+                        + "server already put in a team keeps that team and its name. Turn it off, or remove the nametag settings of a tab list mod, when that mod should decide.");
         afkEnabled = builder.bool("afk.enabled", true,
                 "Shows a player who has been inactive in the AFK color, in place of the color of their rank (or of their name, when they have\n"
                         + "no rank). Nothing is announced. Activity is turning the view, speaking, and using or attacking something.");
