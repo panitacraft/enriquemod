@@ -44,6 +44,21 @@ public final class ModerationMessages {
         }
     }
 
+    public static final class VoiceChat {
+        public static final String DESCRIPTION = "Administra el chat de voz";
+        public static final String MUTE_DESCRIPTION = "Silencia el chat de voz de un jugador o de todos";
+        public static final String UNMUTE_DESCRIPTION = "Devuelve el chat de voz a un jugador o a todos";
+        public static final String MUTED_ALL = "El chat de voz fue silenciado para todos, menos para <bold>{staff}</bold> miembro(s) del staff.";
+        public static final String UNMUTED_ALL = "El chat de voz volvió a estar abierto para todos.";
+        public static final String MUTED_PLAYER = "<bold>{player}</bold> fue silenciado en el chat de voz.";
+        public static final String UNMUTED_PLAYER = "<bold>{player}</bold> ya puede hablar en el chat de voz.";
+        public static final String INVALID_PLAYER = "Ese no es un nombre de jugador válido: usa de 1 a 16 letras, números o _.";
+        public static final String LUCKPERMS_MISSING = "LuckPerms no está instalado, así que no se puede cambiar el permiso del chat de voz.";
+
+        private VoiceChat() {
+        }
+    }
+
     public static final class Mute {
         public static final String DESCRIPTION = "Silencia a un jugador, para siempre o por un tiempo";
         public static final String UNMUTE_DESCRIPTION = "Le devuelve la palabra a un jugador silenciado";

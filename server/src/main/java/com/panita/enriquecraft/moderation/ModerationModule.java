@@ -1,5 +1,6 @@
 package com.panita.enriquecraft.moderation;
 
+import com.panita.enriquecraft.auth.config.AuthConfig;
 import com.panita.enriquecraft.core.framework.data.WorldData;
 import com.panita.enriquecraft.core.framework.inject.ServiceRegistry;
 import com.panita.enriquecraft.core.framework.module.EnriquecraftModule;
@@ -12,10 +13,12 @@ import com.panita.enriquecraft.moderation.message.KickView;
 import com.panita.enriquecraft.moderation.message.ModerationMessages;
 import com.panita.enriquecraft.moderation.message.MuteView;
 import com.panita.enriquecraft.moderation.message.Reasons;
+import com.panita.enriquecraft.moderation.message.VoiceChatView;
 import com.panita.enriquecraft.moderation.service.BanService;
 import com.panita.enriquecraft.moderation.service.ClientModPolicy;
 import com.panita.enriquecraft.moderation.service.MuteBook;
 import com.panita.enriquecraft.moderation.service.MuteService;
+import com.panita.enriquecraft.moderation.service.VoiceChatService;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -44,6 +47,8 @@ public final class ModerationModule implements EnriquecraftModule {
         BanService bans = new BanService(new BanView(messenger, reasons), clock);
         services.register(BanService.class, bans);
         services.register(MuteService.class, new MuteService(new MuteBook(mutes::get, mutes::set, clock), new MuteView(messenger, reasons), clock));
+        services.register(VoiceChatService.class,
+                new VoiceChatService(services.get(ModerationConfig.class), services.get(AuthConfig.class), new VoiceChatView(messenger)));
         services.register(ClientModPolicy.class, new ClientModPolicy(services.get(ModerationConfig.class)));
         services.register(ClientModView.class, new ClientModView(messenger));
         ModerationHooks.install(bans, new KickView(messenger, reasons));
