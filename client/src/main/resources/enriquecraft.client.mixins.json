@@ -6,7 +6,8 @@
   "client": [
     "FontManagerGlyphMixin",
     "ScreenshotMixin",
-    "GuiGraphicsExtractorHoverMixin"
+    "GuiGraphicsExtractorHoverMixin",
+    "NameTagHudMixin"
   ],
   "injectors": {
     "defaultRequire": 1
